@@ -1,0 +1,55 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { PurchaseService } from './purchase.service';
+import { CreatePurchaseDto } from './dto/create-purchase.dto';
+import { Request } from 'express';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+
+@UseGuards(AuthJwtGuard)
+@Controller('purchases')
+export class PurchaseController {
+  constructor(private readonly purchaseService: PurchaseService) {}
+
+  @Post()
+  create(@Body() createPurchaseDto: CreatePurchaseDto, @Req() req: Request) {
+    const userId = Number(req.user?.id);
+    return this.purchaseService.create(createPurchaseDto, userId);
+  }
+
+  @Get()
+  findAll() {
+    return this.purchaseService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.purchaseService.findOneFull(+id);
+  }
+
+  @Get('items/:itemId/import')
+  async exportItem(@Param('itemId') itemId: string, @Req() req: Request) {
+    const creatorId = Number(req.user?.id);
+    const result = await this.purchaseService.importItem(+itemId, creatorId);
+    return result;
+  }
+
+  @Get(':id/import')
+  async exportItemsForOrder(
+    @Param('id') purchaseId: string,
+    @Req() req: Request,
+  ) {
+    const creatorId = Number(req.user?.id);
+    const result = await this.purchaseService.importPurchase(
+      +purchaseId,
+      creatorId,
+    );
+    return result;
+  }
+}
