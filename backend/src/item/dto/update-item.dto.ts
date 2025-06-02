@@ -1,16 +1,16 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { CreateItemDto } from './create-item.dto';
-import { IsEnum, IsObject, IsOptional } from 'class-validator';
-import { ItemStatus } from 'src/common/enums/enum';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsPositive } from 'class-validator';
 
-export class UpdateItemDto extends PartialType(
-  OmitType(CreateItemDto, ['itemableId', 'itemableType'] as const),
-) {
-  @IsObject()
+export class UpdateItemDto {
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
   @IsOptional()
-  snapshotData?: object;
+  quantity: number;
 
-  @IsEnum(ItemStatus)
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
   @IsOptional()
-  status?: ItemStatus;
+  discountId: number;
 }

@@ -50,11 +50,12 @@ export class DiscountController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateDiscountDto: UpdateDiscountDto,
   ) {
-    return this.discountService.update(+id, updateDiscountDto);
+    const discount = await this.discountService.update(+id, updateDiscountDto);
+    return { discount };
   }
 
   @Roles(UserRole.ADMIN)

@@ -36,13 +36,13 @@ export class UserController {
   async changeRole(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
-    role: UserRole,
+    @Body() body: { role: UserRole },
   ) {
     const currentUser = req?.user;
     if (id === currentUser?.id)
       throw new BadRequestException('Cannot change role by yourself!');
 
-    return await this.userService.changeRole(id, role);
+    return await this.userService.changeRole(id, body.role);
   }
 
   @Patch(':id/change-status')
@@ -50,13 +50,26 @@ export class UserController {
   async changeStatus(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
-    status: UserStatus,
+    @Body() body: { status: UserStatus },
   ) {
     const currentUser = req?.user;
     if (id === currentUser?.id)
       throw new BadRequestException('Cannot change status by yourself!');
 
-    return await this.userService.changeStatus(id, status);
+    return await this.userService.changeStatus(id, body.status);
+  }
+
+  @Patch(':id/toggle-status')
+  @Roles(UserRole.ADMIN)
+  async toggleStatus(
+    @Req() req: Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const currentUser = req?.user;
+    if (id === currentUser?.id)
+      throw new BadRequestException('Cannot change status by yourself!');
+
+    return await this.userService.toggleStatus(id);
   }
 
   @Get('me')

@@ -34,6 +34,7 @@ export class InventoryService {
     private consigmentService: ConsigmentService,
   ) {}
 
+  // Get action of item form source information
   async getActionOfItem(sourceType: SourceType, sourceId: number) {
     switch (sourceType) {
       case SourceType.ORDER:
@@ -54,6 +55,7 @@ export class InventoryService {
     item: Item,
     creatorId: number,
     manager: EntityManager,
+    quantity?: number,
   ) {
     // Check if item is product
     if (item.itemableType !== ItemableType.PRODUCT)
@@ -61,29 +63,45 @@ export class InventoryService {
         'Cannot create inventory for item which is not product!',
       );
 
+    // Check if item is imported/exported
+    if (
+      item.status === ItemStatus.IMPORTED ||
+      item.status === ItemStatus.EXPORTED
+    )
+      throw new BadRequestException(`Item is ${item.status}!`);
+
     const action = await this.getActionOfItem(item.sourceType, item.sourceId);
+
+    // Count how many product this item is handled
+    const quantityAlreadyHandled = await this.countInvenQuantity(
+      item.id,
+      action,
+    );
+    const remainQuantity = item.quantity - quantityAlreadyHandled;
+
+    if (remainQuantity < 0)
+      throw new BadRequestException(
+        `Item is ${action} exceed quantity of product. Please try again!`,
+      );
+    else if (remainQuantity === 0)
+      throw new BadRequestException(`Item is ${action}!`);
+
+    // Check if quantity is valid.
+    // If quantity is greater than remainQuantity => invalid
+    if (quantity && quantity > remainQuantity)
+      throw new BadRequestException(
+        'Quantity is greater than remain quantity of item!',
+      );
+
+    const finalQuantity = quantity ? quantity : remainQuantity;
+
     const createItemInventoryDto: CreateItemInventoryDto = {
       action,
-      quantity: item.quantity,
-      note: `${action} product for item ${item.id} of ${item.sourceType}!`,
+      quantity: finalQuantity,
+      note: `${action} ${finalQuantity} product for item ${item.id} of ${item.sourceType}!`,
       productId: item.itemableId,
       itemId: item.id,
     };
-
-    const validAction = [InventoryAction.EXPORT, InventoryAction.IMPORT];
-    if (!validAction.includes(createItemInventoryDto.action))
-      throw new BadRequestException(
-        `${createItemInventoryDto.action} is not valid to create inventory for item!`,
-      );
-
-    const productItem = await this.itemService.findItem(
-      createItemInventoryDto.itemId,
-      ItemableType.PRODUCT,
-    );
-
-    // Return message if item is exported/imported
-    if (productItem && productItem.status !== ItemStatus.NONE)
-      throw new BadRequestException(`Item is ${productItem.status}!`);
 
     // Find product
     const product = await manager.findOneOrFail(Product, {
@@ -95,7 +113,7 @@ export class InventoryService {
       case InventoryAction.EXPORT:
         if (product.reserved < createItemInventoryDto.quantity) {
           throw new BadRequestException(
-            'The quantity is greater than product reserved',
+            'The quantity is greater than product reserved!',
           );
         }
         product.reserved -= createItemInventoryDto.quantity;
@@ -115,10 +133,24 @@ export class InventoryService {
     });
 
     // Add item to inventory
-    if (productItem) inventory.item = productItem;
+    inventory.item = item;
 
     await manager.save(inventory);
 
+    // Total quantity = handled + inventory handle
+    const totalQuantity = inventory.quantity + quantityAlreadyHandled;
+    if (totalQuantity === item.quantity)
+      item.status =
+        action === InventoryAction.IMPORT
+          ? ItemStatus.IMPORTED
+          : ItemStatus.EXPORTED;
+    else if (totalQuantity < item.quantity) item.status = ItemStatus.PARTIAL;
+    else
+      throw new BadRequestException(
+        'Total of inventory quantity and handled quantity is greater than item quantity!',
+      );
+
+    await manager.save(item);
     return inventory;
   }
 
@@ -222,5 +254,16 @@ export class InventoryService {
     const inventory = await this.inventoryRepo.findOneBy({ id });
 
     return inventory;
+  }
+
+  async countInvenQuantity(id: number, action: InventoryAction) {
+    const result: { sum: string | null } | undefined = await this.inventoryRepo
+      .createQueryBuilder('inventory')
+      .select('SUM(inventory.quantity)', 'sum')
+      .where('inventory.action = :action', { action })
+      .andWhere('inventory.itemId = :itemId', { itemId: id })
+      .getRawOne();
+
+    return result?.sum ? Number(result.sum) : 0;
   }
 }

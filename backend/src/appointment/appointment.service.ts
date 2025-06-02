@@ -408,7 +408,24 @@ export class AppointmentService {
   }
 
   findAll() {
-    return this.appointmentRepo.find();
+    return this.appointmentRepo
+      .createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.item', 'item')
+      .leftJoinAndSelect('appointment.healer', 'healer')
+      .leftJoinAndSelect('appointment.room', 'room')
+      .leftJoinAndSelect('appointment.customer', 'customer')
+      .select([
+        'appointment.note',
+        'appointment.startAt',
+        'appointment.endAt',
+        'appointment.status',
+        'appointment.type',
+        'item.id',
+        'healer.fullName',
+        'customer.fullName',
+        'room.name',
+      ])
+      .getMany();
   }
 
   async toggle() {

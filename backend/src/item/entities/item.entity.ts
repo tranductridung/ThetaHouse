@@ -1,5 +1,10 @@
 import { Appointment } from 'src/appointment/entities/appointment.entity';
-import { ItemableType, ItemStatus, SourceType } from 'src/common/enums/enum';
+import {
+  AdjustmentType,
+  ItemableType,
+  ItemStatus,
+  SourceType,
+} from 'src/common/enums/enum';
 import { Discount } from 'src/discount/entities/discount.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import {
@@ -37,6 +42,12 @@ export class Item {
 
   @Column('decimal', { precision: 10, scale: 2 })
   finalAmount: number;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @Column({ type: 'enum', enum: AdjustmentType, default: AdjustmentType.INIT })
+  adjustmentType: AdjustmentType;
 
   @Column({ type: 'json' })
   snapshotData: any;

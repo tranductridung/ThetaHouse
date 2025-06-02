@@ -17,6 +17,7 @@ export class ServiceService {
   ) {}
 
   async create(createServiceDto: CreateServiceDto) {
+    console.log('create');
     // Session = 1 and bonusSession = 0 (with single service)
     // duration = 60 (with single service)
     if (createServiceDto.type === ServiceType.SINGLE) {
@@ -39,20 +40,24 @@ export class ServiceService {
   }
 
   async findAll() {
+    console.log('findAll');
     return await this.serviceRepo.find();
   }
 
   async findAllActive() {
+    console.log('findAllActive');
     return await this.serviceRepo.findBy({ status: CommonStatus.ACTIVE });
   }
 
   async findOne(id: number) {
+    console.log('findOne');
     const service = await this.serviceRepo.findOneBy({ id });
     if (!service) throw new NotFoundException('Service not found!');
     return service;
   }
 
   async update(id: number, updateServiceDto: UpdateServiceDto) {
+    console.log('update');
     const service = await this.serviceRepo.findOne({
       where: {
         id,
@@ -84,6 +89,7 @@ export class ServiceService {
   }
 
   async remove(id: number) {
+    console.log('remove');
     const service = await this.findOne(id);
 
     if (service.status === CommonStatus.DELETED)
@@ -95,6 +101,7 @@ export class ServiceService {
   }
 
   async toggleStatus(id: number) {
+    console.log('toggleStatus');
     const service = await this.serviceRepo.findOne({
       where: {
         id,
@@ -114,6 +121,7 @@ export class ServiceService {
   }
 
   async restore(id: number) {
+    console.log('restore');
     const service = await this.findOne(id);
 
     if (service.status !== CommonStatus.DELETED)

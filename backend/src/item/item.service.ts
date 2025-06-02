@@ -7,11 +7,18 @@ import {
 import { CreateItemDto } from './dto/create-item.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Item } from './entities/item.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  FindOptionsWhere,
+  In,
+  Repository,
+} from 'typeorm';
 import { loadItemable } from './helpers/itemable.helper';
 import { loadSource } from './helpers/source.helper';
 import { DiscountService } from 'src/discount/discount.service';
 import {
+  AdjustmentType,
   DiscountType,
   ItemableType,
   ItemStatus,
@@ -152,12 +159,18 @@ export class ItemService {
   }
 
   // Get item but not throw error if not found
-  async findItem(id: number, itemableType?: ItemableType, status?: ItemStatus) {
+  async findItem(
+    id: number,
+    itemableType?: ItemableType,
+    status?: ItemStatus,
+    isActive?: boolean,
+  ) {
     return await this.itemRepo.findOne({
       where: {
         id,
         itemableType,
         status,
+        isActive,
       },
     });
   }
@@ -166,16 +179,27 @@ export class ItemService {
     sourceId: number,
     sourceType: SourceType,
     itemableType?: ItemableType,
-    status?: ItemStatus,
+    status?: ItemStatus[],
+    isActive?: boolean,
   ) {
-    return await this.itemRepo.find({
-      where: {
-        sourceId,
-        sourceType,
-        status,
-        itemableType,
-      },
-    });
+    const where: FindOptionsWhere<Item> = {
+      sourceId,
+      sourceType,
+    };
+
+    if (status && status.length > 0) {
+      where.status = In(status);
+    }
+
+    if (itemableType) {
+      where.itemableType = itemableType;
+    }
+
+    if (isActive) {
+      where.isActive = isActive;
+    }
+
+    return await this.itemRepo.find({ where });
   }
 
   async update(
@@ -188,23 +212,33 @@ export class ItemService {
     const item = await repo.findOneBy({ id });
 
     if (!item) throw new NotFoundException('Item not found!');
-    const status = updateItemDto.status;
-    if (status) {
-      // Status of product just: None, Imported, Exported
-      // Status of service just: None, Transfered
-      if (item.itemableType === ItemableType.PRODUCT) {
-        if (status === ItemStatus.TRANSFERED)
-          throw new BadRequestException('Invalid status of product!');
-      } else if (
-        status === ItemStatus.IMPORTED ||
-        status === ItemStatus.EXPORTED
-      )
-        throw new BadRequestException('Invalid status of service!');
+
+    if (item.itemableType === ItemableType.PRODUCT) {
+      if (updateItemDto.quantity !== item.quantity)
+        item.status = ItemStatus.PARTIAL;
     }
 
     repo.merge(item, updateItemDto);
     await repo.save(item);
     return { item };
+  }
+
+  async transferService(id: number) {
+    const item = await this.findOne(id);
+
+    if (item.itemableType !== ItemableType.SERVICE)
+      throw new BadRequestException(
+        'Cannot transfer item which is not service!',
+      );
+
+    if (item.status === ItemStatus.TRANSFERED)
+      return { message: 'Item service is transfered!' };
+
+    item.status = ItemStatus.TRANSFERED;
+
+    await this.itemRepo.save(item);
+
+    return { message: 'Service is transfered!' };
   }
 
   async calculateDiscountAmount(
@@ -246,5 +280,20 @@ export class ItemService {
 
     if (hasInvalid)
       throw new BadRequestException(`Some items are not PRODUCT type!`);
+  }
+
+  async cancelSource(
+    sourceId: number,
+    sourceType: SourceType,
+    manager?: EntityManager,
+  ) {
+    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+
+    const result = await repo.update(
+      { sourceId, sourceType },
+      { adjustmentType: AdjustmentType.CANCELLED },
+    );
+
+    return { result };
   }
 }

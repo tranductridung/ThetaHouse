@@ -50,8 +50,13 @@ export class ProductController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    const product = await this.productService.update(+id, updateProductDto);
+
+    return { product };
   }
 
   @Roles(UserRole.ADMIN)

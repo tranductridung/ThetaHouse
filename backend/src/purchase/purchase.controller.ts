@@ -11,6 +11,7 @@ import { PurchaseService } from './purchase.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { ImportItemDto } from './dto/import-item.dto';
 
 @UseGuards(AuthJwtGuard)
 @Controller('purchases')
@@ -24,23 +25,33 @@ export class PurchaseController {
   }
 
   @Get()
-  findAll() {
-    return this.purchaseService.findAll();
+  async findAll() {
+    const purchases = await this.purchaseService.findAll();
+    return { purchases };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.purchaseService.findOneFull(+id);
+  async findOne(@Param('id') id: string) {
+    const purchase = await this.purchaseService.findOneFull(+id);
+    return { purchase };
   }
 
-  @Get('items/:itemId/import')
-  async exportItem(@Param('itemId') itemId: string, @Req() req: Request) {
+  @Post('items/:itemId/import')
+  async exportItem(
+    @Param('itemId') itemId: string,
+    @Req() req: Request,
+    @Body() importItemDto: ImportItemDto,
+  ) {
     const creatorId = Number(req.user?.id);
-    const result = await this.purchaseService.importItem(+itemId, creatorId);
+    const result = await this.purchaseService.importItem(
+      +itemId,
+      creatorId,
+      importItemDto.quantity,
+    );
     return result;
   }
 
-  @Get(':id/import')
+  @Post(':id/import')
   async exportItemsForOrder(
     @Param('id') purchaseId: string,
     @Req() req: Request,

@@ -11,6 +11,7 @@ import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Consigment } from 'src/consigment/entities/consigment.entity';
 import { PartnerType } from 'src/common/enums/enum';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { Payment } from 'src/payment/entities/payment.entity';
 
 @Entity()
 export class Partner {
@@ -52,4 +53,7 @@ export class Partner {
 
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
   appointments: Appointment[];
+
+  @OneToMany(() => Payment, (payments) => payments.customer)
+  payments: Payment[];
 }

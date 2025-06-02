@@ -115,7 +115,21 @@ export class PurchaseService {
   }
 
   async findAll() {
-    return await this.purchaseRepo.find();
+    return await this.purchaseRepo
+      .createQueryBuilder('purchase')
+      .leftJoinAndSelect('purchase.creator', 'creator')
+      .leftJoinAndSelect('purchase.supplier', 'supplier')
+      .select([
+        'purchase.id',
+        'purchase.quantity',
+        'purchase.totalAmount',
+        'purchase.finalAmount',
+        'purchase.discountAmount',
+        'purchase.note',
+        'creator.fullName',
+        'supplier.fullName',
+      ])
+      .getMany();
   }
 
   async findOneFull(id: number) {
@@ -143,13 +157,18 @@ export class PurchaseService {
     return purchase;
   }
 
-  async importItem(itemId: number, creatorId: number) {
-    const item = await this.itemService.findItem(itemId, ItemableType.PRODUCT);
+  async importItem(itemId: number, creatorId: number, quantity?: number) {
+    const item = await this.itemService.findItem(
+      itemId,
+      ItemableType.PRODUCT,
+      undefined,
+      true,
+    );
 
     if (!item) throw new NotFoundException('Item not found!');
 
-    if (item.status !== ItemStatus.NONE)
-      throw new BadRequestException(`Item is ${item.status}!`);
+    if (item.status === ItemStatus.IMPORTED)
+      throw new BadRequestException('Item is imported!');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -160,9 +179,9 @@ export class PurchaseService {
         item,
         creatorId,
         queryRunner.manager,
+        quantity,
       );
 
-      item.status = ItemStatus.IMPORTED;
       await queryRunner.manager.save(item);
 
       await queryRunner.commitTransaction();
@@ -186,21 +205,21 @@ export class PurchaseService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    // Find list item which is not exported/imported
-    const itemsNotExported = await this.itemService.findItemsBySource(
+    // Find list item which is not imported
+    const itemsNotImported = await this.itemService.findItemsBySource(
       purchase.id,
       SourceType.PURCHASE,
       ItemableType.PRODUCT,
-      ItemStatus.NONE,
+      [ItemStatus.NONE, ItemStatus.PARTIAL],
     );
 
-    if (itemsNotExported.length === 0)
-      return { message: 'All item of purchase is exported!' };
+    if (itemsNotImported.length === 0)
+      return { message: 'All item of purchase is im   ported!' };
 
     const itemInventories: Inventory[] = [];
 
     try {
-      for (const item of itemsNotExported) {
+      for (const item of itemsNotImported) {
         const itemInventory =
           await this.inventoryService.createInventoryForItem(
             item,
@@ -208,7 +227,6 @@ export class PurchaseService {
             queryRunner.manager,
           );
 
-        item.status = ItemStatus.IMPORTED;
         await queryRunner.manager.save(item);
 
         if (itemInventory) {

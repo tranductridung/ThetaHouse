@@ -13,7 +13,6 @@ import { TransactionService } from 'src/transaction/transaction.service';
 import { CreateTransactionDto } from 'src/transaction/dto/create-transaction.dto';
 import {
   ConsigmentType,
-  InventoryAction,
   ItemableType,
   ItemStatus,
   PartnerType,
@@ -160,7 +159,21 @@ export class ConsigmentService {
   }
 
   async findAll() {
-    return this.consigmentRepo.find();
+    return await this.consigmentRepo
+      .createQueryBuilder('consignment')
+      .leftJoinAndSelect('consignment.creator', 'creator')
+      .leftJoinAndSelect('consignment.partner', 'partner')
+      .select([
+        'consignment.id',
+        'consignment.type',
+        'consignment.totalAmount',
+        'consignment.finalAmount',
+        'consignment.commissionRate',
+        'consignment.note',
+        'creator.fullName',
+        'partner.fullName',
+      ])
+      .getMany();
   }
 
   async findOneFull(id: number) {
@@ -187,12 +200,20 @@ export class ConsigmentService {
     return consigment;
   }
 
-  async handledItem(itemId: number, creatorId: number) {
-    const item = await this.itemService.findItem(itemId, ItemableType.PRODUCT);
+  async handledItem(itemId: number, creatorId: number, quantity?: number) {
+    const item = await this.itemService.findItem(
+      itemId,
+      ItemableType.PRODUCT,
+      undefined,
+      true,
+    );
 
     if (!item) throw new NotFoundException('Item not found!');
 
-    if (item.status !== ItemStatus.NONE)
+    if (
+      item.status === ItemStatus.IMPORTED ||
+      item.status === ItemStatus.EXPORTED
+    )
       throw new BadRequestException(`Item is ${item.status}!`);
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -204,12 +225,8 @@ export class ConsigmentService {
         item,
         creatorId,
         queryRunner.manager,
+        quantity,
       );
-
-      item.status =
-        inventory.action === InventoryAction.IMPORT
-          ? ItemStatus.IMPORTED
-          : ItemStatus.EXPORTED;
 
       await queryRunner.manager.save(item);
 
@@ -235,20 +252,22 @@ export class ConsigmentService {
     await queryRunner.startTransaction();
 
     // Find list item which is not exported/imported
-    const itemsNotExported = await this.itemService.findItemsBySource(
+    const itemsNotHandled = await this.itemService.findItemsBySource(
       consigment.id,
       SourceType.CONSIGMENT,
       ItemableType.PRODUCT,
-      ItemStatus.NONE,
+      [ItemStatus.NONE, ItemStatus.PARTIAL],
     );
 
-    if (itemsNotExported.length === 0)
-      return { message: 'All item of consigment is exported!' };
+    if (itemsNotHandled.length === 0)
+      return {
+        message: `All item of consigment is ${consigment.type === ConsigmentType.IN ? 'imported' : 'exported'}!`,
+      };
 
     const itemInventories: Inventory[] = [];
 
     try {
-      for (const item of itemsNotExported) {
+      for (const item of itemsNotHandled) {
         const itemInventory =
           await this.inventoryService.createInventoryForItem(
             item,
@@ -256,10 +275,6 @@ export class ConsigmentService {
             queryRunner.manager,
           );
 
-        item.status =
-          itemInventory.action === InventoryAction.IMPORT
-            ? ItemStatus.IMPORTED
-            : ItemStatus.EXPORTED;
         await queryRunner.manager.save(item);
 
         itemInventories.push({

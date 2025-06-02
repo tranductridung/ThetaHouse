@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,16 +10,19 @@ import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Transaction } from './entities/transaction.entity';
-import { TransactionStatus } from 'src/common/enums/enum';
+import { SourceType, TransactionStatus } from 'src/common/enums/enum';
 import { UserService } from 'src/user/user.service';
 import { loadSource } from 'src/item/helpers/source.helper';
 import { CreateTransactionNoSourceDto } from './dto/create-transaction-no-source.dto';
+import { PaymentService } from 'src/payment/payment.service';
 @Injectable()
 export class TransactionService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepo: Repository<Transaction>,
     private userService: UserService,
+    @Inject(forwardRef(() => PaymentService))
+    private paymentService: PaymentService,
     private dataSource: DataSource,
   ) {}
 
@@ -68,8 +73,20 @@ export class TransactionService {
     else return TransactionStatus.PARTIAL;
   }
 
-  findAll() {
-    return this.transactionRepo.find();
+  async findAll() {
+    return await this.transactionRepo
+      .createQueryBuilder('transaction')
+      .leftJoinAndSelect('transaction.creator', 'creator')
+      .select([
+        'transaction.type',
+        'transaction.sourceType',
+        'transaction.totalAmount',
+        'transaction.paidAmount',
+        'transaction.status',
+        'transaction.note',
+        'creator.fullName',
+      ])
+      .getMany();
   }
 
   async findOne(id: number) {
@@ -84,6 +101,45 @@ export class TransactionService {
     return {
       ...transaction,
       source,
+    };
+  }
+
+  async findOneBySourceId(id: number, sources: string) {
+    let type: SourceType;
+
+    switch (sources) {
+      case 'orders':
+        type = SourceType.ORDER;
+        break;
+      case 'purchases':
+        type = SourceType.PURCHASE;
+        break;
+      case 'consignments':
+        type = SourceType.CONSIGMENT;
+        break;
+      default:
+        throw new NotFoundException('Url type not found!');
+    }
+
+    const transaction = await this.transactionRepo.findOneBy({
+      sourceId: id,
+      sourceType: type,
+    });
+    if (!transaction) throw new NotFoundException('Transaction not found!');
+
+    const payments = await this.paymentService.findAllByTransactionId(
+      transaction.id,
+    );
+
+    const source = await loadSource(
+      transaction.sourceId,
+      transaction.sourceType,
+      this.dataSource,
+    );
+    return {
+      ...transaction,
+      source,
+      payments,
     };
   }
 

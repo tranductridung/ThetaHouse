@@ -23,8 +23,9 @@ export class ServiceController {
 
   @Roles(UserRole.ADMIN)
   @Post()
-  create(@Body() createServiceDto: CreateServiceDto) {
-    return this.serviceService.create(createServiceDto);
+  async create(@Body() createServiceDto: CreateServiceDto) {
+    const service = await this.serviceService.create(createServiceDto);
+    return { service };
   }
 
   @Get()
@@ -48,8 +49,12 @@ export class ServiceController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateServiceDto: UpdateServiceDto) {
-    return this.serviceService.update(+id, updateServiceDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateServiceDto: UpdateServiceDto,
+  ) {
+    const service = await this.serviceService.update(+id, updateServiceDto);
+    return { service };
   }
 
   @Roles(UserRole.ADMIN)

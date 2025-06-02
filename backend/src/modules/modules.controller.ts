@@ -24,14 +24,14 @@ export class ModulesController {
     return { module };
   }
 
-  @Get()
+  @Get('/active')
   async findAllActive() {
     const modules = await this.moduleService.findAllActive();
     return { modules };
   }
 
   @Roles(UserRole.ADMIN)
-  @Get('all')
+  @Get()
   async findAll() {
     const modules = await this.moduleService.findAll();
     return { modules };
@@ -45,8 +45,12 @@ export class ModulesController {
 
   @Roles(UserRole.ADMIN)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateModuleDto: UpdateModuleDto) {
-    return this.moduleService.update(+id, updateModuleDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateModuleDto: UpdateModuleDto,
+  ) {
+    const module = await this.moduleService.update(+id, updateModuleDto);
+    return { module };
   }
 
   @Roles(UserRole.ADMIN)

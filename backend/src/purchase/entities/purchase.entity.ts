@@ -1,4 +1,3 @@
-import { DiscountType } from 'src/common/enums/enum';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { User } from 'src/user/entities/user.entity';
 import {

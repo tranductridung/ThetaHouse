@@ -65,8 +65,17 @@ export class UserService {
 
   async changeStatus(id: number, status: UserStatus) {
     const user = await this.findOne(id);
-
     user.status = status;
+    await this.userRepo.save(user);
+    return { message: `User status is changed to ${user.status}` };
+  }
+
+  async toggleStatus(id: number) {
+    const user = await this.findOne(id);
+    user.status =
+      user.status === UserStatus.ACTIVE
+        ? UserStatus.INACTIVE
+        : UserStatus.ACTIVE;
     await this.userRepo.save(user);
     return { message: `User status is changed to ${user.status}` };
   }

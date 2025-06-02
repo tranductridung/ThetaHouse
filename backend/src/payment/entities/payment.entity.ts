@@ -1,5 +1,7 @@
 import { PaymentMethod } from 'src/common/enums/enum';
+import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
@@ -35,4 +37,16 @@ export class Payment {
   })
   @JoinColumn({ name: 'transactionId' })
   transaction: Transaction;
+
+  @ManyToOne(() => User, (creator) => creator.payments, {
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'creatorId' })
+  creator: User;
+
+  @ManyToOne(() => Partner, (customer) => customer.payments, {
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'customerId' })
+  customer: Partner;
 }

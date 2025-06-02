@@ -3,14 +3,12 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreateTransactionNoSourceDto } from './dto/create-transaction-no-source.dto';
@@ -34,8 +32,22 @@ export class TransactionController {
   }
 
   @Get()
-  findAll() {
-    return this.transactionService.findAll();
+  async findAll() {
+    const transactions = await this.transactionService.findAll();
+    return { transactions };
+  }
+
+  @Get('/:sources/:id')
+  async findOneBySourceId(
+    @Param('id') id: string,
+    @Param('sources') sources: string,
+  ) {
+    const transaction = await this.transactionService.findOneBySourceId(
+      +id,
+      sources,
+    );
+
+    return { transaction };
   }
 
   @Get(':id')

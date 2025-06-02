@@ -21,8 +21,9 @@ export class RoomController {
   }
 
   @Get()
-  findAll() {
-    return this.roomService.findAll();
+  async findAll() {
+    const rooms = await this.roomService.findAll();
+    return { rooms };
   }
 
   @Get(':id')

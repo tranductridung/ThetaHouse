@@ -11,9 +11,10 @@ import { ConsigmentService } from './consigment.service';
 import { CreateConsigmentDto } from './dto/create-consigment.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { HandleItemDto } from './dto/handle-item.dto';
 
 @UseGuards(AuthJwtGuard)
-@Controller('consigments')
+@Controller('consignments')
 export class ConsigmentController {
   constructor(private readonly consigmentService: ConsigmentService) {}
 
@@ -32,24 +33,32 @@ export class ConsigmentController {
 
   @Get()
   async findAll() {
-    const consigments = await this.consigmentService.findAll();
-    return { consigments };
+    const consignments = await this.consigmentService.findAll();
+    return { consignments };
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const consigment = await this.consigmentService.findOneFull(+id);
-    return { consigment };
+    const consignment = await this.consigmentService.findOneFull(+id);
+    return { consignment };
   }
 
-  @Get('items/:itemId/handle')
-  async exportItem(@Param('itemId') itemId: string, @Req() req: Request) {
+  @Post('items/:itemId/handle')
+  async exportItem(
+    @Param('itemId') itemId: string,
+    @Req() req: Request,
+    @Body() handleItemDto: HandleItemDto,
+  ) {
     const creatorId = Number(req.user?.id);
-    const result = await this.consigmentService.handledItem(+itemId, creatorId);
+    const result = await this.consigmentService.handledItem(
+      +itemId,
+      creatorId,
+      handleItemDto.quantity,
+    );
     return result;
   }
 
-  @Get(':id/handle')
+  @Post(':id/handle')
   async exportItemsForOrder(
     @Param('id') consigmentId: string,
     @Req() req: Request,

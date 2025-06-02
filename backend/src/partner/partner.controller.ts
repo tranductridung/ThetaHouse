@@ -34,8 +34,12 @@ export class PartnerController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePartnerDto: UpdatePartnerDto) {
-    return this.partnerService.update(+id, updatePartnerDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updatePartnerDto: UpdatePartnerDto,
+  ) {
+    const partner = await this.partnerService.update(+id, updatePartnerDto);
+    return { partner };
   }
 
   @Delete(':id')

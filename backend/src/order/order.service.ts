@@ -147,7 +147,22 @@ export class OrderService {
   }
 
   async findAll() {
-    return await this.orderRepo.find();
+    return await this.orderRepo
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.creator', 'creator')
+      .leftJoinAndSelect('order.customer', 'customer')
+      .leftJoinAndSelect('order.discount', 'discount')
+      .select([
+        'order.id',
+        'order.quantity',
+        'order.totalAmount',
+        'order.finalAmount',
+        'order.note',
+        'creator.fullName',
+        'customer.fullName',
+        'discount.code',
+      ])
+      .getMany();
   }
 
   async findOne(id: number) {
@@ -174,13 +189,18 @@ export class OrderService {
     return { ...order, items: items };
   }
 
-  async exportItem(itemId: number, creatorId: number) {
-    const item = await this.itemService.findItem(itemId, ItemableType.PRODUCT);
+  async exportItem(itemId: number, creatorId: number, quantity?: number) {
+    const item = await this.itemService.findItem(
+      itemId,
+      ItemableType.PRODUCT,
+      undefined,
+      true,
+    );
 
     if (!item) throw new NotFoundException('Item not found!');
 
-    if (item.status !== ItemStatus.NONE)
-      throw new BadRequestException(`Item is ${item.status}!`);
+    if (item.status === ItemStatus.EXPORTED)
+      throw new BadRequestException('Item is exported!');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -191,9 +211,9 @@ export class OrderService {
         item,
         creatorId,
         queryRunner.manager,
+        quantity,
       );
 
-      item.status = ItemStatus.EXPORTED;
       await queryRunner.manager.save(item);
 
       await queryRunner.commitTransaction();
@@ -219,7 +239,8 @@ export class OrderService {
       order.id,
       SourceType.ORDER,
       ItemableType.PRODUCT,
-      ItemStatus.NONE,
+      [ItemStatus.NONE, ItemStatus.PARTIAL],
+      true,
     );
 
     if (itemsNotExported.length === 0)
@@ -236,7 +257,6 @@ export class OrderService {
             queryRunner.manager,
           );
 
-        item.status = ItemStatus.EXPORTED;
         await queryRunner.manager.save(item);
 
         if (itemInventory) {

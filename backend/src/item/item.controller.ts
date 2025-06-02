@@ -1,6 +1,7 @@
 import { UpdateItemDto } from './dto/update-item.dto';
 import { Controller, Get, Body, Param, Patch } from '@nestjs/common';
 import { ItemService } from './item.service';
+import { SourceType } from 'src/common/enums/enum';
 
 @Controller('items')
 export class ItemController {
@@ -39,5 +40,14 @@ export class ItemController {
   async update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
     const item = await this.itemService.update(+id, updateItemDto);
     return { item };
+  }
+
+  @Patch('cancel/:sourceType/:sourceId')
+  async cancelSource(
+    @Param('sourceId') id: string,
+    @Param('sourceType') sourceType: SourceType,
+  ) {
+    const result = await this.itemService.cancelSource(+id, sourceType);
+    return { result };
   }
 }

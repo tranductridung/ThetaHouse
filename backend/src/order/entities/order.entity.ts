@@ -1,3 +1,4 @@
+import { SourceStatus } from 'src/common/enums/enum';
 import { Discount } from 'src/discount/entities/discount.entity';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -26,6 +27,9 @@ export class Order {
 
   @Column({ nullable: true })
   note?: string;
+
+  @Column({ type: 'enum', enum: SourceStatus, default: SourceStatus.CONFIRMED })
+  status: SourceStatus;
 
   @CreateDateColumn({ select: false })
   createdAt: Date;

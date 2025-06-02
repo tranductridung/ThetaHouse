@@ -11,6 +11,7 @@ import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { ExportItemDto } from './dto/export-item.dto';
 
 @UseGuards(AuthJwtGuard)
 @Controller('orders')
@@ -35,14 +36,22 @@ export class OrderController {
     return { order };
   }
 
-  @Get('items/:itemId/export')
-  async exportItem(@Param('itemId') itemId: string, @Req() req: Request) {
+  @Post('items/:itemId/export')
+  async exportItem(
+    @Param('itemId') itemId: string,
+    @Body() exportItemDto: ExportItemDto,
+    @Req() req: Request,
+  ) {
     const creatorId = Number(req.user?.id);
-    const result = await this.orderService.exportItem(+itemId, creatorId);
+    const result = await this.orderService.exportItem(
+      +itemId,
+      creatorId,
+      exportItemDto.quantity,
+    );
     return result;
   }
 
-  @Get(':id/export')
+  @Post(':id/export')
   async exportItemsForOrder(@Param('id') orderId: string, @Req() req: Request) {
     const creatorId = Number(req.user?.id);
     const result = await this.orderService.exportOrder(+orderId, creatorId);

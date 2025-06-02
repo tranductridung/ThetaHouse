@@ -55,6 +55,7 @@ export enum AppointmentStatus {
   PENDING = 'Pending',
   CONFIRMED = 'Confirmed',
   COMPLETED = 'Completed',
+  CANCELLED = 'Cancelled',
 }
 export enum AppointmentType {
   BONUS = 'Bonus',
@@ -98,7 +99,23 @@ export enum PaymentMethod {
 
 export enum ItemStatus {
   NONE = 'None',
+  PARTIAL = 'Partial',
   IMPORTED = 'Imported',
   EXPORTED = 'Exported',
   TRANSFERED = 'Transfered',
+}
+
+export enum AdjustmentType {
+  INIT = 'Init',
+  REPLACE = 'Replace',
+  ADD = 'Add',
+  REMOVE = 'Remove',
+  CANCELLED = 'Cancelled',
+}
+
+export enum SourceStatus {
+  CONFIRMED = 'Confirmed',
+  PROCESSING = 'Processing',
+  COMPLETED = 'Completed',
+  CANCELLED = 'Cancelled',
 }

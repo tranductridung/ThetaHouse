@@ -14,6 +14,7 @@ import { Consigment } from 'src/consigment/entities/consigment.entity';
 import { Order } from 'src/order/entities/order.entity';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
+import { Payment } from 'src/payment/entities/payment.entity';
 
 @Entity()
 export class User {
@@ -66,4 +67,7 @@ export class User {
 
   @OneToMany(() => Transaction, (transactions) => transactions.creator)
   transactions: Transaction[];
+
+  @OneToMany(() => Payment, (payments) => payments.creator)
+  payments: Payment[];
 }
