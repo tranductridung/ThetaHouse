@@ -24,13 +24,13 @@ import Payment from "@/pages/Payment";
 import Item from "@/pages/Item";
 import { Toaster } from "./components/ui/sonner";
 import SourcePage from "./pages/SourcePage";
-import OrderForm from "./components/forms/OrderForm";
-import PurchaseForm from "./components/forms/PurchaseForm";
-import ConsignmentForm from "./components/forms/ConsignmentForm";
 import Discount from "./pages/Discount";
 import OrderDetails from "./pages/OrderDetails";
 import PurchaseDetails from "./pages/PurchaseDetails";
 import ConsignmentDetails from "./pages/ConsignmentDetails";
+import CreatePurchase from "./pages/CreatePurchase";
+import CreateOrder from "./pages/CreateOrder";
+import CreateConsignment from "./pages/CreateConsignment";
 
 const App = () => {
   return (
@@ -65,9 +65,12 @@ const App = () => {
               <Route path="purchases/:id" element={<PurchaseDetails />} />
               <Route path="consignments/:id" element={<ConsignmentDetails />} />
 
-              <Route path="purchases/create" element={<PurchaseForm />} />
-              <Route path="orders/create" element={<OrderForm />} />
-              <Route path="consignments/create" element={<ConsignmentForm />} />
+              <Route path="purchases/create" element={<CreatePurchase />} />
+              <Route path="orders/create" element={<CreateOrder />} />
+              <Route
+                path="consignments/create"
+                element={<CreateConsignment />}
+              />
 
               {/* <Route path="purchases/edit" element={<PurchaseForm />} />
               <Route path="orders/edit" element={<OrderForm />} />

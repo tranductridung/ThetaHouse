@@ -11,7 +11,7 @@ import { MailModule } from './mail/mail.module';
 import { ProductModule } from './product/product.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { ServiceModule } from './service/service.module';
-import { ConsigmentModule } from './consigment/consigment.module';
+import { ConsigmentModule } from './consignment/consigment.module';
 import { OrderModule } from './order/order.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { PartnerModule } from './partner/partner.module';

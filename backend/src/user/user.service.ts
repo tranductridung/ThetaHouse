@@ -1,3 +1,4 @@
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import { ConfigService } from '@nestjs/config';
 import {
   ConflictException,
@@ -22,8 +23,22 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async findAll() {
-    return await this.userRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.userRepo
+      .createQueryBuilder('user')
+      .orderBy('user.id', 'ASC');
+
+    if (paginationDto) {
+      const [users, total] = await queryBuilder
+        .skip(paginationDto.page * paginationDto.limit)
+        .take(paginationDto.limit)
+        .getManyAndCount();
+
+      return { users, total };
+    } else {
+      const users = await queryBuilder.getMany();
+      return users;
+    }
   }
 
   async findByEmail(email: string) {

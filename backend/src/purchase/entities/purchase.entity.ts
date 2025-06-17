@@ -1,3 +1,5 @@
+import { SourceStatus } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
@@ -18,14 +20,30 @@ export class Purchase {
   @Column()
   quantity: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   totalAmount: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   finalAmount: number;
 
-  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    default: 0,
+    transformer: new ColumnNumericTransformer(),
+  })
   discountAmount: number;
+
+  @Column({ type: 'enum', enum: SourceStatus, default: SourceStatus.CONFIRMED })
+  status: SourceStatus;
 
   @Column({ nullable: true })
   note?: string;

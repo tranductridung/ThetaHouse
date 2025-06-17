@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Service } from './entities/service.entity';
 import { Not, Repository } from 'typeorm';
 import { CommonStatus, ServiceType } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Injectable()
 export class ServiceService {
@@ -39,14 +40,44 @@ export class ServiceService {
     return service;
   }
 
-  async findAll() {
-    console.log('findAll');
-    return await this.serviceRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.serviceRepo
+      .createQueryBuilder('service')
+      .orderBy('service.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [services, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { services, total };
+    } else {
+      const services = await queryBuilder.getMany();
+      return services;
+    }
   }
 
-  async findAllActive() {
-    console.log('findAllActive');
-    return await this.serviceRepo.findBy({ status: CommonStatus.ACTIVE });
+  async findAllActive(paginationDto?: PaginationDto) {
+    const queryBuilder = this.serviceRepo
+      .createQueryBuilder('service')
+      .where('service.status  = :status', { status: CommonStatus.ACTIVE })
+      .orderBy('service.id', 'ASC');
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [services, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { services, total };
+    } else {
+      const services = await queryBuilder.getMany();
+      return services;
+    }
   }
 
   async findOne(id: number) {

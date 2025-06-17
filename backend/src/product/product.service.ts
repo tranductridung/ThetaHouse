@@ -9,6 +9,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Not, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Injectable()
 export class ProductService {
@@ -23,12 +24,44 @@ export class ProductService {
     return product;
   }
 
-  async findAll() {
-    return await this.productRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.productRepo
+      .createQueryBuilder('product')
+      .orderBy('product.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [products, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { products, total };
+    } else {
+      const products = await queryBuilder.getMany();
+      return products;
+    }
   }
 
-  async findAllActive() {
-    return await this.productRepo.findBy({ status: CommonStatus.ACTIVE });
+  async findAllActive(paginationDto?: PaginationDto) {
+    const queryBuilder = this.productRepo
+      .createQueryBuilder('product')
+      .where('product.status = :status', { status: CommonStatus.ACTIVE });
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [products, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { products, total };
+    } else {
+      const products = await queryBuilder.getMany();
+      return products;
+    }
   }
 
   async findOne(id: number) {

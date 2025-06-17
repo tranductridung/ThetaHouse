@@ -12,11 +12,11 @@ import { ModulesModule } from 'src/modules/modules.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Appointment]),
-    ItemModule,
     UserModule,
     RoomModule,
     ModulesModule,
     forwardRef(() => PartnerModule),
+    forwardRef(() => ItemModule),
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],

@@ -26,6 +26,9 @@ const Discount = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const handleSubmit = async (
     formData: CreateDiscountFormType | EditDiscountFormType
@@ -127,11 +130,18 @@ const Discount = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/discounts/all");
-      setData(response.data.discounts);
+      try {
+        const response = await api.get(
+          `/discounts/all?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.discounts);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
     fetchData();
-  }, []);
+  }, [pageIndex, pageSize]);
 
   return (
     <div className="p-4">
@@ -144,6 +154,11 @@ const Discount = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
 
       <Dialog

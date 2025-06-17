@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
-import type {
-  CreateConsignmentFormType,
-  EditConsignmentFormType,
-  ConsignmentType,
-} from "@/components/schemas/source";
+import type { ConsignmentType } from "@/components/schemas/source";
 import api from "@/api/api";
 import { DataTable } from "@/components/data-table";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { consignmentColumns } from "@/components/columns/consigment-column";
 
@@ -23,47 +18,47 @@ const Consignment = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
   const navigate = useNavigate();
 
-  const handleSubmit = async (
-    formData: CreateConsignmentFormType | EditConsignmentFormType
-  ) => {
-    try {
-      if (formManager.type === "add") {
-        const response = await api.post("/consignments", formData);
-        setData((prev) => [...prev, response.data.consignment]);
-        toast.success(`Create partner success!`);
-      } else if (formManager.type === "edit" && formManager.data?.id) {
-        const response = await api.patch(
-          `/consignments/${formManager.data.id}`,
-          formData
-        );
-        setData((prev) =>
-          prev.map((consignment) =>
-            consignment.id === formManager.data?.id
-              ? response.data.consignment
-              : consignment
-          )
-        );
-        toast.success(`Create partner success!`);
-      }
+  // const handleSubmit = async (
+  //   formData: CreateConsignmentDetailFormType | EditConsignmentDetailFormType
+  // ) => {
+  //   try {
+  //     if (formManager.type === "add") {
+  //       const response = await api.post("/consignments", formData);
+  //       setData((prev) => [...prev, response.data.consignment]);
+  //       toast.success(`Create partner success!`);
+  //     } else if (formManager.type === "edit" && formManager.data?.id) {
+  //       const response = await api.patch(
+  //         `/consignments/${formManager.data.id}`,
+  //         formData
+  //       );
+  //       setData((prev) =>
+  //         prev.map((consignment) =>
+  //           consignment.id === formManager.data?.id
+  //             ? response.data.consignment
+  //             : consignment
+  //         )
+  //       );
+  //       toast.success(`Create partner success!`);
+  //     }
 
-      setFormManager({
-        isShow: false,
-        type: "add",
-        data: null,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  //     setFormManager({
+  //       isShow: false,
+  //       type: "add",
+  //       data: null,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   const onAdd = () => {
-    setFormManager({
-      isShow: true,
-      type: "add",
-      data: null,
-    });
+    navigate("/sources/consignments/create");
   };
 
   const onEdit = (consignment: ConsignmentType) => {
@@ -76,17 +71,19 @@ const Consignment = () => {
 
   const onDetail = (id: number) => {
     navigate(`/sources/consignments/${id}`);
-    console.log("hello", id);
   };
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/consignments");
+      const response = await api.get(
+        `/consignments?page=${pageIndex}&limit=${pageSize}`
+      );
+      console.log(response);
       setData(response.data.consignments);
-      console.log(response.data.consignments);
+      setTotal(response.data.total);
     };
     fetchData();
-  }, []);
+  }, [pageIndex, pageSize]);
 
   return (
     <div className="p-4">
@@ -97,6 +94,11 @@ const Consignment = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
 
       {/*  <Dialog

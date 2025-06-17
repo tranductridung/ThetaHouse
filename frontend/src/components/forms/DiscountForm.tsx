@@ -155,10 +155,15 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
                       <FormLabel>Max Discount Amount</FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
-                          placeholder="Max Discount Amount"
-                          className="w-full"
-                          {...field}
+                          type="number"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : Number(e.target.value)
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -175,10 +180,15 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
                       <FormLabel>Min Total Value</FormLabel>
                       <FormControl>
                         <Input
-                          type="text"
-                          placeholder="Min Total Value"
-                          className="w-full"
-                          {...field}
+                          type="number"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? undefined
+                                : Number(e.target.value)
+                            )
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -188,7 +198,6 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
               </div>
 
               {/* Type */}
-
               <FormField
                 control={form.control}
                 name="type"

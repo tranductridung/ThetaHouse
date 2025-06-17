@@ -15,6 +15,7 @@ import { UserService } from 'src/user/user.service';
 import { loadSource } from 'src/item/helpers/source.helper';
 import { CreateTransactionNoSourceDto } from './dto/create-transaction-no-source.dto';
 import { PaymentService } from 'src/payment/payment.service';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 @Injectable()
 export class TransactionService {
   constructor(
@@ -37,6 +38,11 @@ export class TransactionService {
       status: TransactionStatus.UNPAID,
     });
 
+    transaction.status = this.getTransactionStatus(
+      transaction.paidAmount,
+      transaction.totalAmount,
+    );
+
     transaction.creator = await this.userService.findOne(creatorId);
 
     await entityManager.save(transaction);
@@ -46,8 +52,13 @@ export class TransactionService {
   async createNoSource(
     createTransactionNoSourceDto: CreateTransactionNoSourceDto,
     creatorId: number,
+    manager?: EntityManager,
   ) {
-    const transaction = this.transactionRepo.create({
+    const repo = manager
+      ? manager.getRepository(Transaction)
+      : this.transactionRepo;
+
+    const transaction = repo.create({
       ...createTransactionNoSourceDto,
     });
 
@@ -58,35 +69,15 @@ export class TransactionService {
 
     transaction.creator = await this.userService.findOne(creatorId);
 
-    await this.transactionRepo.save(transaction);
+    await repo.save(transaction);
     return transaction;
   }
 
   getTransactionStatus(paidAmount: number, totalAmount: number) {
-    if (paidAmount > totalAmount)
-      throw new BadRequestException(
-        'Paid amount cannot be greater than total amount!',
-      );
-
-    if (paidAmount === 0) return TransactionStatus.UNPAID;
-    else if (paidAmount === totalAmount) return TransactionStatus.PAID;
+    if (paidAmount > totalAmount) return TransactionStatus.OVERPAID;
+    if (paidAmount === totalAmount) return TransactionStatus.PAID;
+    else if (paidAmount === 0) return TransactionStatus.UNPAID;
     else return TransactionStatus.PARTIAL;
-  }
-
-  async findAll() {
-    return await this.transactionRepo
-      .createQueryBuilder('transaction')
-      .leftJoinAndSelect('transaction.creator', 'creator')
-      .select([
-        'transaction.type',
-        'transaction.sourceType',
-        'transaction.totalAmount',
-        'transaction.paidAmount',
-        'transaction.status',
-        'transaction.note',
-        'creator.fullName',
-      ])
-      .getMany();
   }
 
   async findOne(id: number) {
@@ -115,7 +106,7 @@ export class TransactionService {
         type = SourceType.PURCHASE;
         break;
       case 'consignments':
-        type = SourceType.CONSIGMENT;
+        type = SourceType.CONSIGNMENT;
         break;
       default:
         throw new NotFoundException('Url type not found!');
@@ -156,8 +147,8 @@ export class TransactionService {
 
     if (updateTransactionDto.paidAmount)
       transaction.status = this.getTransactionStatus(
-        transaction.paidAmount,
-        transaction.totalAmount,
+        Number(transaction.paidAmount),
+        Number(transaction.totalAmount),
       );
 
     await repo.save(transaction);
@@ -174,5 +165,34 @@ export class TransactionService {
 
     await this.transactionRepo.remove(transaction);
     return { message: 'Delete transaction success!' };
+  }
+
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.transactionRepo
+      .createQueryBuilder('transaction')
+      .leftJoinAndSelect('transaction.creator', 'creator')
+      .select([
+        'transaction.id',
+        'transaction.type',
+        'transaction.sourceType',
+        'transaction.totalAmount',
+        'transaction.paidAmount',
+        'transaction.status',
+        'transaction.note',
+        'creator.fullName',
+      ])
+      .orderBy('transaction.id', 'ASC');
+
+    if (paginationDto) {
+      const [transactions, total] = await queryBuilder
+        .skip(paginationDto.page * paginationDto.limit)
+        .take(paginationDto.limit)
+        .getManyAndCount();
+
+      return { transactions, total };
+    } else {
+      const transactions = await queryBuilder.getMany();
+      return transactions;
+    }
   }
 }

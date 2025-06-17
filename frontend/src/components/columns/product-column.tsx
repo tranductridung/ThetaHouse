@@ -51,7 +51,11 @@ export const productColumns = ({
     header: "Unit",
   },
   {
-    accessorKey: "unitPrice",
+    accessorFn: (row) =>
+      (row?.unitPrice ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Unit Price",
   },
   {

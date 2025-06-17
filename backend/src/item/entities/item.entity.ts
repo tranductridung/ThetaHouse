@@ -5,6 +5,7 @@ import {
   ItemStatus,
   SourceType,
 } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Discount } from 'src/discount/entities/discount.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import {
@@ -37,10 +38,18 @@ export class Item {
   @Column()
   quantity: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   totalAmount: number;
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   finalAmount: number;
 
   @Column({ default: true })

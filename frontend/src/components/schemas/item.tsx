@@ -1,48 +1,45 @@
 import { z } from "zod";
-import {
-  CommonStatus,
-  DiscountType,
-  ItemableType,
-  ItemSourceType,
-  ItemStatus,
-} from "../constants/constants";
+import { ItemableType, ItemStatus } from "../constants/constants";
+import { discountSchema } from "./discount";
 
-export const baseDiscountSchema = z.object({
-  sourceId: z.number().gte(0),
-  sourceType: z.enum(ItemSourceType),
-  itemableId: z.number().gte(0),
+export const baseItemSchema = z.object({
   itemableType: z.enum(ItemableType),
-  quantity: z.number().gte(0),
-  totalAmount: z.number().gte(0),
+  quantity: z.number(),
+});
+
+export const itemSchema = baseItemSchema.extend({
+  id: z.number(),
+  sourceType: z.string(),
+  totalAmount: z.number(),
+  finalAmount: z.number(),
+  status: z.enum(ItemStatus),
+  snapshotData: z.object({
+    unitPrice: z.string(),
+    session: z.number(),
+    bonusSession: z.number(),
+  }),
   discount: z.object({
     code: z.string(),
   }),
-  finalAmount: z.number().gte(0),
-  status: z.enum(ItemStatus),
-  snapshot: z.object({
-    unitPrice: z.number().gte(0),
-    session: z.number().gte(0).optional(),
-    bonusSession: z.number().gte(0).optional(),
-    duration: z.number().gte(0).optional(),
-  }),
 });
 
-export const discountSchema = baseDiscountSchema.extend({
-  id: z.number(),
-  value: z.number().gt(0).lte(100),
-  type: z.enum(DiscountType),
-  maxDiscountAmount: z.number().gte(0),
-  status: z.enum(CommonStatus),
-  minTotalValue: z.number().gte(0),
+export const itemDraftSchema = baseItemSchema.extend({
+  discount: discountSchema.optional(),
+  itemableId: z.number(),
+  name: z.string(),
+  description: z.string(),
+  unitPrice: z.number(),
+  discountAmount: z.number().optional(),
+  subtotal: z.number(),
 });
-export const createDiscountFormSchema = baseDiscountSchema.extend({
-  value: z.number().gt(0).lt(100),
-  type: z.enum(DiscountType),
-  maxDiscountAmount: z.number().gte(0).optional(),
-  minTotalValue: z.number().gte(0).optional(),
-});
-export const editDiscountFormSchema = baseDiscountSchema.extend({});
 
-export type DiscountType = z.infer<typeof discountSchema>;
-export type CreateDiscountFormType = z.infer<typeof createDiscountFormSchema>;
-export type EditDiscountFormType = z.infer<typeof editDiscountFormSchema>;
+export const createItemSchema = baseItemSchema.extend({
+  discountId: z.number().optional(),
+  quantity: z.number(),
+  itemableId: z.number(),
+  itemableType: z.enum(ItemableType),
+});
+
+export type ItemType = z.infer<typeof itemSchema>;
+export type CreateItemType = z.infer<typeof createItemSchema>;
+export type ItemDraftType = z.infer<typeof itemDraftSchema>;

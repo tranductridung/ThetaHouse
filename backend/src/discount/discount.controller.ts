@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
@@ -15,6 +16,7 @@ import { UserRole } from 'src/common/enums/enum';
 import { DiscountService } from './discount.service';
 import { CreateDiscountDto } from './dto/create-discount.dto';
 import { UpdateDiscountDto } from './dto/update-discount.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('discounts')
@@ -29,16 +31,14 @@ export class DiscountController {
   }
 
   @Get()
-  async findAllActive() {
-    const discounts = await this.discountService.findAllActive();
-    return { discounts };
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.discountService.findAllActive(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)
   @Get('all')
-  async findAll() {
-    const discounts = await this.discountService.findAll();
-    return { discounts };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.discountService.findAll(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)

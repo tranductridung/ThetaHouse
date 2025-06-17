@@ -10,11 +10,11 @@ import {
 import { UserStatus, UserRole } from '../../common/enums/enum';
 import { IsEnum } from 'class-validator';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
-import { Consigment } from 'src/consigment/entities/consigment.entity';
 import { Order } from 'src/order/entities/order.entity';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
+import { Consignment } from 'src/consignment/entities/consigment.entity';
 
 @Entity()
 export class User {
@@ -53,8 +53,8 @@ export class User {
   @OneToMany(() => Inventory, (inventories) => inventories.creator)
   inventories: Inventory[];
 
-  @OneToMany(() => Consigment, (consigments) => consigments.creator)
-  consigments: Consigment[];
+  @OneToMany(() => Consignment, (consignments) => consignments.creator)
+  consignments: Consignment[];
 
   @OneToMany(() => Order, (orders) => orders.creator)
   orders: Order[];

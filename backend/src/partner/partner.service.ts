@@ -1,3 +1,4 @@
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   ConflictException,
   Injectable,
@@ -33,8 +34,45 @@ export class PartnerService {
     return partner;
   }
 
-  async findAll() {
-    return await this.partnerRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.partnerRepo
+      .createQueryBuilder('partner')
+      .orderBy('partner.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [partners, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { partners, total };
+    } else {
+      const partners = await queryBuilder.getMany();
+      return partners;
+    }
+  }
+
+  async findAllByType(type: PartnerType, paginationDto?: PaginationDto) {
+    const queryBuilder = this.partnerRepo
+      .createQueryBuilder('partner')
+      .where('partner.type = :type', { type })
+      .orderBy('partner.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [partners, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { partners, total };
+    } else {
+      const partners = await queryBuilder.getMany();
+      return partners;
+    }
   }
 
   async findOne(id: number) {

@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-import type {
-  CreatePurchaseFormType,
-  EditPurchaseFormType,
-  PurchaseType,
-} from "@/components/schemas/source";
+import type { PurchaseType } from "@/components/schemas/source";
 import api from "@/api/api";
 import { DataTable } from "@/components/data-table";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { purchaseColumns } from "@/components/columns/purchase-column";
+import { handleAxiosError } from "@/lib/utils";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -23,47 +19,46 @@ const Purchase = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const navigate = useNavigate();
 
-  const handleSubmit = async (
-    formData: CreatePurchaseFormType | EditPurchaseFormType
-  ) => {
-    try {
-      if (formManager.type === "add") {
-        const response = await api.post("/purchases", formData);
-        setData((prev) => [...prev, response.data.purchase]);
-        toast.success(`Create partner success!`);
-      } else if (formManager.type === "edit" && formManager.data?.id) {
-        const response = await api.patch(
-          `/purchases/${formManager.data.id}`,
-          formData
-        );
-        setData((prev) =>
-          prev.map((purchase) =>
-            purchase.id === formManager.data?.id
-              ? response.data.purchase
-              : purchase
-          )
-        );
-        toast.success(`Create partner success!`);
-      }
+  // const handleSubmit = async (
+  //   formData: CreatePurchaseDetailFormType | EditPurchaseFormType
+  // ) => {
+  //   try {
+  //     if (formManager.type === "add") {
+  //       const response = await api.post("/purchases", formData);
+  //       setData((prev) => [...prev, response.data.purchase]);
+  //       toast.success(`Create partner success!`);
+  //     } else if (formManager.type === "edit" && formManager.data?.id) {
+  //       const response = await api.patch(
+  //         `/purchases/${formManager.data.id}`,
+  //         formData
+  //       );
+  //       setData((prev) =>
+  //         prev.map((purchase) =>
+  //           purchase.id === formManager.data?.id
+  //             ? response.data.purchase
+  //             : purchase
+  //         )
+  //       );
+  //       toast.success(`Create partner success!`);
+  //     }
 
-      setFormManager({
-        isShow: false,
-        type: "add",
-        data: null,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  //     setFormManager({
+  //       isShow: false,
+  //       type: "add",
+  //       data: null,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
 
   const onAdd = () => {
-    setFormManager({
-      isShow: true,
-      type: "add",
-      data: null,
-    });
+    navigate("/sources/purchases/create");
   };
 
   const onEdit = (purchase: PurchaseType) => {
@@ -81,12 +76,19 @@ const Purchase = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/purchases");
-      setData(response.data.purchases);
-      console.log(response.data.purchases);
+      try {
+        const response = await api.get(
+          `/purchases?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.purchases);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
+
     fetchData();
-  }, []);
+  }, [pageIndex, pageSize]);
 
   return (
     <div className="p-4">
@@ -97,6 +99,11 @@ const Purchase = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
 
       {/*  <Dialog

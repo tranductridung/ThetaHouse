@@ -6,10 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { PartnerService } from './partner.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { PartnerType } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('partners')
 export class PartnerController {
@@ -22,9 +25,24 @@ export class PartnerController {
   }
 
   @Get()
-  async findAll() {
-    const partners = await this.partnerService.findAll();
-    return { partners };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.partnerService.findAll(paginationDto);
+  }
+
+  @Get('/customer')
+  async findAllActiveCustomer(@Query() paginationDto: PaginationDto) {
+    return await this.partnerService.findAllByType(
+      PartnerType.CUSTOMER,
+      paginationDto,
+    );
+  }
+
+  @Get('/supplier')
+  async findAllActiveSupllier(@Query() paginationDto: PaginationDto) {
+    return await this.partnerService.findAllByType(
+      PartnerType.SUPPLIER,
+      paginationDto,
+    );
   }
 
   @Get(':id')

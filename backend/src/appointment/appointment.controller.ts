@@ -7,12 +7,14 @@ import {
   Delete,
   UseGuards,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('appointments')
@@ -30,10 +32,14 @@ export class AppointmentController {
     return { appointment };
   }
 
+  @Get('/all')
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.appointmentService.findAll(paginationDto);
+  }
+
   @Get()
-  async findAll() {
-    const appointments = await this.appointmentService.findAll();
-    return { appointments };
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.appointmentService.findAllActive(paginationDto);
   }
 
   @Get(':id')
@@ -57,5 +63,11 @@ export class AppointmentController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.appointmentService.remove(+id);
+  }
+
+  @Post(':id/complete')
+  async setCompleteStatus(@Param('id') id: string) {
+    const result = await this.appointmentService.setCompleteStatus(+id);
+    return { message: 'set complete', result };
   }
 }

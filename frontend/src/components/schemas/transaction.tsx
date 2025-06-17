@@ -4,6 +4,7 @@ import {
   TypeOfTransaction,
   TransactionStatus,
 } from "../constants/constants";
+import { paymentSchema } from "./payment";
 
 export const baseTransactionSchema = z.object({
   paidAmount: z.number().gte(0),
@@ -20,21 +21,16 @@ export const transactionSchema = baseTransactionSchema.extend({
   creator: z.object({
     fullName: z.string(),
   }),
+  payments: z.array(paymentSchema),
 });
-export const createTransactionFormSchema = baseTransactionSchema.extend({
+
+export const createTransactionSchema = z.object({
   type: z.enum(TypeOfTransaction),
-  sourceId: z.number().gte(0),
-  sourceType: z.enum(ItemSourceType),
   totalAmount: z.number().gte(0),
-  status: z.enum(TransactionStatus),
-  creator: z.object({
-    fullName: z.string(),
-  }),
+  note: z.string(),
 });
 export const editTransactionFormSchema = baseTransactionSchema.extend({});
 
 export type TransactionType = z.infer<typeof transactionSchema>;
-export type CreateTransactionFormType = z.infer<
-  typeof createTransactionFormSchema
->;
+export type CreateTransactionType = z.infer<typeof createTransactionSchema>;
 export type EditTransactionFormType = z.infer<typeof editTransactionFormSchema>;

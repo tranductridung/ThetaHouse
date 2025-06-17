@@ -11,6 +11,9 @@ import { handleAxiosError } from "@/lib/utils";
 
 const User = () => {
   const [data, setData] = useState<UserType[]>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const toggleStatus = async (id: number) => {
     try {
@@ -60,11 +63,19 @@ const User = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/users");
-      setData(response.data.users);
+      try {
+        const response = await api.get(
+          `/users?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.users);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
+
     fetchData();
-  }, []);
+  }, [pageIndex, pageSize]);
 
   return (
     <div className="p-4">
@@ -74,6 +85,11 @@ const User = () => {
           handleChangeRole,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
     </div>
   );

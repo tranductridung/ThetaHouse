@@ -6,14 +6,16 @@ import {
   Param,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { Request } from 'express';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/role.guard';
-import { InventoryAction, UserRole } from 'src/common/enums/enum';
+import { UserRole } from 'src/common/enums/enum';
 import { CreateAdjustInventoryDto } from './dto/create-adjust-inventory.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('inventories')
 export class InventoryController {
@@ -22,21 +24,22 @@ export class InventoryController {
   @UseGuards(AuthJwtGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post()
-  create(
+  async create(
     @Req() req: Request,
     @Body() createAdjustInventoryDto: CreateAdjustInventoryDto,
   ) {
     const userId = Number(req.user?.id);
-    return this.inventoryService.createAdjustInventory(
+    const inventory = await this.inventoryService.createAdjustInventory(
       createAdjustInventoryDto,
       userId,
     );
+
+    return { inventory };
   }
 
   @Get()
-  async findAll() {
-    const inventories = await this.inventoryService.findAll();
-    return { inventories };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.inventoryService.findAll(paginationDto);
   }
 
   @Get(':id')

@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-import type {
-  CreateOrderFormType,
-  EditOrderFormType,
-  OrderType,
-} from "@/components/schemas/source";
+import type { OrderType } from "@/components/schemas/source";
 import { orderColumns } from "@/components/columns/order-column";
 import api from "@/api/api";
 import { DataTable } from "@/components/data-table";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { handleAxiosError } from "@/lib/utils";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -23,45 +19,13 @@ const Order = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const navigate = useNavigate();
 
-  const handleSubmit = async (
-    formData: CreateOrderFormType | EditOrderFormType
-  ) => {
-    try {
-      if (formManager.type === "add") {
-        const response = await api.post("/orders", formData);
-        setData((prev) => [...prev, response.data.order]);
-        toast.success(`Create partner success!`);
-      } else if (formManager.type === "edit" && formManager.data?.id) {
-        const response = await api.patch(
-          `/orders/${formManager.data.id}`,
-          formData
-        );
-        setData((prev) =>
-          prev.map((order) =>
-            order.id === formManager.data?.id ? response.data.order : order
-          )
-        );
-        toast.success(`Create partner success!`);
-      }
-
-      setFormManager({
-        isShow: false,
-        type: "add",
-        data: null,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const onAdd = () => {
-    setFormManager({
-      isShow: true,
-      type: "add",
-      data: null,
-    });
+    navigate("/sources/orders/create");
   };
 
   const onEdit = (order: OrderType) => {
@@ -79,13 +43,21 @@ const Order = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/orders");
-      setData(response.data.orders);
-      console.log(response.data.orders);
+      try {
+        const response = await api.get(
+          `/orders/all?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.orders);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
-    fetchData();
-  }, []);
 
+    fetchData();
+  }, [pageIndex, pageSize]);
+
+  console.log(data);
   return (
     <div className="p-4">
       <DataTable
@@ -95,29 +67,12 @@ const Order = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
-
-      {/*  <Dialog
-        open={formManager.isShow}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            setFormManager({
-              isShow: false,
-              type: "add",
-              data: null,
-            });
-          }
-        }}
-      >
-         <DialogContent>
-          <DialogTitle></DialogTitle>
-          <OrderForm
-            orderData={formManager.data}
-            onSubmit={handleSubmit}
-            type={formManager.type}
-          />
-        </DialogContent>
-      </Dialog> */}
     </div>
   );
 };

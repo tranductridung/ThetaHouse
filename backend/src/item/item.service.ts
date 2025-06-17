@@ -1,37 +1,49 @@
-import { UpdateItemDto } from './dto/update-item.dto';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateItemDto } from './dto/create-item.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Item } from './entities/item.entity';
 import {
   DataSource,
   EntityManager,
   FindOptionsWhere,
   In,
+  Not,
   Repository,
 } from 'typeorm';
-import { loadItemable } from './helpers/itemable.helper';
-import { loadSource } from './helpers/source.helper';
-import { DiscountService } from 'src/discount/discount.service';
 import {
   AdjustmentType,
+  ConsignmentType,
   DiscountType,
   ItemableType,
   ItemStatus,
+  SourceStatus,
   SourceType,
+  TransactionStatus,
 } from 'src/common/enums/enum';
+import { Item } from './entities/item.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CreateItemDto } from './dto/create-item.dto';
+import { UpdateItemDto } from './dto/update-item.dto';
+import { loadItemable } from './helpers/itemable.helper';
+import { SnapshotType } from 'src/common/types/item.types';
 import { Product } from 'src/product/entities/product.entity';
 import { Service } from 'src/service/entities/service.entity';
-
+import { DiscountService } from 'src/discount/discount.service';
+import { loadEntitySource, loadSource } from './helpers/source.helper';
+import { AppointmentService } from 'src/appointment/appointment.service';
+import { Transaction } from 'src/transaction/entities/transaction.entity';
+import { Consignment } from 'src/consignment/entities/consigment.entity';
 @Injectable()
 export class ItemService {
   constructor(
     @InjectRepository(Item) private itemRepo: Repository<Item>,
     private discountService: DiscountService,
+    @Inject(forwardRef(() => AppointmentService))
+    private appointmentService: AppointmentService,
     private dataSource: DataSource,
   ) {}
 
@@ -40,6 +52,7 @@ export class ItemService {
     sourceId: number,
     sourceType: SourceType,
     manager?: EntityManager,
+    adjustmentType?: AdjustmentType,
   ) {
     const repo = manager ? manager.getRepository(Item) : this.itemRepo;
 
@@ -55,13 +68,8 @@ export class ItemService {
       this.dataSource,
     );
 
-    // Load source
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const source = await loadSource(
-      sourceId,
-      sourceType,
-      manager ?? this.dataSource,
-    );
+    // Check source by loadSource func
+    await loadSource(sourceId, sourceType, manager ?? this.dataSource);
 
     // Check if item is exist
     const existItem = await repo.findOne({
@@ -70,6 +78,7 @@ export class ItemService {
         itemableType: createItemDto.itemableType,
         sourceId,
         sourceType,
+        isActive: true,
       },
     });
 
@@ -83,12 +92,11 @@ export class ItemService {
 
     const finalAmount = await this.calculateDiscountAmount(
       totalAmount,
-      updatedQuantity,
       createItemDto.discountId,
     );
 
     // Create snapshot
-    let snapshotData = {};
+    let snapshotData: SnapshotType;
     if (createItemDto.itemableType === ItemableType.PRODUCT) {
       snapshotData = {
         unitPrice: (itemable as Product).unitPrice,
@@ -114,6 +122,7 @@ export class ItemService {
     } else {
       const item = repo.create({
         ...createItemDto,
+        adjustmentType,
         sourceId,
         sourceType,
         quantity: updatedQuantity,
@@ -121,24 +130,67 @@ export class ItemService {
         totalAmount,
         finalAmount,
       });
+
       return await repo.save(item);
     }
   }
 
-  async findAll() {
-    return await this.itemRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.itemRepo
+      .createQueryBuilder('item')
+      .orderBy('item.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [items, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { items, total };
+    } else {
+      const items = await queryBuilder.getMany();
+      return items;
+    }
+  }
+
+  async findAllActive(paginationDto?: PaginationDto) {
+    const queryBuilder = this.itemRepo
+      .createQueryBuilder('item')
+      .where('item.isActive = :isActive', { isActive: true })
+      .orderBy('item.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [items, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { items, total };
+    } else {
+      const items = await queryBuilder.getMany();
+      return items;
+    }
   }
 
   // Get item without itemable and source.
-  async findOne(id: number) {
+  async findOne(id: number, checkActive?: boolean) {
     const item = await this.itemRepo.findOneBy({ id });
+
     if (!item) throw new NotFoundException('Item not found!');
+
+    if (checkActive && !item.isActive)
+      throw new BadRequestException('Item is cancelled!');
+
     return item;
   }
 
   // Get full item with itemable and source.
-  async findOneFull(id: number) {
-    const item = await this.findOne(id);
+  async findOneFull(id: number, checkActive?: boolean) {
+    const item = await this.findOne(id, checkActive);
 
     const itemable = await loadItemable(
       item.itemableId,
@@ -209,7 +261,12 @@ export class ItemService {
   ) {
     const repo = manager ? manager.getRepository(Item) : this.itemRepo;
 
-    const item = await repo.findOneBy({ id });
+    const item = await repo.findOne({
+      where: {
+        id,
+        isActive: true,
+      },
+    });
 
     if (!item) throw new NotFoundException('Item not found!');
 
@@ -224,7 +281,7 @@ export class ItemService {
   }
 
   async transferService(id: number) {
-    const item = await this.findOne(id);
+    const item = await this.findOne(id, true);
 
     if (item.itemableType !== ItemableType.SERVICE)
       throw new BadRequestException(
@@ -241,11 +298,7 @@ export class ItemService {
     return { message: 'Service is transfered!' };
   }
 
-  async calculateDiscountAmount(
-    totalAmount: number,
-    quantity: number = 1,
-    discountId?: number,
-  ) {
+  async calculateDiscountAmount(totalAmount: number, discountId?: number) {
     let finalAmount = totalAmount;
 
     // Calculate finalAmount by totalAmount and discount (if item has discount)
@@ -267,9 +320,10 @@ export class ItemService {
           discountAmount = discount.maxDiscountAmount;
         }
 
-        finalAmount -= discountAmount * quantity;
+        finalAmount -= discountAmount;
       }
     }
+
     return finalAmount;
   }
 
@@ -282,18 +336,179 @@ export class ItemService {
       throw new BadRequestException(`Some items are not PRODUCT type!`);
   }
 
-  async cancelSource(
+  async disableItemOfSource(
     sourceId: number,
     sourceType: SourceType,
-    manager?: EntityManager,
+    manager: EntityManager,
   ) {
-    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
-
-    const result = await repo.update(
-      { sourceId, sourceType },
-      { adjustmentType: AdjustmentType.CANCELLED },
+    const items = await manager.update(
+      Item,
+      { sourceId, sourceType, isActive: true },
+      { isActive: false, adjustmentType: AdjustmentType.CANCELLED },
     );
 
-    return { result };
+    return { items };
+  }
+
+  // Get completed status of item by source type
+  // Return: IMPORTED or EXPORTED
+  getItemStatusBySource(sourceType: SourceType, type?: ConsignmentType) {
+    let status: ItemStatus;
+
+    if (sourceType === SourceType.CONSIGNMENT) {
+      if (!type)
+        throw new BadRequestException(
+          'Type is required to get status of consignment!',
+        );
+
+      status =
+        type === ConsignmentType.IN ? ItemStatus.IMPORTED : ItemStatus.EXPORTED;
+    } else
+      status =
+        sourceType === SourceType.PURCHASE
+          ? ItemStatus.IMPORTED
+          : ItemStatus.EXPORTED;
+
+    return status;
+  }
+
+  // Check product item is handled or not (handle may be import or export)
+  async isAllProductItemHandled(
+    sourceId: number,
+    sourceType: SourceType,
+    manager: EntityManager,
+  ): Promise<boolean> {
+    let status: ItemStatus;
+
+    const repo = manager.getRepository(Item);
+
+    if (sourceType === SourceType.CONSIGNMENT) {
+      const consignment = await manager.findOne(Consignment, {
+        where: { id: sourceId },
+        select: ['id', 'type'],
+      });
+      console.log(consignment);
+      status = this.getItemStatusBySource(sourceType, consignment?.type);
+    } else status = this.getItemStatusBySource(sourceType);
+
+    const count = await repo.count({
+      where: {
+        sourceId,
+        sourceType,
+        itemableType: ItemableType.PRODUCT,
+        isActive: true,
+        status: Not(status),
+      },
+    });
+
+    return count === 0;
+  }
+
+  async isAllServiceItemCompleted(orderId: number, manager?: EntityManager) {
+    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+    const items = await repo.find({
+      where: {
+        sourceId: orderId,
+        sourceType: SourceType.ORDER,
+        itemableType: ItemableType.SERVICE,
+        isActive: true,
+      },
+      select: ['id', 'snapshotData', 'quantity'],
+    });
+
+    for (const item of items) {
+      const isItemCompleted =
+        await this.appointmentService.isServiceItemCompleted(
+          item.id,
+          Number(item.snapshotData?.session),
+          Number(item.snapshotData?.bonusSession),
+          item.quantity,
+          manager,
+        );
+
+      console.log('isItemCompleted', isItemCompleted);
+
+      if (!isItemCompleted) return false;
+    }
+
+    return true;
+  }
+
+  async getSourceStatus(
+    sourceId: number,
+    sourceType: SourceType,
+    manager: EntityManager,
+    transactionStatus?: TransactionStatus,
+  ) {
+    if (!transactionStatus) {
+      const transaction = await manager.findOne(Transaction, {
+        where: {
+          sourceId,
+          sourceType,
+        },
+        select: ['id', 'status'],
+      });
+
+      if (!transaction) throw new NotFoundException('Transaction not found!');
+      transactionStatus = transaction.status;
+    }
+
+    console.log('function is order compeleted');
+    const entity = await loadSource(sourceId, sourceType, manager);
+    const repo = manager.getRepository(entity.constructor);
+
+    const isSourceExist = await repo.exists({
+      where: { id: sourceId, status: Not(SourceStatus.CANCELLED) },
+    });
+
+    if (!isSourceExist) throw new NotFoundException(`${sourceType} not found!`);
+
+    // Is status of transaction paid or not
+    console.log('transactionStatus:', transactionStatus);
+    const isPaid =
+      transactionStatus === TransactionStatus.PAID ||
+      transactionStatus === TransactionStatus.OVERPAID;
+
+    //  Is all product completed or not
+    const isProductsCompleted = await this.isAllProductItemHandled(
+      sourceId,
+      sourceType,
+      manager,
+    );
+    console.log('isProductsCompleted:', isProductsCompleted);
+
+    //  Is all service completed or not
+    const isServicesCompleted = await this.isAllServiceItemCompleted(
+      sourceId,
+      manager,
+    );
+    console.log('isServicesCompleted:', isServicesCompleted);
+    console.log(isPaid, isProductsCompleted, isServicesCompleted);
+
+    if (isPaid && isProductsCompleted && isServicesCompleted)
+      return SourceStatus.COMPLETED;
+    else if (!isPaid && !isProductsCompleted && !isServicesCompleted)
+      return SourceStatus.CONFIRMED;
+    return SourceStatus.PROCESSING;
+  }
+
+  async updateSourceStatus(
+    sourceId: number,
+    sourceType: SourceType,
+    manager: EntityManager,
+    status?: TransactionStatus,
+  ) {
+    // Get repo of entity: Order, Purchase, Consignment
+    const entity = loadEntitySource(sourceType);
+    const repo = manager.getRepository(entity);
+
+    const sourceStatus = await this.getSourceStatus(
+      sourceId,
+      sourceType,
+      manager,
+      status,
+    );
+
+    await repo.update(sourceId, { status: sourceStatus });
   }
 }

@@ -1,4 +1,5 @@
 import { CommonStatus, ServiceType } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import {
   Column,
   CreateDateColumn,
@@ -21,7 +22,11 @@ export class Service {
   @Column()
   duration: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   unitPrice: number;
 
   @Column({ type: 'enum', enum: CommonStatus, default: CommonStatus.ACTIVE })

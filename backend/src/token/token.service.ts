@@ -18,4 +18,12 @@ export class TokenService {
   async removeToken(refreshToken: string) {
     return await this.tokenRepository.delete({ refreshToken });
   }
+
+  async isTokenExist(refreshToken: string) {
+    const isExist = await this.tokenRepository.exists({
+      where: { refreshToken },
+    });
+
+    return isExist;
+  }
 }

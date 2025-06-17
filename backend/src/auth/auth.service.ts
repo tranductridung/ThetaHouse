@@ -11,6 +11,7 @@ import { UserRole, UserStatus } from 'src/common/enums/enum';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { TokenService } from 'src/token/token.service';
 import { MailService } from 'src/mail/mail.service';
+import { UserPayload } from './user-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -117,5 +118,41 @@ export class AuthService {
     if (user.status === UserStatus.UNVERIFIED) {
       await this.userService.changeStatus(id, UserStatus.PENDING);
     }
+  }
+
+  async refresh(refreshToken?: string) {
+    if (!refreshToken)
+      throw new UnauthorizedException('Refresh token not found!');
+
+    // Check if token is exist in database
+    await this.tokenService.isTokenExist(refreshToken);
+
+    let userPayload: UserPayload;
+
+    try {
+      userPayload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get('REFRESH_TOKEN'),
+      });
+    } catch (error) {
+      console.log(error);
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const userExisting = await this.userService.findOne(userPayload.id);
+
+    const accessToken = this.jwtService.sign(
+      {
+        id: userExisting.id,
+        email: userExisting.email,
+        fullName: userExisting.fullName,
+        role: userExisting.role,
+      },
+      {
+        secret: this.configService.get('ACCESS_TOKEN'),
+        expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRES'),
+      },
+    );
+
+    return accessToken;
   }
 }

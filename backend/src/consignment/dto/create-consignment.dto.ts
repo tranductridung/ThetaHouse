@@ -11,22 +11,23 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { ConsigmentType } from 'src/common/enums/enum';
+import { ConsignmentType } from 'src/common/enums/enum';
 import { CreateItemDto } from 'src/item/dto/create-item.dto';
 
-export class CreateConsigmentDto {
+export class CreateConsignmentDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateItemDto)
   items: CreateItemDto[];
 
-  @IsEnum(ConsigmentType)
-  type: ConsigmentType;
+  @IsEnum(ConsignmentType)
+  type: ConsignmentType;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(100)
+  @IsOptional()
   commissionRate: number;
 
   @IsString()

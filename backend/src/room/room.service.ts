@@ -1,3 +1,4 @@
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
   Injectable,
@@ -26,8 +27,24 @@ export class RoomService {
     return room;
   }
 
-  async findAll() {
-    return await this.roomRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.roomRepo
+      .createQueryBuilder('room')
+      .orderBy('room.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [rooms, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { rooms, total };
+    } else {
+      const rooms = await queryBuilder.getMany();
+      return rooms;
+    }
   }
 
   async findOne(id: number) {

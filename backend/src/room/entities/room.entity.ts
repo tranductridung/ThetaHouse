@@ -1,4 +1,5 @@
 import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { CommonStatus } from 'src/common/enums/enum';
 import {
   Column,
   CreateDateColumn,

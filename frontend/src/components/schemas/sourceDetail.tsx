@@ -1,40 +1,55 @@
 import { z } from "zod";
-import { itemSchema } from "../columns/item-column";
 import { discountSchema } from "./discount";
 import { userSchema } from "./user";
 import { partnerSchema } from "./partner";
+import { ConsignmentType, SourceStatus } from "../constants/constants";
+import { itemSchema } from "./item";
 
-export const basesourceDetailSchema = z.object({
+export const baseSourceDetailSchema = z.object({
   note: z.string().optional(),
   totalAmount: z.number(),
   finalAmount: z.number(),
   quantity: z.number(),
   creator: userSchema,
-  customer: partnerSchema,
-  discount: discountSchema.optional(),
   items: z.array(itemSchema),
 });
 
 //Order
-export const orderSchema = basesourceDetailSchema.extend({
+export const orderSchema = baseSourceDetailSchema.extend({
   id: z.number(),
+  status: z.enum(SourceStatus),
+  customer: partnerSchema,
+  discount: discountSchema,
 });
-export const createOrderFormSchema = basesourceDetailSchema.extend({});
-export const editOrderFormSchema = basesourceDetailSchema.extend({}); // Not completed
+export const createOrderFormSchema = baseSourceDetailSchema.extend({
+  customer: partnerSchema,
+});
+export const editOrderFormSchema = baseSourceDetailSchema.extend({}); // Not completed
 
 //Purchase
-export const purchaseSchema = basesourceDetailSchema.extend({
+export const purchaseSchema = baseSourceDetailSchema.extend({
+  supplier: partnerSchema,
+  discountAmount: z.number().optional(),
+  status: z.enum(SourceStatus),
   id: z.number(),
 });
-export const createPurchaseFormSchema = basesourceDetailSchema.extend({});
-export const editPurchaseFormSchema = basesourceDetailSchema.extend({}); // Not completed
+export const createPurchaseFormSchema = baseSourceDetailSchema.extend({
+  supplier: partnerSchema,
+});
+export const editPurchaseFormSchema = baseSourceDetailSchema.extend({}); // Not completed
 
 //Consignment
-export const consignmentSchema = basesourceDetailSchema.extend({
+export const consignmentSchema = baseSourceDetailSchema.extend({
   id: z.number(),
+  status: z.enum(SourceStatus),
+  type: z.enum(ConsignmentType),
+  commissionRate: z.number().lte(100).gte(0),
+  partner: partnerSchema,
 });
-export const createConsignmentFormSchema = basesourceDetailSchema.extend({});
-export const editConsignmentFormSchema = basesourceDetailSchema.extend({}); // Not completed
+export const createConsignmentFormSchema = baseSourceDetailSchema.extend({
+  partner: partnerSchema,
+});
+export const editConsignmentFormSchema = baseSourceDetailSchema.extend({}); // Not completed
 
 // Order
 export type OrderDetailType = z.infer<typeof orderSchema>;

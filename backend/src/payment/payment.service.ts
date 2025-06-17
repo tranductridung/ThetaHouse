@@ -1,4 +1,4 @@
-import { UpdateTransactionDto } from './../transaction/dto/update-transaction.dto';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
   forwardRef,
@@ -6,27 +6,28 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Payment } from './entities/payment.entity';
 import { Repository, DataSource } from 'typeorm';
-import { Transaction } from '../transaction/entities/transaction.entity';
-import { TransactionStatus } from 'src/common/enums/enum';
-import { TransactionService } from 'src/transaction/transaction.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ItemService } from 'src/item/item.service';
+import { Payment } from './entities/payment.entity';
 import { User } from 'src/user/entities/user.entity';
+import { TransactionStatus } from 'src/common/enums/enum';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Partner } from 'src/partner/entities/partner.entity';
-
+import { Transaction } from '../transaction/entities/transaction.entity';
+import { TransactionService } from 'src/transaction/transaction.service';
+import { UpdateTransactionDto } from './../transaction/dto/update-transaction.dto';
 @Injectable()
 export class PaymentService {
   constructor(
     @InjectRepository(Payment) private paymentRepo: Repository<Payment>,
+    private itemService: ItemService,
     private dataSource: DataSource,
     @Inject(forwardRef(() => TransactionService))
     private transactionService: TransactionService,
   ) {}
 
   async create(createPaymentDto: CreatePaymentDto, creatorId: number) {
-    // amount, method, note, transactionId,
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -45,12 +46,12 @@ export class PaymentService {
         ...createPaymentDto,
       });
 
+      payment.transaction = transaction;
       payment.creator = await queryRunner.manager.findOneOrFail(User, {
         where: {
           id: creatorId,
         },
       });
-
       payment.customer = await queryRunner.manager.findOneOrFail(Partner, {
         where: {
           id: createPaymentDto.customerId,
@@ -75,7 +76,15 @@ export class PaymentService {
         queryRunner.manager,
       );
 
+      await this.itemService.updateSourceStatus(
+        transaction.sourceId,
+        transaction.sourceType,
+        queryRunner.manager,
+        transaction.status,
+      );
+
       await queryRunner.manager.save(payment);
+      await queryRunner.commitTransaction();
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -85,19 +94,36 @@ export class PaymentService {
     }
   }
 
-  async findAll() {
-    return await this.paymentRepo
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.paymentRepo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.creator', 'creator')
       .leftJoinAndSelect('payment.customer', 'customer')
+      .leftJoinAndSelect('payment.transaction', 'transaction')
       .select([
+        'payment.id',
+        'transaction.id',
         'payment.amount',
         'payment.method',
         'payment.note',
         'creator.fullName',
         'customer.fullName',
       ])
-      .getMany();
+      .orderBy('payment.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [payments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { payments, total };
+    } else {
+      const payments = await queryBuilder.getMany();
+      return payments;
+    }
   }
 
   async findOne(id: number) {
@@ -106,14 +132,38 @@ export class PaymentService {
     return payment;
   }
 
-  async findAllByTransactionId(id: number) {
-    const payments = await this.paymentRepo.find({
-      where: {
-        transaction: { id: id },
-      },
-    });
-    console.log(id, payments);
+  async findAllByTransactionId(
+    transactionId: number,
+    paginationDto?: PaginationDto,
+  ) {
+    const queryBuilder = this.paymentRepo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect('payment.creator', 'creator')
+      .leftJoinAndSelect('payment.customer', 'customer')
+      .leftJoinAndSelect('payment.transaction', 'transaction')
+      .where('transaction.id = :transactionId', { transactionId })
+      .select([
+        'payment.id',
+        'transaction.id',
+        'payment.amount',
+        'payment.method',
+        'payment.note',
+        'creator.fullName',
+        'customer.fullName',
+      ])
+      .orderBy('payment.id', 'ASC');
 
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+      const [payments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { payments, total };
+    }
+
+    const payments = await queryBuilder.getMany();
     return payments;
   }
 }

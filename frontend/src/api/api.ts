@@ -31,12 +31,12 @@ api.interceptors.response.use(
 
       try {
         const responses = await axios.post(
-          "http://localhost:3000/api/users/refresh",
+          "http://localhost:3000/api/v1/auth/refresh",
           {},
           { withCredentials: true }
         );
 
-        const accessToken = responses.data.data.accessToken;
+        const accessToken = responses.data.accessToken;
         localStorage.setItem("accessToken", accessToken);
         api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;

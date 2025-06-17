@@ -8,29 +8,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import { z } from "zod";
 import { Button } from "../ui/button";
+import type { PaymentType } from "../schemas/payment";
 
-export const paymentSchema = z.object({
-  amount: z.string(),
-  method: z.string(),
-  note: z.string(),
-  transaction: z.object({
-    id: z.number(),
-  }),
-  creator: z.object({
-    fullName: z.string(),
-  }),
-  customer: z.object({
-    fullName: z.string(),
-  }),
-});
-
-export type PaymentType = z.infer<typeof paymentSchema>;
-
-export const paymentColumns: ColumnDef<z.infer<typeof paymentSchema>>[] = [
+export const paymentColumns: ColumnDef<PaymentType>[] = [
   {
-    accessorKey: "amount",
+    accessorKey: "id",
+    header: "ID",
+  },
+  {
+    accessorFn: (row) =>
+      (row?.amount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Amount",
   },
   {
@@ -39,7 +30,7 @@ export const paymentColumns: ColumnDef<z.infer<typeof paymentSchema>>[] = [
   },
   {
     accessorFn: (row) => row.transaction?.id ?? "",
-    header: "Transantion",
+    header: "Transaction",
   },
   {
     accessorFn: (row) => row.creator?.fullName ?? "",

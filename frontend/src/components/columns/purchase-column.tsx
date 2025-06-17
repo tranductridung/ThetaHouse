@@ -10,6 +10,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import type { PurchaseType } from "../schemas/source";
+import { Badge } from "../ui/badge";
+import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type PurchaseProps = {
   onDetail: (id: number) => void;
@@ -29,18 +31,29 @@ export const purchaseColumns = ({
     header: "Quantity",
   },
   {
-    accessorKey: "totalAmount",
+    accessorFn: (row) =>
+      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Total Amount",
   },
   {
-    accessorKey: "discountAmount",
+    accessorFn: (row) =>
+      (row?.discountAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Discount Amount",
   },
   {
-    accessorKey: "finalAmount",
+    accessorFn: (row) =>
+      (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Final Amount",
   },
-
   {
     accessorFn: (row) => row.creator?.fullName ?? "",
     header: "Creator",
@@ -52,6 +65,20 @@ export const purchaseColumns = ({
   {
     accessorKey: "note",
     header: "Note",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
+      >
+        {getSourceStatusIcon(row.original.status)}
+        {row.original.status}
+      </Badge>
+    ),
   },
   {
     id: "actions",

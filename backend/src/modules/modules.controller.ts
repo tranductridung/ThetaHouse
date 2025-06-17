@@ -6,12 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ModulesService } from './modules.service';
 import { UserRole } from 'src/common/enums/enum';
 import { Roles } from 'src/auth/roles.decorator';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('modules')
 export class ModulesController {
@@ -24,17 +26,15 @@ export class ModulesController {
     return { module };
   }
 
-  @Get('/active')
-  async findAllActive() {
-    const modules = await this.moduleService.findAllActive();
-    return { modules };
+  @Get()
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.moduleService.findAllActive(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)
-  @Get()
-  async findAll() {
-    const modules = await this.moduleService.findAll();
-    return { modules };
+  @Get('all')
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.moduleService.findAll(paginationDto);
   }
 
   @Get(':id')

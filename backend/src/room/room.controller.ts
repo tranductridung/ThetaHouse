@@ -6,38 +6,42 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('rooms')
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
   @Post()
-  create(@Body() createRoomDto: CreateRoomDto) {
-    return this.roomService.create(createRoomDto);
+  async create(@Body() createRoomDto: CreateRoomDto) {
+    const room = await this.roomService.create(createRoomDto);
+    return { room };
   }
 
   @Get()
-  async findAll() {
-    const rooms = await this.roomService.findAll();
-    return { rooms };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.roomService.findAll(paginationDto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.roomService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const room = await this.roomService.findOne(+id);
+    return { room };
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-    return this.roomService.update(+id, updateRoomDto);
+  async update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
+    const room = await this.roomService.update(+id, updateRoomDto);
+    return { room };
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.roomService.remove(+id);
   }
 }

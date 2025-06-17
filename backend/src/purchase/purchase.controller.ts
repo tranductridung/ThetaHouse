@@ -6,12 +6,16 @@ import {
   Param,
   Req,
   UseGuards,
+  Delete,
+  Query,
 } from '@nestjs/common';
 import { PurchaseService } from './purchase.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { ImportItemDto } from './dto/import-item.dto';
+import { CreateItemDto } from 'src/item/dto/create-item.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard)
 @Controller('purchases')
@@ -24,10 +28,14 @@ export class PurchaseController {
     return this.purchaseService.create(createPurchaseDto, userId);
   }
 
+  @Get('all')
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.purchaseService.findAll(paginationDto);
+  }
+
   @Get()
-  async findAll() {
-    const purchases = await this.purchaseService.findAll();
-    return { purchases };
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.purchaseService.findAllActive(paginationDto);
   }
 
   @Get(':id')
@@ -52,7 +60,7 @@ export class PurchaseController {
   }
 
   @Post(':id/import')
-  async exportItemsForOrder(
+  async importItemsForPurchase(
     @Param('id') purchaseId: string,
     @Req() req: Request,
   ) {
@@ -61,6 +69,35 @@ export class PurchaseController {
       +purchaseId,
       creatorId,
     );
+    return result;
+  }
+
+  @Post(':id/cancel')
+  async cancelPurchase(@Param('id') id: string, @Req() req: Request) {
+    const creatorId = Number(req.user?.id);
+
+    const result = await this.purchaseService.cancelPurchase(+id, creatorId);
+    return result;
+  }
+
+  @Post(':id/items')
+  async addItem(
+    @Param('id') purchaseId: string,
+    @Body() createItemDto: CreateItemDto,
+  ) {
+    const result = await this.purchaseService.addItem(
+      +purchaseId,
+      createItemDto,
+    );
+    return result;
+  }
+
+  @Delete(':id/items/:itemId')
+  async removeItem(
+    @Param('id') purchaseId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    const result = await this.purchaseService.removeItem(+purchaseId, +itemId);
     return result;
   }
 }

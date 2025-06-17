@@ -3,6 +3,7 @@ import {
   TransactionStatus,
   TransactionType,
 } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Payment } from 'src/payment/entities/payment.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
@@ -30,10 +31,18 @@ export class Transaction {
   @Column({ nullable: true })
   sourceId: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   totalAmount: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   paidAmount: number;
 
   @Column({ type: 'enum', enum: TransactionStatus })

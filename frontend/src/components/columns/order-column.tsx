@@ -10,6 +10,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import type { OrderType } from "../schemas/source";
+import { Badge } from "../ui/badge";
+import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type OrderProps = {
   onDetail: (id: number) => void;
@@ -29,12 +31,20 @@ export const orderColumns = ({
     header: "Quantity",
   },
   {
-    accessorKey: "totalAmount",
-    header: "TotalAmount",
+    accessorFn: (row) =>
+      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+    header: "Total Amount",
   },
   {
-    accessorKey: "finalAmount",
-    header: "FinalAmount",
+    accessorFn: (row) =>
+      (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+    header: "Final Amount",
   },
   {
     accessorFn: (row) => row.creator?.fullName ?? "",
@@ -51,6 +61,28 @@ export const orderColumns = ({
   {
     accessorKey: "note",
     header: "Note",
+    cell: ({ row }) => {
+      const note = row.getValue("note") as string;
+      return (
+        <div className="line-clamp-2 max-w-xs text-sm text-muted-foreground">
+          {note}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
+      >
+        {getSourceStatusIcon(row.original.status)}
+        {row.original.status}
+      </Badge>
+    ),
   },
   {
     id: "actions",
@@ -72,8 +104,6 @@ export const orderColumns = ({
             >
               Edit
             </DropdownMenuItem>
-
-            {/* <DropdownMenuItem>Delete</DropdownMenuItem> */}
 
             <DropdownMenuItem
               onClick={() => {

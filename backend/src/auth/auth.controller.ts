@@ -74,4 +74,13 @@ export class AuthController {
     await this.authService.verifyEmail(Number(req?.user?.id));
     return { message: 'Verify email success!' };
   }
+
+  @Post('refresh')
+  async refreshToken(@Req() req: Request) {
+    const cookies = req.cookies as { refreshToken?: string };
+    const refreshToken = cookies?.refreshToken;
+    const accessToken = await this.authService.refresh(refreshToken);
+
+    return { accessToken };
+  }
 }

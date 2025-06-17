@@ -30,7 +30,7 @@ export enum ServiceType {
   COMBO = 'Combo',
 }
 
-export enum ConsigmentType {
+export enum ConsignmentType {
   IN = 'In',
   OUT = 'Out',
 }
@@ -43,7 +43,7 @@ export enum DiscountType {
 export enum SourceType {
   ORDER = 'Order',
   PURCHASE = 'Purchase',
-  CONSIGMENT = 'Consigment',
+  CONSIGNMENT = 'Consignment',
 }
 
 export enum ItemableType {
@@ -88,6 +88,7 @@ export enum TransactionStatus {
   UNPAID = 'Unpaid',
   PAID = 'Paid',
   PARTIAL = 'Partial',
+  OVERPAID = 'Overpaid',
 }
 
 export enum PaymentMethod {
@@ -106,11 +107,11 @@ export enum ItemStatus {
 }
 
 export enum AdjustmentType {
-  INIT = 'Init',
-  REPLACE = 'Replace',
-  ADD = 'Add',
-  REMOVE = 'Remove',
-  CANCELLED = 'Cancelled',
+  INIT = 'Init', // Init when create source
+  ADD = 'Add', // Add new item to source
+  REMOVE = 'Remove', // Remove item of source
+  REPLACE = 'Replace', // Replace item of source
+  CANCELLED = 'Cancelled', // Cancelled source
 }
 
 export enum SourceStatus {

@@ -1,5 +1,7 @@
+import { PaginationDto } from './../common/dtos/pagination.dto';
+import { DataSource } from 'typeorm';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
 import { ItemService } from 'src/item/item.service';
@@ -23,12 +25,15 @@ import {
   AppointmentType,
   ItemableType,
   ItemStatus,
+  SourceType,
 } from 'src/common/enums/enum';
 @Injectable()
 export class AppointmentService {
   constructor(
+    private dataSource: DataSource,
     @InjectRepository(Appointment)
     private appointmentRepo: Repository<Appointment>,
+    @Inject(forwardRef(() => ItemService))
     private itemService: ItemService,
     private modulesService: ModulesService,
     private roomService: RoomService,
@@ -140,7 +145,10 @@ export class AppointmentService {
       if (!createAppointmentDto.itemId)
         throw new BadRequestException(`ItemId is required!`);
 
-      const item = await this.itemService.findOne(createAppointmentDto.itemId);
+      const item = await this.itemService.findOne(
+        createAppointmentDto.itemId,
+        true,
+      );
       appointment.item = item;
 
       await this.validateSession(createAppointmentDto.type, undefined, item);
@@ -194,6 +202,7 @@ export class AppointmentService {
     else appointment.status = AppointmentStatus.PENDING;
 
     await this.appointmentRepo.save(appointment);
+
     return appointment;
   }
 
@@ -385,17 +394,39 @@ export class AppointmentService {
     return { message: 'Delete appointment success!' };
   }
 
-  async setCompleteStatus(appointment: Appointment) {
-    if (appointment.status === AppointmentStatus.PENDING)
-      throw new BadRequestException(
-        'Update full information to set status to completed!',
+  async setCompleteStatus(appointmentId: number) {
+    const querryRunner = this.dataSource.createQueryRunner();
+    await querryRunner.connect();
+    await querryRunner.startTransaction();
+
+    try {
+      const appointment = await querryRunner.manager.findOne(Appointment, {
+        where: { id: appointmentId },
+        relations: ['item'],
+      });
+      if (!appointment) throw new NotFoundException('Appointment not found!');
+
+      if (appointment.status === AppointmentStatus.COMPLETED)
+        throw new BadRequestException('Appointment status is completed!');
+
+      appointment.status = AppointmentStatus.COMPLETED;
+      await querryRunner.manager.save(appointment);
+
+      await this.itemService.updateSourceStatus(
+        appointment.item.sourceId,
+        SourceType.ORDER,
+        querryRunner.manager,
       );
 
-    if (appointment.status === AppointmentStatus.COMPLETED)
-      throw new BadRequestException('Appointment status is completed!');
-
-    appointment.status = AppointmentStatus.COMPLETED;
-    await this.appointmentRepo.save(appointment);
+      await querryRunner.commitTransaction();
+    } catch (error) {
+      console.log(error);
+      await querryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await querryRunner.release();
+    }
+    return { message: 'Appointment is set to completed!' };
   }
 
   checkStatus(appointment: Appointment) {
@@ -407,14 +438,15 @@ export class AppointmentService {
     return allFieldsHaveValue;
   }
 
-  findAll() {
-    return this.appointmentRepo
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.appointmentRepo
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.item', 'item')
       .leftJoinAndSelect('appointment.healer', 'healer')
       .leftJoinAndSelect('appointment.room', 'room')
       .leftJoinAndSelect('appointment.customer', 'customer')
       .select([
+        'appointment.id',
         'appointment.note',
         'appointment.startAt',
         'appointment.endAt',
@@ -425,15 +457,103 @@ export class AppointmentService {
         'customer.fullName',
         'room.name',
       ])
-      .getMany();
+      .orderBy('appointment.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [appointments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { appointments, total };
+    } else {
+      const appointments = await queryBuilder.getMany();
+      return appointments;
+    }
+  }
+
+  async findAllActive(paginationDto?: PaginationDto) {
+    const queryBuilder = this.appointmentRepo
+      .createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.item', 'item')
+      .leftJoinAndSelect('appointment.healer', 'healer')
+      .leftJoinAndSelect('appointment.room', 'room')
+      .leftJoinAndSelect('appointment.customer', 'customer')
+      .where('appointment.status != :status', {
+        status: AppointmentStatus.CANCELLED,
+      })
+      .select([
+        'appointment.id',
+        'appointment.note',
+        'appointment.startAt',
+        'appointment.endAt',
+        'appointment.status',
+        'appointment.type',
+        'item.id',
+        'healer.fullName',
+        'customer.fullName',
+        'room.name',
+      ])
+      .orderBy('appointment.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [appointments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { appointments, total };
+    } else {
+      const appointments = await queryBuilder.getMany();
+      return appointments;
+    }
   }
 
   async toggle() {
-    const apts = await this.findAll();
+    const appointments = await this.appointmentRepo.find();
 
-    for (const apt of apts) {
+    for (const apt of appointments) {
       apt.status = AppointmentStatus.COMPLETED;
       await this.appointmentRepo.save(apt);
     }
+  }
+
+  async isServiceItemCompleted(
+    itemId: number,
+    session: number,
+    bonusSession: number,
+    quantity: number,
+    manager?: EntityManager,
+  ): Promise<boolean> {
+    console.log(itemId);
+
+    const repo = manager
+      ? manager.getRepository(Appointment)
+      : this.appointmentRepo;
+    const totalSession = quantity * session;
+    const totalBonusSession = quantity * bonusSession;
+
+    const mainCount = await repo.count({
+      where: {
+        item: { id: itemId },
+        type: AppointmentType.MAIN,
+        status: AppointmentStatus.COMPLETED,
+      },
+    });
+    const bonusCount = await repo.count({
+      where: {
+        item: { id: itemId },
+        type: AppointmentType.BONUS,
+        status: AppointmentStatus.COMPLETED,
+      },
+    });
+
+    console.log(mainCount, totalSession, bonusCount, totalBonusSession);
+
+    return mainCount === totalSession && bonusCount === totalBonusSession;
   }
 }

@@ -10,8 +10,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import type { TransactionType } from "../schemas/transaction";
+import { Badge } from "../ui/badge";
+import { getTransactionStatusIcon } from "../styles/TransactionStatus";
 
 export const transactionColumns: ColumnDef<TransactionType>[] = [
+  {
+    accessorKey: "id",
+    header: "ID",
+  },
   {
     accessorKey: "type",
     header: "Type",
@@ -21,16 +27,34 @@ export const transactionColumns: ColumnDef<TransactionType>[] = [
     header: "Source Type",
   },
   {
-    accessorKey: "totalAmount",
+    accessorFn: (row) =>
+      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Total Amount",
   },
   {
-    accessorKey: "paidAmount",
+    accessorFn: (row) =>
+      (row?.paidAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Paid Amount",
   },
   {
     accessorKey: "status",
     header: "Status",
+
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
+      >
+        {getTransactionStatusIcon(row.original.status)}
+        {row.original.status}
+      </Badge>
+    ),
   },
   {
     accessorFn: (row) => row.creator?.fullName ?? "",

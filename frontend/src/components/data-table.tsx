@@ -51,25 +51,49 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onAdd?: () => void;
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+  setPageIndex: (page: number) => void;
+  setPageSize: (size: number) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onAdd,
+  pageIndex,
+  pageSize,
+  total,
+  setPageIndex,
+  setPageSize,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
   const table = useReactTable({
     data,
     columns,
+    pageCount: Math.ceil(total / pageSize),
     state: {
       globalFilter,
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
     },
+    manualPagination: true,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: (updater) => {
+      const newPagination =
+        typeof updater === "function"
+          ? updater({ pageIndex, pageSize })
+          : updater;
+      setPageIndex(newPagination.pageIndex);
+      setPageSize(newPagination.pageSize);
+    },
   });
 
   return (
@@ -190,11 +214,11 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-4">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
+      <div className="flex items-center justify-end px-4">
+        {/* <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
+        </div> */}
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
             <Label htmlFor="rows-per-page" className="text-sm font-medium">
@@ -221,8 +245,9 @@ export function DataTable<TData, TValue>({
             </Select>
           </div>
           <div className="flex w-fit items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            {/* Page {table.getState().pagination.pageIndex + 1} of{" "} */}
+            Page {pageIndex + 1} of {Math.ceil(total / pageSize)}
+            {/* {table.getPageCount()} */}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button

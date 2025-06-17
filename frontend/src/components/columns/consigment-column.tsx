@@ -6,36 +6,41 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { ConsignmentType } from "../schemas/source";
+import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type ConsignmentProps = {
   onEdit: (consignment: ConsignmentType) => void;
   onDetail: (id: number) => void;
 };
 
-// export const orderColumns = ({
-//   onDetail,
-//   onEdit,
-// }: OrderProps): ColumnDef<OrderType>[] => [
-
 export const consignmentColumns = ({
   onEdit,
   onDetail,
 }: ConsignmentProps): ColumnDef<ConsignmentType>[] => [
-  { accessorKey: "id", header: "Id" },
+  { accessorKey: "id", header: "ID" },
   {
     accessorKey: "type",
     header: "Type",
   },
   {
-    accessorKey: "totalAmount",
+    accessorFn: (row) =>
+      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Total Amount",
   },
   {
-    accessorKey: "finalAmount",
+    accessorFn: (row) =>
+      (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Final Amount",
   },
   {
@@ -53,6 +58,19 @@ export const consignmentColumns = ({
   {
     accessorKey: "note",
     header: "Note",
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <Badge
+        variant="outline"
+        className="flex gap-1 px-1.5 text-muted-foreground [&_svg]:size-3"
+      >
+        {getSourceStatusIcon(row.original.status)}
+        {row.original.status}
+      </Badge>
+    ),
   },
   {
     id: "actions",

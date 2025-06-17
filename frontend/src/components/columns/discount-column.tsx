@@ -43,16 +43,35 @@ export const discountColumns = ({
     header: "Code",
   },
   {
-    accessorKey: "value",
-    header: "Value",
+    accessorFn: (row) => {
+      if (row.type === "Fixed") {
+        return (row.value ?? 0).toLocaleString("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        });
+      }
+
+      // Default
+      return `${row.value ?? 0}%`;
+    },
+    header: "Discount",
   },
   {
-    accessorKey: "maxDiscountAmount",
-    header: "Max Discount Amount",
+    accessorFn: (row) =>
+      (row?.maxDiscountAmount ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+    header: "Max Amount",
   },
   {
-    accessorKey: "minTotalValue",
-    header: "Min Total Value",
+    accessorFn: (row) =>
+      (row?.minTotalValue ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+
+    header: "Min Total",
   },
   {
     accessorKey: "type",

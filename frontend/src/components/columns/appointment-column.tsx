@@ -8,36 +8,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import { z } from "zod";
 import { Button } from "../ui/button";
+import type { AppointmentType } from "../schemas/appointment";
 
-export const appointmentSchema = z.object({
-  note: z.string(),
-  startAt: z.string(),
-  endAt: z.string(),
-  status: z.string(),
-  type: z.string(),
+type AppointmentProps = {
+  onEdit: (product: AppointmentType) => void;
+};
 
-  item: z.object({
-    id: z.string(),
-  }),
-  healer: z.object({
-    fullName: z.string(),
-  }),
-  room: z.object({
-    name: z.string(),
-  }),
-  customer: z.object({
-    fullName: z.string(),
-  }),
-});
-
-export type AppointmentType = z.infer<typeof appointmentSchema>;
-
-export const appointmentColumns: ColumnDef<
-  z.infer<typeof appointmentSchema>
->[] = [
-  { accessorFn: (row) => row.item?.id ?? "", header: "Item ID" },
+export const appointmentColumns = ({
+  onEdit,
+}: AppointmentProps): ColumnDef<AppointmentType>[] => [
+  { accessorFn: (row) => row.item?.id ?? "", header: "ID" },
   { accessorFn: (row) => row.customer?.fullName ?? "", header: "Customer" },
   { accessorFn: (row) => row.healer?.fullName ?? "", header: "Healer" },
   { accessorFn: (row) => row.room?.name ?? "", header: "Room" },
@@ -61,12 +42,11 @@ export const appointmentColumns: ColumnDef<
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                console.log(row.original);
+                onEdit(row.original);
               }}
             >
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

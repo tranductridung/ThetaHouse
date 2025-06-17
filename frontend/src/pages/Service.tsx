@@ -26,6 +26,9 @@ const Service = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const handleSubmit = async (
     formData: CreateServiceFormType | EditServiceFormType
@@ -131,11 +134,19 @@ const Service = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/services");
-      setData(response.data.services);
+      try {
+        const response = await api.get(
+          `/services/all?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.services);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
+
     fetchData();
-  }, []);
+  }, [pageIndex, pageSize]);
 
   return (
     <div className="p-4">
@@ -148,6 +159,11 @@ const Service = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
 
       <Dialog

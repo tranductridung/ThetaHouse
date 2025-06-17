@@ -1,7 +1,7 @@
 import { UpdateItemDto } from './dto/update-item.dto';
-import { Controller, Get, Body, Param, Patch } from '@nestjs/common';
+import { Controller, Get, Body, Param, Patch, Query } from '@nestjs/common';
 import { ItemService } from './item.service';
-import { SourceType } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('items')
 export class ItemController {
@@ -25,9 +25,13 @@ export class ItemController {
   // }
 
   @Get()
-  async findAll() {
-    const items = await this.itemService.findAll();
-    return { items };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.itemService.findAll(paginationDto);
+  }
+
+  @Get()
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.itemService.findAllActive(paginationDto);
   }
 
   @Get(':id')
@@ -40,14 +44,5 @@ export class ItemController {
   async update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
     const item = await this.itemService.update(+id, updateItemDto);
     return { item };
-  }
-
-  @Patch('cancel/:sourceType/:sourceId')
-  async cancelSource(
-    @Param('sourceId') id: string,
-    @Param('sourceType') sourceType: SourceType,
-  ) {
-    const result = await this.itemService.cancelSource(+id, sourceType);
-    return { result };
   }
 }

@@ -1,4 +1,5 @@
 import { CommonStatus, DiscountType } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Item } from 'src/item/entities/item.entity';
 import { Order } from 'src/order/entities/order.entity';
 import {
@@ -24,16 +25,30 @@ export class Discount {
   @Column('text', { nullable: true })
   description?: string;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   value: number;
 
   @Column({ type: 'enum', enum: DiscountType })
   type: DiscountType;
 
-  @Column('decimal', { nullable: true, precision: 12, scale: 2 })
+  @Column('decimal', {
+    nullable: true,
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   maxDiscountAmount?: number;
 
-  @Column('decimal', { nullable: true, precision: 12, scale: 2 })
+  @Column('decimal', {
+    nullable: true,
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   minTotalValue?: number;
 
   @Column({ type: 'enum', enum: CommonStatus, default: CommonStatus.ACTIVE })

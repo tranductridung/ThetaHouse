@@ -1,4 +1,5 @@
 import { CommonStatus, ProductUnit } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import {
   Column,
@@ -23,7 +24,11 @@ export class Product {
   @Column({ type: 'enum', enum: ProductUnit })
   unit: ProductUnit;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   unitPrice: number;
 
   @Column({ default: 0 })

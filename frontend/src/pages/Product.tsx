@@ -1,8 +1,7 @@
 import api from "@/api/api";
 import { DataTable } from "@/components/data-table";
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DialogTitle } from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type {
   ProductFormType,
   ProductType,
@@ -25,6 +24,9 @@ const Product = () => {
     type: "add",
     data: null,
   });
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const handleSubmit = async (formData: ProductFormType) => {
     try {
@@ -125,12 +127,20 @@ const Product = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/products");
-      setData(response.data.products);
+      try {
+        const response = await api.get(
+          `/products/all?page=${pageIndex}&limit=${pageSize}`
+        );
+        setData(response.data.products);
+        setTotal(response.data.total);
+      } catch (error) {
+        handleAxiosError(error);
+      }
     };
-    fetchData();
-  }, []);
 
+    fetchData();
+  }, [pageIndex, pageSize]);
+  console.log(data);
   return (
     <div className="p-4">
       <DataTable
@@ -142,6 +152,11 @@ const Product = () => {
           onEdit,
         })}
         data={data}
+        total={total}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        setPageIndex={setPageIndex}
+        setPageSize={setPageSize}
       />
 
       <Dialog

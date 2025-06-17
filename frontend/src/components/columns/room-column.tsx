@@ -6,20 +6,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
-import { z } from "zod";
+import { MoreHorizontal } from "lucide-react";
+import type { RoomType } from "../schemas/room";
+import type { ColumnDef } from "@tanstack/react-table";
 
-export const roomSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  description: z.string(),
-});
+type RoomProps = {
+  handleDelete: (id: number) => void;
+  handleRestore: (id: number) => void;
+  handleToggle: (id: number) => void;
+  onEdit: (room: RoomType) => void;
+};
 
-export type RoomType = z.infer<typeof roomSchema>;
-
-export const roomColumns: ColumnDef<z.infer<typeof roomSchema>>[] = [
+export const roomColumns = ({
+  handleDelete,
+  handleRestore,
+  handleToggle,
+  onEdit,
+}: RoomProps): ColumnDef<RoomType>[] => [
   {
     accessorKey: "name",
     header: "Name",
@@ -43,7 +47,7 @@ export const roomColumns: ColumnDef<z.infer<typeof roomSchema>>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                console.log(row.original);
+                onEdit(row.original);
               }}
             >
               Edit

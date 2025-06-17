@@ -7,16 +7,23 @@ import {
   Delete,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreateTransactionNoSourceDto } from './dto/create-transaction-no-source.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard)
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
+
+  @Get()
+  async find(@Query() paginationDto: PaginationDto) {
+    return await this.transactionService.findAll(paginationDto);
+  }
 
   @Post()
   async create(
@@ -29,12 +36,6 @@ export class TransactionController {
       creatorId,
     );
     return { transaction };
-  }
-
-  @Get()
-  async findAll() {
-    const transactions = await this.transactionService.findAll();
-    return { transactions };
   }
 
   @Get('/:sources/:id')

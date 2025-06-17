@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -15,6 +16,7 @@ import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { UserRole } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('products')
@@ -29,16 +31,14 @@ export class ProductController {
   }
 
   @Get()
-  async findAllActive() {
-    const products = await this.productService.findAllActive();
-    return { products };
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.productService.findAllActive(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)
   @Get('all')
-  async findAll() {
-    const products = await this.productService.findAll();
-    return { products };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.productService.findAll(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)

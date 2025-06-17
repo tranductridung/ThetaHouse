@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ServiceService } from './service.service';
 import { CreateServiceDto } from './dto/create-service.dto';
@@ -15,6 +16,7 @@ import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { UserRole } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('services')
@@ -29,16 +31,14 @@ export class ServiceController {
   }
 
   @Get()
-  async findAllActive() {
-    const services = await this.serviceService.findAllActive();
-    return { services };
+  async findAllActive(@Query() paginationDto: PaginationDto) {
+    return await this.serviceService.findAllActive(paginationDto);
   }
 
   @Roles(UserRole.ADMIN)
   @Get('all')
-  async findAll() {
-    const services = await this.serviceService.findAll();
-    return { services };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.serviceService.findAll(paginationDto);
   }
 
   @Get(':id')

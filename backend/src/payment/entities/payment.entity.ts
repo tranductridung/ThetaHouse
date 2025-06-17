@@ -1,4 +1,5 @@
 import { PaymentMethod } from 'src/common/enums/enum';
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -17,7 +18,11 @@ export class Payment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column('decimal', { precision: 12, scale: 2 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   amount: number;
 
   @Column({ type: 'enum', enum: PaymentMethod })

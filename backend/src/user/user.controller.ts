@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { UserRole, UserStatus } from 'src/common/enums/enum';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDTO } from './dto/change-pass.dto';
 import { Request } from 'express';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('users')
@@ -26,9 +28,8 @@ export class UserController {
 
   @Get()
   @Roles(UserRole.ADMIN)
-  async findAll() {
-    const users = await this.userService.findAll();
-    return { users: users };
+  async findAll(@Query() paginationDto: PaginationDto) {
+    return await this.userService.findAll(paginationDto);
   }
 
   @Patch(':id/change-role')

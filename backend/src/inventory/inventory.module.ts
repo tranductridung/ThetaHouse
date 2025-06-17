@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Inventory } from './entities/inventory.entity';
 import { ProductModule } from 'src/product/product.module';
 import { ItemModule } from 'src/item/item.module';
-import { ConsigmentModule } from 'src/consigment/consigment.module';
+import { ConsigmentModule } from 'src/consignment/consigment.module';
 
 @Module({
   imports: [

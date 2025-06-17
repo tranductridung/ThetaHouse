@@ -31,6 +31,10 @@ export const serviceColumns = ({
   onEdit,
 }: ServiceProps): ColumnDef<ServiceType>[] => [
   {
+    accessorKey: "id",
+    header: "ID",
+  },
+  {
     accessorKey: "name",
     header: "Name",
   },
@@ -55,7 +59,11 @@ export const serviceColumns = ({
     header: "Type",
   },
   {
-    accessorKey: "unitPrice",
+    accessorFn: (row) =>
+      (row?.unitPrice ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
     header: "Unit Price",
   },
   {

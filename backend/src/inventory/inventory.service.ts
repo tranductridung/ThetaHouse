@@ -1,12 +1,6 @@
-import { ConsigmentService } from './../consigment/consigment.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ItemService } from 'src/item/item.service';
-import { User } from 'src/user/entities/user.entity';
-import { Inventory } from './entities/inventory.entity';
-import { Product } from 'src/product/entities/product.entity';
-import { DataSource, Repository, EntityManager } from 'typeorm';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
-  ConsigmentType,
+  ConsignmentType,
   InventoryAction,
   ItemableType,
   ItemStatus,
@@ -19,7 +13,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Item } from 'src/item/entities/item.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Inventory } from './entities/inventory.entity';
+import { Product } from 'src/product/entities/product.entity';
+import { DataSource, Repository, EntityManager } from 'typeorm';
+import { ConsignmentService } from './../consignment/consigment.service';
 import { CreateItemInventoryDto } from './dto/create-item-inventory.dto';
 import { CreateAdjustInventoryDto } from './dto/create-adjust-inventory.dto';
 
@@ -27,11 +27,10 @@ import { CreateAdjustInventoryDto } from './dto/create-adjust-inventory.dto';
 export class InventoryService {
   constructor(
     @InjectRepository(Inventory) private inventoryRepo: Repository<Inventory>,
-    private itemService: ItemService,
     private dataSource: DataSource,
 
-    @Inject(forwardRef(() => ConsigmentService))
-    private consigmentService: ConsigmentService,
+    @Inject(forwardRef(() => ConsignmentService))
+    private consignmentService: ConsignmentService,
   ) {}
 
   // Get action of item form source information
@@ -42,9 +41,9 @@ export class InventoryService {
       case SourceType.PURCHASE:
         return InventoryAction.IMPORT;
       default: {
-        const consigment = await this.consigmentService.findOne(sourceId);
+        const consignment = await this.consignmentService.findOne(sourceId);
 
-        return consigment.type === ConsigmentType.IN
+        return consignment.type === ConsignmentType.IN
           ? InventoryAction.IMPORT
           : InventoryAction.EXPORT;
       }
@@ -220,8 +219,38 @@ export class InventoryService {
     return inventory;
   }
 
-  async findAll() {
-    return await this.inventoryRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.inventoryRepo
+      .createQueryBuilder('inventory')
+      .leftJoinAndSelect('inventory.product', 'product')
+      .leftJoinAndSelect('inventory.item', 'item')
+      .leftJoinAndSelect('inventory.creator', 'creator')
+      .select([
+        'inventory.id',
+        'inventory.quantity',
+        'inventory.action',
+        'inventory.note',
+        'creator.fullName',
+        'product.name',
+        'product.unit',
+        'product.unitPrice',
+        'item.id',
+      ])
+      .orderBy('inventory.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [inventories, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { inventories, total };
+    } else {
+      const inventories = await queryBuilder.getMany();
+      return inventories;
+    }
   }
 
   async findOneFull(id: number) {
@@ -256,12 +285,12 @@ export class InventoryService {
     return inventory;
   }
 
-  async countInvenQuantity(id: number, action: InventoryAction) {
+  async countInvenQuantity(itemId: number, action: InventoryAction) {
     const result: { sum: string | null } | undefined = await this.inventoryRepo
       .createQueryBuilder('inventory')
       .select('SUM(inventory.quantity)', 'sum')
       .where('inventory.action = :action', { action })
-      .andWhere('inventory.itemId = :itemId', { itemId: id })
+      .andWhere('inventory.itemId = :itemId', { itemId })
       .getRawOne();
 
     return result?.sum ? Number(result.sum) : 0;

@@ -9,6 +9,7 @@ import { UpdateDiscountDto } from './dto/update-discount.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Discount } from './entities/discount.entity';
 import { Not, Repository } from 'typeorm';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Injectable()
 export class DiscountService {
@@ -54,12 +55,45 @@ export class DiscountService {
     return discount;
   }
 
-  async findAll() {
-    return await this.discountRepo.find();
+  async findAll(paginationDto?: PaginationDto) {
+    const queryBuilder = this.discountRepo
+      .createQueryBuilder('discount')
+      .orderBy('discount.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [discounts, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { discounts, total };
+    } else {
+      const discounts = await queryBuilder.getMany();
+      return discounts;
+    }
   }
 
-  async findAllActive() {
-    return await this.discountRepo.findBy({ status: CommonStatus.ACTIVE });
+  async findAllActive(paginationDto?: PaginationDto) {
+    const queryBuilder = this.discountRepo
+      .createQueryBuilder('discount')
+      .where('discount.status = :status', { status: CommonStatus.ACTIVE })
+      .orderBy('discount.id', 'ASC');
+
+    if (paginationDto) {
+      const { page, limit } = paginationDto;
+
+      const [discounts, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { discounts, total };
+    } else {
+      const discounts = await queryBuilder.getMany();
+      return discounts;
+    }
   }
 
   async findOne(id: number) {

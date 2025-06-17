@@ -6,12 +6,12 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Order } from 'src/order/entities/order.entity';
-import { Purchase } from 'src/purchase/entities/purchase.entity';
-import { Consigment } from 'src/consigment/entities/consigment.entity';
 import { PartnerType } from 'src/common/enums/enum';
-import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { Order } from 'src/order/entities/order.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
+import { Purchase } from 'src/purchase/entities/purchase.entity';
+import { Consignment } from 'src/consignment/entities/consigment.entity';
+import { Appointment } from 'src/appointment/entities/appointment.entity';
 
 @Entity()
 export class Partner {
@@ -48,8 +48,8 @@ export class Partner {
   @OneToMany(() => Purchase, (purchase) => purchase.supplier)
   purchases: Purchase[];
 
-  @OneToMany(() => Consigment, (consigment) => consigment.creator)
-  consigments: Consigment[];
+  @OneToMany(() => Consignment, (consignment) => consignment.creator)
+  consignments: Consignment[];
 
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
   appointments: Appointment[];
