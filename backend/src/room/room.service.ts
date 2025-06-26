@@ -33,7 +33,13 @@ export class RoomService {
       .orderBy('room.id', 'ASC');
 
     if (paginationDto) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(room.name) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [rooms, total] = await queryBuilder
         .skip(page * limit)

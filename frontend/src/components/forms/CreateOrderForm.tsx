@@ -299,69 +299,6 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
     toast.success("Choose customer success!");
   };
 
-  // useEffect(() => {
-  //   let orderSubtotal = 0;
-  //   let orderQuantity = 0;
-
-  //   watchedItems.forEach((item, index) => {
-  //     const { quantity, unitPrice, discount } = item;
-
-  //     const { subtotal, discountAmount } = calculateDiscountAmount(
-  //       quantity,
-  //       unitPrice,
-  //       discount
-  //     );
-
-  //     orderSubtotal += subtotal - discountAmount;
-  //     orderQuantity += item.quantity;
-
-  //     const currentSubtotal = form.getValues(`items.${index}.subtotal`);
-  //     const currentDiscountAmount = form.getValues(
-  //       `items.${index}.discountAmount`
-  //     );
-  //     const currentQuantity = form.getValues(`items.${index}.quantity`);
-
-  //     if (
-  //       currentSubtotal !== subtotal ||
-  //       currentDiscountAmount !== discountAmount ||
-  //       currentQuantity !== quantity
-  //     ) {
-  //       setValue(`items.${index}.subtotal`, subtotal >= 0 ? subtotal : 0);
-  //       setValue(
-  //         `items.${index}.discountAmount`,
-  //         discountAmount >= 0 ? discountAmount : 0
-  //       );
-  //       setValue(`items.${index}.quantity`, quantity >= 0 ? quantity : 0);
-  //     }
-  //   });
-
-  //   // Update order subtotal and discount amount
-  //   const { subtotal, discountAmount } = calculateDiscountAmount(
-  //     1,
-  //     orderSubtotal,
-  //     form.getValues("discount")
-  //   );
-
-  //   const currentOrderSubtotal = form.getValues("subtotal");
-  //   const currentOrderDiscountAmount = form.getValues("discountAmount");
-  //   const currentOrderQuantity = form.getValues("quantity");
-
-  //   if (
-  //     currentOrderSubtotal !== subtotal ||
-  //     currentOrderDiscountAmount !== discountAmount ||
-  //     currentOrderQuantity !== orderQuantity
-  //   ) {
-  //     setValue("subtotal", subtotal >= 0 ? subtotal : 0);
-  //     setValue("discountAmount", discountAmount >= 0 ? discountAmount : 0);
-  //     setValue("quantity", orderQuantity >= 0 ? orderQuantity : 0);
-  //   }
-  // }, [watchedItems]);
-
-  // useEffect(() => {
-  //   let orderSubtotal = 0;
-  //   let orderSubtotal = 0;
-  // });
-
   const calculateOrder = () => {
     const items = form.getValues("items");
     let orderQuantity = 0;
@@ -384,6 +321,7 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
       discountAmount,
     };
   };
+
   useEffect(() => {
     const result = calculateOrder();
     console.log(result);
@@ -410,7 +348,6 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
   const onInternalSubmit = async (data: OrderDraftType) => {
     await onSubmit(data);
     reset();
-    // onSuccess?.();
   };
 
   return (

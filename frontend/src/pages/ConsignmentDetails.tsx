@@ -1,3 +1,4 @@
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -14,51 +15,87 @@ import { DataTable } from "@/components/data-table";
 import { itemColumns } from "@/components/columns/item-column";
 import { paymentColumns } from "@/components/columns/payment-column";
 import { getTransactionStatusStyle } from "@/components/styles/TransactionStatus";
-import { getSourceStatusStyle } from "@/components/styles/SourceStatus";
+import {
+  getConsignmentTypeIcon,
+  getSourceStatusStyle,
+} from "@/components/styles/SourceStatus";
 import type { TransactionType } from "@/components/schemas/transaction";
 import DisplayUser from "@/components/DisplayUser";
+import { useSourceActions } from "@/hooks/useSourceAction";
+import { useItemActions } from "@/hooks/useItemAction";
+import type { ItemDraftType } from "@/components/schemas/item";
+import { toast } from "sonner";
+import type { PaymentDraftType } from "@/components/schemas/payment";
+import AddItemForm from "@/components/forms/AddItemForm";
+import AddPaymentForm from "@/components/forms/AddPaymentForm";
 
 const ConsignmentDetails = () => {
   const { id } = useParams();
   const [consignment, setConsignment] = useState<ConsignmentDetailType | null>(
     null
   );
+  const [transaction, setTransaction] = useState<TransactionType | null>(null);
+  const [isShowAddItem, setIsShowAddItem] = useState(false);
+  const [isShowAddPayment, setIsShowAddPayment] = useState(false);
 
-  const [transactions, setTransactions] = useState<TransactionType | null>(
-    null
-  );
+  const fetchData = async () => {
+    try {
+      const consignmentReponse = await api.get(`/consignments/${id}`);
+      setConsignment(consignmentReponse.data.consignment);
+
+      const transactionReponse = await api.get(
+        `/transactions/consignments/${id}`
+      );
+      setTransaction(transactionReponse.data.transaction);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const consignmentReponse = await api.get(`/consignments/${id}`);
-        setConsignment(consignmentReponse.data.consignment);
-
-        const transactionReponse = await api.get(
-          `/transactions/consignments/${id}`
-        );
-        setTransactions(transactionReponse.data.transaction);
-      } catch (error) {
-        handleAxiosError(error);
-      }
-    };
-
     fetchData();
   }, []);
 
-  const filteredColumns = itemColumns.filter((col) => {
-    if (
-      col.header === "Session" ||
-      col.header === "Discount Code" ||
-      col.header === "Bonus Session"
-    ) {
-      return false;
-    }
-    return true;
-  });
+  const { handleAddItem, handleRemove, handleExportImport } =
+    useItemActions(fetchData);
+  const { handleAddPayment } = useSourceActions(fetchData);
 
-  console.log("consignment: ", consignment);
-  console.log("transaction: ", transactions);
+  const onAddItem = (itemDraftType: ItemDraftType) => {
+    console.log("add item", itemDraftType);
+    if (!consignment) {
+      toast.error("Consignment ID is required!");
+      return;
+    }
+    handleAddItem(itemDraftType, consignment?.id, "Consignment");
+    setIsShowAddItem(false);
+  };
+
+  const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
+    await handleAddPayment(paymentDraftType, transaction.id);
+    setIsShowAddPayment(false);
+  };
+
+  const onExportImport = () => {
+    console.log("on Export Import");
+  };
+
+  const onRemove = (itemId: number) => {
+    console.log("on remove");
+    if (!consignment) {
+      toast.error("Consignment ID is required!");
+      return;
+    }
+    handleRemove(itemId, consignment.id, "Consignment");
+  };
+
+  const openPayment = () => {
+    setIsShowAddPayment(true);
+  };
+
+  const openAddItem = () => {
+    setIsShowAddItem(true);
+  };
+
   return (
     <>
       <div className="p-4">
@@ -66,10 +103,10 @@ const ConsignmentDetails = () => {
           <h1 className="text-2xl font-bold">Consignment ID: {id}</h1>
           <h1
             className={`flex  px-5 py-1 rounded-xl font-bold ${getTransactionStatusStyle(
-              transactions?.status
+              transaction?.status
             )}`}
           >
-            {transactions?.status}
+            {transaction?.status}
           </h1>
 
           <h1
@@ -79,23 +116,64 @@ const ConsignmentDetails = () => {
           >
             {consignment?.status}
           </h1>
+
+          <h1
+            className={`flex px-5 py-1 rounded-xl font-bold ${getConsignmentTypeIcon(
+              consignment?.type
+            )}`}
+          >
+            {consignment?.type}
+          </h1>
         </div>
 
         <div className="flex flex-col space-y-5">
-          <DataTable
+          {/* <DataTable
             columns={filteredColumns}
             data={consignment?.items ?? []}
-          ></DataTable>
-
-          <div className="bconsignment-1 my-4"></div>
+            pageIndex={0}
+            pageSize={consignment?.items?.length ?? 10}
+            total={consignment?.items?.length ?? 0}
+            setPageIndex={() => {}}
+            setPageSize={() => {}}
+            title={"Add Item"}
+          ></DataTable> */}
 
           <DataTable
+            columns={itemColumns({
+              onRemove,
+              onExportImport,
+              consignmentType: consignment?.type,
+            })}
+            onAdd={
+              consignment?.status !== "Cancelled" ? openAddItem : undefined
+            }
+            data={consignment?.items ?? []}
+            pageIndex={0}
+            pageSize={consignment?.items?.length ?? 10}
+            total={consignment?.items?.length ?? 0}
+            setPageIndex={() => {}}
+            setPageSize={() => {}}
+            title={"Add Item"}
+          ></DataTable>
+
+          <div className="border-1 my-4"></div>
+
+          <DataTable
+            onAdd={
+              consignment?.status !== "Cancelled" ? openPayment : undefined
+            }
             columns={paymentColumns}
             data={transaction?.payments ?? []}
+            pageIndex={0}
+            pageSize={consignment?.items?.length ?? 10}
+            total={consignment?.items?.length ?? 0}
+            setPageIndex={() => {}}
+            setPageSize={() => {}}
+            title={"Add Payment"}
           ></DataTable>
         </div>
 
-        <div className="bconsignment-1 my-4"></div>
+        <div className="border-1 my-4"></div>
 
         <div className="flex flex-1 flex-col md:flex-row pt-5 rounded-xl text-gray-500 shadow-xl text-md md:text-xl ">
           <div className="flex-1/3 grid md:grid-rows-3 p-5 gap-5">
@@ -126,7 +204,9 @@ const ConsignmentDetails = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="border-b-2 pb-3">Order Summary</CardTitle>
+                <CardTitle className="border-b-2 pb-3">
+                  Consignment Summary
+                </CardTitle>
               </CardHeader>
 
               <CardContent className="flex justify-between">
@@ -164,6 +244,11 @@ const ConsignmentDetails = () => {
                 <p>{transaction?.paidAmount}</p>
               </CardContent>
 
+              <CardContent className="flex justify-between">
+                <h1>Remain: </h1>
+                <p>{consignment?.finalAmount - transaction?.paidAmount}</p>
+              </CardContent>
+
               <CardFooter className="flex justify-between border-t-2 pt-2">
                 <h1 className="font-bold">Total: </h1>
                 <p>{consignment?.finalAmount}</p>
@@ -171,6 +256,38 @@ const ConsignmentDetails = () => {
             </Card>
           </div>
         </div>
+
+        {/* Add item dialog */}
+        <Dialog
+          open={isShowAddItem}
+          modal={false}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsShowAddItem(false);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogTitle></DialogTitle>
+            <AddItemForm onSubmit={onAddItem} isService={false} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Add payment dialog */}
+        <Dialog
+          open={isShowAddPayment}
+          modal={false}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsShowAddPayment(false);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogTitle></DialogTitle>
+            <AddPaymentForm onSubmit={onAddPayment} />
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

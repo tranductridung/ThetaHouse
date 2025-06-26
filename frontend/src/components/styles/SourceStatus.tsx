@@ -1,4 +1,8 @@
-import type { SourceStatusType } from "@/components/constants/constants";
+import type {
+  AppointmentStatusType,
+  SourceStatusType,
+  TypeOfConsignment,
+} from "@/components/constants/constants";
 import {
   CheckCircle2Icon,
   CircleX,
@@ -17,6 +21,33 @@ export const getSourceStatusIcon = (status: SourceStatusType) => {
     case "Confirmed":
       return <CalendarCheck2 className="text-blue-500 dark:text-blue-400" />;
     case "Processing":
+      return <LoaderIcon />;
+  }
+};
+
+export const getConsignmentTypeIcon = (type: TypeOfConsignment) => {
+  console.log("hello", type);
+  switch (type) {
+    case "In":
+      console.log("in");
+      return "bg-blue-200 text-blue-600";
+    case "Out":
+      console.log("out");
+      return "bg-red-200 text-red-600";
+  }
+};
+
+export const getAppointmentStatusIcon = (status: AppointmentStatusType) => {
+  switch (status) {
+    case "Completed":
+      return (
+        <CheckCircle2Icon className="text-green-500 dark:text-green-400" />
+      );
+    case "Cancelled":
+      return <CircleX className="text-red-500 dark:text-red-400" />;
+    case "Confirmed":
+      return <CalendarCheck2 className="text-blue-500 dark:text-blue-400" />;
+    case "Pending":
       return <LoaderIcon />;
   }
 };

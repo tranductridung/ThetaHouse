@@ -5,6 +5,12 @@ export const UserStatus = [
   "Pending",
   "Unverified",
 ] as const;
+export const AppointmentStatus = [
+  "Pending",
+  "Confirmed",
+  "Cancelled",
+  "Completed",
+] as const;
 export const InventoryAction = [
   "Import",
   "Export",
@@ -17,7 +23,7 @@ export const ModuleType = ["Single", "Combo", "Both"] as const;
 export const CommonStatus = ["Active", "Inactive", "Deleted"] as const;
 export const ConsignmentType = ["In", "Out"] as const;
 export const DiscountType = ["Fixed", "Percentage"] as const;
-export const ItemSourceType = ["Order", "Purchase", "Consignment"] as const;
+export const TypeOfSource = ["Order", "Purchase", "Consignment"] as const;
 export const ItemableType = ["Service", "Product"] as const;
 export const ItemStatus = [
   "None",
@@ -47,7 +53,9 @@ export const TypeOfAppointment = ["Main", "Free", "Bonus"] as const;
 // export type TransactionStatusType =
 //   (typeof TransactionStatus)[keyof typeof TransactionStatus];
 
+export type SourceType = (typeof TypeOfSource)[number];
 export type SourceStatusType = (typeof SourceStatus)[number];
+export type AppointmentStatusType = (typeof AppointmentStatus)[number];
 export type ItemStatusType = (typeof ItemStatus)[number];
 export type TransactionStatusType = (typeof TransactionStatus)[number];
 export type TypeOfConsignment = (typeof ConsignmentType)[number];

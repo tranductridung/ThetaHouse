@@ -148,8 +148,8 @@ export class InventoryService {
       throw new BadRequestException(
         'Total of inventory quantity and handled quantity is greater than item quantity!',
       );
-
     await manager.save(item);
+
     return inventory;
   }
 

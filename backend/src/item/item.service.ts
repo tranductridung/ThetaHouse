@@ -251,7 +251,9 @@ export class ItemService {
       where.isActive = isActive;
     }
 
-    return await this.itemRepo.find({ where });
+    return await this.itemRepo.find({
+      where,
+    });
   }
 
   async update(

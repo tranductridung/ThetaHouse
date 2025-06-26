@@ -29,9 +29,17 @@ export class UserService {
       .orderBy('user.id', 'ASC');
 
     if (paginationDto) {
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(user.fullName) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
+
       const [users, total] = await queryBuilder
-        .skip(paginationDto.page * paginationDto.limit)
-        .take(paginationDto.limit)
+        .skip(page * limit)
+        .take(limit)
         .getManyAndCount();
 
       return { users, total };

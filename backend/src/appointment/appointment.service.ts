@@ -158,12 +158,11 @@ export class AppointmentService {
 
     // Calculate endAt from startAt and duration (if startAt exist)
     if (createAppointmentDto.startAt) {
-      if (!createAppointmentDto.duration)
-        throw new BadRequestException('Duration is required!');
-
+      // if (!createAppointmentDto.duration)
+      //   throw new BadRequestException('Duration is required!');
       const endAt = this.calculteEndAt(
         createAppointmentDto.startAt,
-        createAppointmentDto.duration,
+        Number(appointment.item.snapshotData.duration),
       );
 
       appointment.endAt = endAt;
@@ -307,10 +306,14 @@ export class AppointmentService {
 
     // Calculate endAt if the update DTO has startAt or the appointment doesn't have endAt
     if (updateAppointmentDto.startAt || !endAt) {
-      if (!updateAppointmentDto.duration)
+      // if (!updateAppointmentDto.duration)
+      if (!appointment.item.snapshotData.duration)
         throw new BadRequestException('Required duration!');
 
-      endAt = this.calculteEndAt(startAt, updateAppointmentDto.duration);
+      endAt = this.calculteEndAt(
+        startAt,
+        Number(appointment.item.snapshotData.duration),
+      );
     }
 
     // Check if room free
@@ -336,9 +339,13 @@ export class AppointmentService {
       const customer = await this.partnerService.findOne(
         updateAppointmentDto.customerId,
       );
+      console.log('customer', customer);
+      console.log('appointment customer', appointment.customer);
+      console.log(typeof customer, typeof appointment.customer);
 
-      if (customer !== appointment.customer) {
-        if (!item) throw new BadRequestException('Please provide item!');
+      if (customer.id !== appointment.customer.id) {
+        console.log('hallo');
+        if (!item) throw new BadRequestException('Please provide item 1!');
 
         item.status = ItemStatus.TRANSFERED;
         appointment.customer = customer;
@@ -357,7 +364,7 @@ export class AppointmentService {
           undefined,
         );
       } else {
-        if (!item) throw new BadRequestException('Please provide item!');
+        if (!item) throw new BadRequestException('Please provide item 2!');
         await this.validateSession(updateAppointmentDto.type, undefined, item);
       }
       appointment.type = updateAppointmentDto.type;
@@ -454,8 +461,11 @@ export class AppointmentService {
         'appointment.type',
         'item.id',
         'healer.fullName',
+        'healer.id',
         'customer.fullName',
+        'customer.id',
         'room.name',
+        'room.id',
       ])
       .orderBy('appointment.id', 'ASC');
 
@@ -495,6 +505,9 @@ export class AppointmentService {
         'healer.fullName',
         'customer.fullName',
         'room.name',
+        'healer.id',
+        'customer.id',
+        'room.id',
       ])
       .orderBy('appointment.id', 'ASC');
 

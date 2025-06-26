@@ -47,7 +47,6 @@ const CreateItemRow = ({
 
     fetchData();
   }, [pageIndex, pageSize]);
-
   return (
     <div>
       {isService ? (

@@ -37,7 +37,13 @@ export class ModulesService {
       .orderBy('module.id', 'ASC');
 
     if (paginationDto) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(module.name) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [modules, total] = await queryBuilder
         .skip(page * limit)
@@ -58,7 +64,13 @@ export class ModulesService {
       .orderBy('module.id', 'ASC');
 
     if (paginationDto) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.andWhere('LOWER(module.name) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [modules, total] = await queryBuilder
         .skip(page * limit)

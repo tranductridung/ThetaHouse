@@ -15,12 +15,14 @@ import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type OrderProps = {
   onDetail: (id: number) => void;
-  onEdit: (order: OrderType) => void;
+  onCancel: (id: number) => void;
+  handleExport: (id: number) => void;
 };
 
 export const orderColumns = ({
   onDetail,
-  onEdit,
+  onCancel,
+  handleExport,
 }: OrderProps): ColumnDef<OrderType>[] => [
   {
     accessorKey: "id",
@@ -99,19 +101,33 @@ export const orderColumns = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                onEdit(row.original);
-              }}
-            >
-              Edit
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onClick={() => {
                 onDetail(row.original.id);
               }}
             >
               More
             </DropdownMenuItem>
+
+            {row.original.status !== "Cancelled" ? (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onCancel(row.original.id);
+                  }}
+                >
+                  Cancel
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    handleExport(row.original.id);
+                  }}
+                >
+                  Export order
+                </DropdownMenuItem>
+              </>
+            ) : (
+              ""
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

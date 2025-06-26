@@ -4,7 +4,6 @@ import {
   IsDate,
   IsEnum,
   IsInt,
-  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
@@ -35,10 +34,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   startAt?: Date;
 
-  @Type(() => Number)
-  @IsNumber()
-  @IsPositive()
-  duration?: number;
+  // @Type(() => Number)
+  // @IsNumber()
+  // @IsPositive()
+  // duration?: number;
 
   @Type(() => Number)
   @IsInt()

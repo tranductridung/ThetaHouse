@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { OrderService } from './order.service';
+import { OrderService } from 'src/common/dtos/pagination.dto';
 import { OrderController } from './order.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';

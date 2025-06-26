@@ -9,7 +9,7 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { OrderService } from './order.service';
+import { OrderService } from 'src/common/dtos/pagination.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';

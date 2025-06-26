@@ -264,7 +264,6 @@ export class OrderService {
       undefined,
       isActive ? true : undefined,
     );
-
     return { ...order, items: items };
   }
 

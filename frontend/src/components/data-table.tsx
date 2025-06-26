@@ -56,6 +56,7 @@ interface DataTableProps<TData, TValue> {
   total: number;
   setPageIndex: (page: number) => void;
   setPageSize: (size: number) => void;
+  title?: string | null;
 }
 
 export function DataTable<TData, TValue>({
@@ -67,6 +68,7 @@ export function DataTable<TData, TValue>({
   total,
   setPageIndex,
   setPageSize,
+  title,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
   const table = useReactTable({
@@ -144,7 +146,9 @@ export function DataTable<TData, TValue>({
           {onAdd ? (
             <Button variant="outline" size="sm" onClick={onAdd}>
               <PlusIcon />
-              <span className="hidden lg:inline">Add Section</span>
+              <span className="hidden lg:inline">
+                {title ? title : "Add Section"}{" "}
+              </span>
             </Button>
           ) : (
             ""

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  ItemSourceType,
+  TypeOfSource,
   TypeOfTransaction,
   TransactionStatus,
 } from "../constants/constants";
@@ -15,7 +15,7 @@ export const transactionSchema = baseTransactionSchema.extend({
   id: z.number(),
   type: z.enum(TypeOfTransaction),
   sourceId: z.number().gte(0),
-  sourceType: z.enum(ItemSourceType),
+  sourceType: z.enum(TypeOfSource),
   totalAmount: z.number().gte(0),
   status: z.enum(TransactionStatus),
   creator: z.object({

@@ -40,7 +40,13 @@ export class PartnerService {
       .orderBy('partner.id', 'ASC');
 
     if (paginationDto) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(partner.fullName) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [partners, total] = await queryBuilder
         .skip(page * limit)
@@ -61,7 +67,13 @@ export class PartnerService {
       .orderBy('partner.id', 'ASC');
 
     if (paginationDto) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.andWhere('LOWER(partner.fullName) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [partners, total] = await queryBuilder
         .skip(page * limit)

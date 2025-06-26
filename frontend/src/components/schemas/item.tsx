@@ -10,6 +10,7 @@ export const baseItemSchema = z.object({
 export const itemSchema = baseItemSchema.extend({
   id: z.number(),
   sourceType: z.string(),
+  sourceId: z.number(),
   totalAmount: z.number(),
   finalAmount: z.number(),
   status: z.enum(ItemStatus),
@@ -21,6 +22,7 @@ export const itemSchema = baseItemSchema.extend({
   discount: z.object({
     code: z.string(),
   }),
+  isActive: z.boolean(),
 });
 
 export const itemDraftSchema = baseItemSchema.extend({
@@ -29,15 +31,13 @@ export const itemDraftSchema = baseItemSchema.extend({
   name: z.string(),
   description: z.string(),
   unitPrice: z.number(),
-  discountAmount: z.number().optional(),
+  discountAmount: z.number(),
   subtotal: z.number(),
 });
 
 export const createItemSchema = baseItemSchema.extend({
   discountId: z.number().optional(),
-  quantity: z.number(),
   itemableId: z.number(),
-  itemableType: z.enum(ItemableType),
 });
 
 export type ItemType = z.infer<typeof itemSchema>;

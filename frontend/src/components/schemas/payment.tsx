@@ -1,11 +1,5 @@
 import { z } from "zod";
-import {
-  ItemSourceType,
-  PaymentMethod,
-  TransactionStatus,
-  TypeOfPartner,
-  TypeOfTransaction,
-} from "../constants/constants";
+import { PaymentMethod, TypeOfPartner } from "../constants/constants";
 
 export const basePaymentSchema = z.object({
   amount: z.number().gte(0),
@@ -32,14 +26,6 @@ export const createPaymentSchema = basePaymentSchema.extend({
 });
 
 export const paymentDraftSchema = basePaymentSchema.extend({
-  transaction: z.object({
-    id: z.number(),
-    type: z.enum(TypeOfTransaction),
-    sourceType: z.enum(ItemSourceType),
-    totalAmount: z.number().gte(0),
-    paidAmount: z.number().gte(0),
-    status: z.enum(TransactionStatus),
-  }),
   customer: z.object({
     id: z.number(),
     type: z.enum(TypeOfPartner),

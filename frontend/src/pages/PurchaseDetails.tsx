@@ -17,40 +17,77 @@ import { getSourceStatusStyle } from "@/components/styles/SourceStatus";
 import { getTransactionStatusStyle } from "@/components/styles/TransactionStatus";
 import type { TransactionType } from "@/components/schemas/transaction";
 import DisplayUser from "@/components/DisplayUser";
+import { useItemActions } from "@/hooks/useItemAction";
+import { toast } from "sonner";
+import type { ItemDraftType } from "@/components/schemas/item";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import AddItemForm from "@/components/forms/AddItemForm";
+import { useSourceActions } from "@/hooks/useSourceAction";
+import type { PaymentDraftType } from "@/components/schemas/payment";
+import AddPaymentForm from "@/components/forms/AddPaymentForm";
 
 const PurchaseDetails = () => {
   const { id } = useParams();
   const [purchase, setPurchase] = useState<PurchaseDetailType | null>(null);
   const [transaction, setTransaction] = useState<TransactionType | null>(null);
+  const [isShowAddPayment, setIsShowAddPayment] = useState(false);
+  const [isShowAddItem, setIsShowAddItem] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const purchaseReponse = await api.get(`/purchases/${id}`);
+      setPurchase(purchaseReponse.data.purchase);
+
+      const transactionReponse = await api.get(`/transactions/purchases/${id}`);
+      setTransaction(transactionReponse.data.transaction);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const purchaseReponse = await api.get(`/purchases/${id}`);
-        setPurchase(purchaseReponse.data.purchase);
-
-        const transactionReponse = await api.get(
-          `/transactions/purchases/${id}`
-        );
-        setTransaction(transactionReponse.data.transaction);
-      } catch (error) {
-        handleAxiosError(error);
-      }
-    };
-
     fetchData();
   }, []);
 
-  const filteredColumns = itemColumns.filter((col) => {
-    if (
-      col.header === "Session" ||
-      col.header === "Discount Code" ||
-      col.header === "Bonus Session"
-    ) {
-      return false;
+  const { handleAddItem, handleRemove, handleExportImport } =
+    useItemActions(fetchData);
+  const { handleAddPayment } = useSourceActions(fetchData);
+
+  const onExportImport = () => {
+    console.log("on Export Import");
+  };
+
+  const onRemove = (itemId: number) => {
+    console.log("on remove");
+    if (!purchase) {
+      toast.error("Purchase ID is required!");
+      return;
     }
-    return true;
-  });
+    handleRemove(itemId, purchase.id, "Purchase");
+  };
+
+  const openAddItem = () => {
+    setIsShowAddItem(true);
+  };
+
+  const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
+    await handleAddPayment(paymentDraftType, transaction.id);
+    setIsShowAddPayment(false);
+  };
+
+  const openPayment = () => {
+    setIsShowAddPayment(true);
+  };
+
+  const onAddItem = (itemDraftType: ItemDraftType) => {
+    console.log("add item", itemDraftType);
+    if (!purchase) {
+      toast.error("Purchase ID is required!");
+      return;
+    }
+    handleAddItem(itemDraftType, purchase?.id, "Purchase");
+    setIsShowAddItem(false);
+  };
 
   return (
     <>
@@ -76,18 +113,24 @@ const PurchaseDetails = () => {
 
         <div className="flex flex-col space-y-5">
           <DataTable
-            columns={filteredColumns}
+            columns={itemColumns({
+              onRemove,
+              onExportImport,
+            })}
+            onAdd={purchase?.status !== "Cancelled" ? openAddItem : undefined}
             data={purchase?.items ?? []}
             pageIndex={0}
             pageSize={purchase?.items?.length ?? 10}
             total={purchase?.items?.length ?? 0}
             setPageIndex={() => {}}
             setPageSize={() => {}}
+            title={"Add Item"}
           ></DataTable>
 
           <div className="border-1 my-4"></div>
 
           <DataTable
+            onAdd={purchase?.status !== "Cancelled" ? openPayment : undefined}
             columns={paymentColumns}
             data={transaction?.payments ?? []}
             pageIndex={0}
@@ -95,6 +138,7 @@ const PurchaseDetails = () => {
             total={purchase?.items?.length ?? 0}
             setPageIndex={() => {}}
             setPageSize={() => {}}
+            title={"Add Payment"}
           ></DataTable>
         </div>
 
@@ -129,7 +173,9 @@ const PurchaseDetails = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="border-b-2 pb-3">Order Summary</CardTitle>
+                <CardTitle className="border-b-2 pb-3">
+                  Purchase Summary
+                </CardTitle>
               </CardHeader>
 
               <CardContent className="flex justify-between">
@@ -162,9 +208,14 @@ const PurchaseDetails = () => {
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="flex justify-between ">
+              <CardContent className="flex justify-between">
                 <h1>Paid: </h1>
                 <p>{transaction?.paidAmount}</p>
+              </CardContent>
+
+              <CardContent className="flex justify-between">
+                <h1>Remain: </h1>
+                <p>{purchase?.finalAmount - transaction?.paidAmount}</p>
               </CardContent>
 
               <CardFooter className="flex justify-between border-t-2 pt-2">
@@ -174,6 +225,38 @@ const PurchaseDetails = () => {
             </Card>
           </div>
         </div>
+
+        {/* Add item dialog */}
+        <Dialog
+          open={isShowAddItem}
+          modal={false}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsShowAddItem(false);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogTitle></DialogTitle>
+            <AddItemForm onSubmit={onAddItem} isService={false} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Add payment dialog */}
+        <Dialog
+          open={isShowAddPayment}
+          modal={false}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setIsShowAddPayment(false);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogTitle></DialogTitle>
+            <AddPaymentForm onSubmit={onAddPayment} />
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

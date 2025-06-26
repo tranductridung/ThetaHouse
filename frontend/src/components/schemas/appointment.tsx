@@ -1,20 +1,23 @@
 import { z } from "zod";
-import { TypeOfAppointment, TypeOfPartner } from "../constants/constants";
+import { AppointmentStatus, TypeOfAppointment } from "../constants/constants";
 import { moduleSchema } from "./module";
-import { description } from "../chart-area-interactive";
 
 export const baseAppointmentSchema = z.object({});
-
 export const appointmentSchema = baseAppointmentSchema.extend({
   id: z.number(),
   customer: z.object({
+    id: z.number(),
     fullName: z.string(),
   }),
   item: z.object({ id: z.number() }),
   type: z.enum(TypeOfAppointment),
   startAt: z.date(),
-  room: z.object({ name: z.string() }),
+  room: z.object({
+    id: z.number(),
+    name: z.string(),
+  }),
   healer: z.object({
+    id: z.number(),
     fullName: z.string(),
   }),
   duration: z.number(),
@@ -23,55 +26,49 @@ export const appointmentSchema = baseAppointmentSchema.extend({
       name: z.string(),
     })
   ),
+  note: z.string(),
+  status: z.enum(AppointmentStatus),
 });
 
-export const createAppointmentSchema = baseAppointmentSchema.extend({
-  itemId: z.number(),
+export const editAppointmentSchema = baseAppointmentSchema.extend({
   note: z.string().optional(),
   customerId: z.number(),
   type: z.enum(TypeOfAppointment),
   startAt: z.date().optional(),
   roomId: z.number().optional(),
   healerId: z.number().optional(),
-  duration: z.number().optional(),
   moduleIds: z.array(z.number()).optional(),
 });
-export const editAppointmentSchema = baseAppointmentSchema.extend({
-  note: z.string().optional(),
-  customerId: z.number(),
-  startAt: z.date().optional(),
-  roomId: z.number().optional(),
-  healerId: z.number().optional(),
-  duration: z.number().optional(),
-  moduleIds: z.array(z.number()).optional(),
+
+export const createAppointmentSchema = editAppointmentSchema.extend({
+  // itemId: z.number(),
 });
 
 export const appointmentDraftSchema = z.object({
   note: z.string().optional(),
+  // item: z
+  //   .object({
+  //     id: z.number(),
+  //   })
+  //   .optional(),
   customer: z.object({
     id: z.number(),
-    type: z.enum(TypeOfPartner),
     fullName: z.string(),
-    email: z.string(),
-    phoneNumber: z.string(),
   }),
   healer: z
     .object({
       id: z.number(),
       fullName: z.string(),
-      email: z.string(),
-      phoneNumber: z.string(),
     })
     .optional(),
-  room: z.object({ name: z.string(), description: z.string() }),
-
-  id: z.number(),
+  room: z.object({ name: z.string(), id: z.number() }).optional(),
+  // id: z.number().optional(),
   startAt: z.date().optional(),
-  duration: z.number().optional(),
   modules: z.array(moduleSchema).optional(),
   type: z.enum(TypeOfAppointment),
 });
 
 export type AppointmentType = z.infer<typeof appointmentSchema>;
 export type CreateAppointmentType = z.infer<typeof createAppointmentSchema>;
+export type EditAppointmentType = z.infer<typeof editAppointmentSchema>;
 export type AppointmentDraftType = z.infer<typeof appointmentDraftSchema>;

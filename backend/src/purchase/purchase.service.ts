@@ -168,6 +168,7 @@ export class PurchaseService {
         'purchase.quantity',
         'purchase.totalAmount',
         'purchase.finalAmount',
+        'purchase.status',
         'purchase.discountAmount',
         'purchase.note',
         'creator.fullName',

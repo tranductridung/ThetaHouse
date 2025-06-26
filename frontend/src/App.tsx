@@ -31,6 +31,7 @@ import ConsignmentDetails from "./pages/ConsignmentDetails";
 import CreatePurchase from "./pages/CreatePurchase";
 import CreateOrder from "./pages/CreateOrder";
 import CreateConsignment from "./pages/CreateConsignment";
+import CreateAppointment from "./pages/CreateAppointment";
 
 const App = () => {
   return (
@@ -48,6 +49,7 @@ const App = () => {
             <Route path="items" element={<Item />} />
 
             <Route path="appointments/scheduled" element={<Appointment />} />
+            <Route path="appointments/create" element={<CreateAppointment />} />
 
             <Route path="/finance/payments" element={<Payment />} />
             <Route path="/finance/transactions" element={<Transaction />} />
