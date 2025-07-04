@@ -121,6 +121,7 @@ export class InventoryService {
         product.quantity += createItemInventoryDto.quantity;
         break;
     }
+
     await manager.save(product);
 
     // Create inventory

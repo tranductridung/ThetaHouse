@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   ConsignmentType,
-  ItemableType,
   SourceStatus,
   TypeOfPartner,
 } from "../constants/constants";
@@ -46,7 +45,6 @@ export const orderDraftSchema = z.object({
 export const createOrderSchema = z.object({
   note: z.string().optional(),
   discountId: z.number().optional(),
-  // discount: discountSchema.optional(),
   customerId: z.number(),
   items: z.array(createItemSchema),
 });
@@ -71,19 +69,20 @@ export const purchaseDraftSchema = z.object({
     email: z.string(),
     phoneNumber: z.string(),
   }),
-  items: z.array(
-    z.object({
-      itemableType: z.enum(ItemableType),
-      quantity: z.number(),
-      name: z.string(),
-      itemableId: z.number(),
-      description: z.string(),
-      unitPrice: z.number(),
-      subtotal: z.number(),
-    })
-  ),
+  // items: z.array(
+  //   z.object({
+  //     itemableType: z.enum(ItemableType),
+  //     quantity: z.number(),
+  //     name: z.string(),
+  //     itemableId: z.number(),
+  //     description: z.string(),
+  //     unitPrice: z.number(),
+  //     subtotal: z.number(),
+  //   })
+  // ),
+  items: z.array(itemDraftSchema),
 });
-export const createPurchaseSchema = baseSourceSchema.extend({
+export const createPurchaseSchema = z.object({
   note: z.string().optional(),
   discountAmount: z.number().optional(),
   supplierId: z.number(),
@@ -102,41 +101,48 @@ export const consignmentSchema = baseSourceSchema.extend({
   }),
   type: z.enum(ConsignmentType),
 });
-export const createConsignmentSchema = baseSourceSchema.extend({
+export const createConsignmentSchema = z.object({
   type: z.enum(ConsignmentType),
   note: z.string().optional(),
   commissionRate: z.number().gte(0).lte(100).optional(),
   partnerId: z.number(),
   items: z.array(createItemSchema),
 });
-export const consignmentDraftSchema = z.object({
-  type: z.enum(ConsignmentType),
-  discountAmount: z.number(),
-  commissionRate: z.number().gte(0).lte(100).optional(),
-  subtotal: z.number(),
-  quantity: z.number(),
-  note: z.string().optional(),
-  partner: z
-    .object({
-      id: z.number(),
-      type: z.enum(TypeOfPartner),
-      fullName: z.string(),
-      email: z.string(),
-      phoneNumber: z.string(),
-    })
-    .optional(),
-  items: z.array(
-    z.object({
-      itemableType: z.enum(ItemableType),
-      quantity: z.number(),
-      name: z.string(),
-      itemableId: z.number(),
-      description: z.string(),
-      unitPrice: z.number(),
-      subtotal: z.number(),
-    })
-  ),
-});
+
+export const consignmentDraftSchema = z
+  .object({
+    type: z.enum(ConsignmentType),
+    discountAmount: z.number(),
+    commissionRate: z.number().gte(0).lte(100).optional(),
+    subtotal: z.number(),
+    quantity: z.number(),
+    note: z.string().optional(),
+    partner: z
+      .object({
+        id: z.number(),
+        type: z.enum(TypeOfPartner),
+        fullName: z.string(),
+        email: z.string(),
+        phoneNumber: z.string(),
+      })
+      .optional(),
+    items: z.array(
+      itemDraftSchema.extend({
+        defaultPurchasePrice: z.number(),
+        defaultOrderPrice: z.number(),
+      })
+    ),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.partner) {
+      ctx.addIssue({
+        path: ["partner"],
+        code: z.ZodIssueCode.custom,
+        message: "Partner is required.",
+      });
+      return;
+    }
+  });
 // Order
 export type OrderType = z.infer<typeof orderSchema>;
 export type CreateOrderType = z.infer<typeof createOrderSchema>;

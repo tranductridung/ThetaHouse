@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import api from "@/api/api";
-import { handleAxiosError } from "@/lib/utils";
+import { formatCurrency, handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { PurchaseDetailType } from "@/components/schemas/sourceDetail";
@@ -25,6 +25,7 @@ import AddItemForm from "@/components/forms/AddItemForm";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import type { PaymentDraftType } from "@/components/schemas/payment";
 import AddPaymentForm from "@/components/forms/AddPaymentForm";
+import ExportImportForm from "@/components/forms/ExportImportForm";
 
 const PurchaseDetails = () => {
   const { id } = useParams();
@@ -32,6 +33,10 @@ const PurchaseDetails = () => {
   const [transaction, setTransaction] = useState<TransactionType | null>(null);
   const [isShowAddPayment, setIsShowAddPayment] = useState(false);
   const [isShowAddItem, setIsShowAddItem] = useState(false);
+  const [exportImportForm, setExportImportForm] = useState<{
+    selectedItemId: number | null;
+    isShow: boolean;
+  }>({ selectedItemId: null, isShow: false });
 
   const fetchData = async () => {
     try {
@@ -49,13 +54,9 @@ const PurchaseDetails = () => {
     fetchData();
   }, []);
 
-  const { handleAddItem, handleRemove, handleExportImport } =
+  const { handleAddItem, handleRemove, handleExportImportItem } =
     useItemActions(fetchData);
   const { handleAddPayment } = useSourceActions(fetchData);
-
-  const onExportImport = () => {
-    console.log("on Export Import");
-  };
 
   const onRemove = (itemId: number) => {
     console.log("on remove");
@@ -89,6 +90,25 @@ const PurchaseDetails = () => {
     setIsShowAddItem(false);
   };
 
+  const onExportImport = (quantity: number) => {
+    if (!exportImportForm.selectedItemId) {
+      toast.error("Item ID is required to export/import product!");
+      return;
+    }
+
+    handleExportImportItem(
+      exportImportForm.selectedItemId,
+      "Purchase",
+      quantity
+    );
+    setExportImportForm({ isShow: false, selectedItemId: null });
+  };
+
+  const onOpenExportImport = (itemId: number) => {
+    setExportImportForm({ isShow: true, selectedItemId: itemId });
+  };
+
+  console.log(purchase);
   return (
     <>
       <div className="p-4">
@@ -115,7 +135,7 @@ const PurchaseDetails = () => {
           <DataTable
             columns={itemColumns({
               onRemove,
-              onExportImport,
+              onOpenExportImport,
             })}
             onAdd={purchase?.status !== "Cancelled" ? openAddItem : undefined}
             data={purchase?.items ?? []}
@@ -185,17 +205,17 @@ const PurchaseDetails = () => {
 
               <CardContent className="flex justify-between">
                 <h1>Subtotal: </h1>
-                <p>{purchase?.totalAmount ?? 0}</p>
+                <p>{formatCurrency(purchase?.totalAmount ?? 0)}</p>
               </CardContent>
 
               <CardContent className="flex justify-between">
                 <h1>Discount: </h1>
-                <p>{purchase?.discountAmount ?? 0}</p>
+                <p>{formatCurrency(purchase?.discountAmount ?? 0)}</p>
               </CardContent>
 
               <CardFooter className="flex justify-between border-t-2 pt-2 ">
                 <h1 className="font-bold">Total: </h1>
-                <p>{purchase?.finalAmount ?? 0}</p>
+                <p>{formatCurrency(purchase?.finalAmount ?? 0)}</p>
               </CardFooter>
             </Card>
           </div>
@@ -210,17 +230,21 @@ const PurchaseDetails = () => {
 
               <CardContent className="flex justify-between">
                 <h1>Paid: </h1>
-                <p>{transaction?.paidAmount}</p>
+                <p>{formatCurrency(transaction?.paidAmount)}</p>
               </CardContent>
 
               <CardContent className="flex justify-between">
                 <h1>Remain: </h1>
-                <p>{purchase?.finalAmount - transaction?.paidAmount}</p>
+                <p>
+                  {formatCurrency(
+                    purchase?.finalAmount - transaction?.paidAmount
+                  )}
+                </p>
               </CardContent>
 
               <CardFooter className="flex justify-between border-t-2 pt-2">
                 <h1 className="font-bold">Total: </h1>
-                <p>{purchase?.finalAmount}</p>
+                <p>{formatCurrency(purchase?.finalAmount)}</p>
               </CardFooter>
             </Card>
           </div>
@@ -255,6 +279,25 @@ const PurchaseDetails = () => {
           <DialogContent>
             <DialogTitle></DialogTitle>
             <AddPaymentForm onSubmit={onAddPayment} />
+          </DialogContent>
+        </Dialog>
+
+        {/* Export or Import item */}
+        <Dialog
+          open={exportImportForm.isShow}
+          modal={false}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setExportImportForm({
+                isShow: false,
+                selectedItemId: null,
+              });
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogTitle></DialogTitle>
+            <ExportImportForm onSubmit={onExportImport} />
           </DialogContent>
         </Dialog>
       </div>

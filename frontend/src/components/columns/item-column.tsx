@@ -17,14 +17,14 @@ import type { SourceType } from "../constants/constants";
 type ItemColumnsProps = {
   onCreateAppointment?: (id: number) => void;
   onRemove: (itemId: number, sourceId: number, sourceType: SourceType) => void;
-  onExportImport: (id: number) => void;
+  onOpenExportImport: (itemId: number) => void;
   consignmentType?: "In" | "Out" | undefined;
 };
 
 export const itemColumns = ({
   onCreateAppointment,
   onRemove,
-  onExportImport,
+  onOpenExportImport,
   consignmentType,
 }: ItemColumnsProps): ColumnDef<ItemType>[] => {
   const getAction = (sourceType: SourceType) => {
@@ -53,7 +53,7 @@ export const itemColumns = ({
     },
     {
       accessorFn: (row) =>
-        (Number(row.snapshotData?.unitPrice) || 0).toLocaleString("vi-VN", {
+        (Number(row?.unitPrice) || 0).toLocaleString("vi-VN", {
           style: "currency",
           currency: "VND",
         }),
@@ -150,7 +150,7 @@ export const itemColumns = ({
               {row.original.itemableType === "Product" &&
                 !["Imported", "Exported"].includes(row.original.status) && (
                   <DropdownMenuItem
-                    onClick={() => onExportImport(row.original.id)}
+                    onClick={() => onOpenExportImport(row.original.id)}
                   >
                     {getAction(row.original.sourceType)}
                   </DropdownMenuItem>

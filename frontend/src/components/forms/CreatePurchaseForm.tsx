@@ -114,12 +114,13 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
       itemableType: "Product",
       name: product.name,
       description: product.description,
-      unitPrice: product.unitPrice,
-      subtotal: product.unitPrice,
+      unitPrice: product.defaultPurchasePrice,
+      subtotal: product.defaultPurchasePrice,
+      discountAmount: 0,
     });
 
     setValue("quantity", watchedQuantity + 1);
-    setValue("subtotal", watchedSubtotal + product.unitPrice);
+    setValue("subtotal", watchedSubtotal + product.defaultPurchasePrice);
 
     toast.success(`Add product "${product.name}" success!`);
   };
@@ -155,6 +156,21 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
       subtotal: purchaseSubtotal,
     };
   };
+
+  const handleChangeUnitPrice = (index: number, unitPrice: number) => {
+    const item = form.getValues(`items.${index}`);
+
+    const itemSubtotal = unitPrice * item.quantity;
+
+    const allItems = form.getValues("items");
+    const purchaseSubtotal = allItems.reduce((acc, item, i) => {
+      return acc + (i === index ? unitPrice : item.unitPrice);
+    }, 0);
+
+    form.setValue(`subtotal`, purchaseSubtotal);
+    form.setValue(`items.${index}.subtotal`, itemSubtotal);
+  };
+
   useEffect(() => {
     const result = calculatePurchase();
 
@@ -179,107 +195,120 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onInternalSubmit)}
-        className="space-y-4 text-xl  h-full w-full"
+        className="space-y-4 text-xl h-full w-full"
       >
-        <div className="flex md:flex-row flex-col">
+        <div className="flex md:flex-row flex-col text-sm md:text-xl">
           {/* Item Lists */}
-          {watchedItems.length === 0 ? (
-            <div className="mb-5 px-5">
-              <Card className="mb-5 px-5 justify-center items-center">
-                <CardContent>
+          <div className=" flex flex-1/2 space-y-5">
+            {watchedItems.length === 0 ? (
+              <div className="mb-5 px-5 w-full">
+                <Card className=" justify-center items-center w-full h-full">
+                  <CardContent>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => {
+                        setIsShowAddItem(true);
+                      }}
+                      className="text-xl m-auto"
+                    >
+                      Add New Item
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
+                  {/* Add new item button */}
                   <Button
                     type="button"
-                    variant="link"
                     onClick={() => {
                       setIsShowAddItem(true);
                     }}
-                    className="text-xl m-auto"
+                    className="w-fit rounded-full p-6 text-right"
                   >
-                    Add New Item
+                    <Plus />
+                    {/* Add New Item */}
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
-                {/* Add new item button */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsShowAddItem(true);
-                  }}
-                  className="w-fit rounded-full p-6 text-right"
-                >
-                  <Plus />
-                  {/* Add New Item */}
-                </Button>
 
-                {fields.map((item, index) => (
-                  <Card key={item.id} className="w-full">
-                    <CardHeader>
-                      <CardTitle>
-                        {item.itemableType} {item.name}
-                      </CardTitle>
-                      <CardDescription>{item.description}</CardDescription>
-                      <CardAction>
-                        <div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => handleRemoveItem(index)}
-                            className="hover:bg-red-200 hover:text-red-500"
-                          >
-                            <X size={28} />
-                          </Button>
-                        </div>
-                      </CardAction>
-                    </CardHeader>
+                  {fields.map((item, index) => (
+                    <Card key={item.id} className="w-full">
+                      <CardHeader>
+                        <CardTitle>
+                          {item.itemableType} {item.name}
+                        </CardTitle>
+                        <CardDescription>{item.description}</CardDescription>
+                        <CardAction>
+                          <div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleRemoveItem(index)}
+                              className="hover:bg-red-200 hover:text-red-500"
+                            >
+                              <X size={28} />
+                            </Button>
+                          </div>
+                        </CardAction>
+                      </CardHeader>
 
-                    {/* Quanity */}
-                    <CardContent className="flex justify-between">
-                      <span>Quantity: </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register(`items.${index}.quantity`, {
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const quantity = Number(e.target.value);
-                            handleQuantityChange(index, quantity);
-                          },
-                        })}
-                        className="w-20 inline-block"
-                      />
-                    </CardContent>
+                      {/* Quanity */}
+                      <CardContent className="flex justify-between">
+                        <span>Quantity: </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.quantity`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const quantity = Number(e.target.value);
+                              handleQuantityChange(index, quantity);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                      </CardContent>
 
-                    {/* Unit Price */}
-                    <CardContent className="flex justify-between">
-                      <span>Unit Price</span>
-                      <span>{item.unitPrice}</span>{" "}
-                    </CardContent>
+                      {/* Unit Price */}
+                      <CardContent className="flex justify-between">
+                        <span>Unit Price</span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.unitPrice`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const unitPrice = Number(e.target.value);
+                              handleChangeUnitPrice(index, unitPrice);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                      </CardContent>
 
-                    {/* Subtotal */}
-                    <CardContent className="flex justify-between bpurchase-t-2 pt-2">
-                      <span>Subtotal:</span>
-                      <span>{watchedItems?.[index]?.subtotal || 0}</span>
-                    </CardContent>
+                      {/* Subtotal */}
+                      <CardContent className="flex justify-between bpurchase-t-2 pt-2">
+                        <span>Subtotal:</span>
+                        <span>{watchedItems?.[index]?.subtotal || 0}</span>
+                      </CardContent>
 
-                    {/* Item Discount */}
+                      {/* Item Discount */}
 
-                    {/* Item Total */}
-                    <CardContent className="flex justify-between bpurchase-t-2 pt-2">
-                      <h1 className="font-bold">Total: </h1>
-                      <span>{watchedItems?.[index]?.subtotal}</span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
+                      {/* Item Total */}
+                      <CardContent className="flex justify-between bpurchase-t-2 pt-2">
+                        <h1 className="font-bold">Total: </h1>
+                        <span>{watchedItems?.[index]?.subtotal}</span>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* General Information */}
-          <div className="flex flex-1/3 flex-col space-y-5 px-5">
+          <div className="flex flex-1/2 flex-col space-y-5 px-5">
             {/* Note */}
             <FormField
               control={form.control}
@@ -305,7 +334,7 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
                   <FormControl>
                     <Input
                       type="number"
-                      min={1}
+                      min={0}
                       {...form.register(`discountAmount`, {
                         valueAsNumber: true,
                       })}

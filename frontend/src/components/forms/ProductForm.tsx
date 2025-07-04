@@ -38,7 +38,8 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
     defaultValues: {
       name: productData?.name,
       description: productData?.description,
-      unitPrice: productData?.unitPrice,
+      defaultOrderPrice: productData?.defaultOrderPrice,
+      defaultPurchasePrice: productData?.defaultPurchasePrice,
       unit: productData?.unit,
     },
   });
@@ -87,14 +88,44 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
             )}
           />
 
+          {/* Unit */}
+          <FormField
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Unit</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a unit of product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup className="w-full">
+                      <SelectItem value="Piece">Piece</SelectItem>
+                      <SelectItem value="Kg">Kg</SelectItem>
+                      <SelectItem value="Box">Box</SelectItem>
+                      <SelectItem value="Liter">Liter</SelectItem>
+                      <SelectItem value="Package">Package</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="flex flex-col space-y-5 md:flex-row md:space-x-5 md:space-y-0">
-            {/* Unit Price */}
+            {/* Default Order Price */}
             <FormField
               control={form.control}
-              name="unitPrice"
+              name="defaultOrderPrice"
               render={({ field }) => (
-                <FormItem className="w-full ">
-                  <FormLabel>Unit Price</FormLabel>
+                <FormItem className="w-full md:flex-1/2">
+                  <FormLabel>Default Order Price</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -113,31 +144,26 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
               )}
             />
 
-            {/* Unit */}
+            {/* Default Order Price */}
             <FormField
               control={form.control}
-              name="unit"
+              name="defaultPurchasePrice"
               render={({ field }) => (
-                <FormItem className="w-full md:w-3/5">
-                  <FormLabel>Unit</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a unit of product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup className="w-full">
-                        <SelectItem value="Piece">Piece</SelectItem>
-                        <SelectItem value="Kg">Kg</SelectItem>
-                        <SelectItem value="Box">Box</SelectItem>
-                        <SelectItem value="Liter">Liter</SelectItem>
-                        <SelectItem value="Package">Package</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-
+                <FormItem className="w-full md:flex-1/2 ">
+                  <FormLabel>Default Purchase Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value)
+                        )
+                      }
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

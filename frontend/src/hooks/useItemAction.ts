@@ -1,17 +1,52 @@
 import api from "@/api/api";
-import type { SourceType } from "@/components/constants/constants";
+import type {
+  SourceType,
+  TypeOfConsignment,
+} from "@/components/constants/constants";
 import type { AppointmentDraftType } from "@/components/schemas/appointment";
 import type { CreateItemType, ItemDraftType } from "@/components/schemas/item";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const useItemActions = (refetch: () => void) => {
-  const handleExportImport = async (
+  const handleExportImportItem = async (
     itemId: number,
-    sourceId: number,
-    sourceType: SourceType
+    sourceType: SourceType,
+    quantity?: number,
+    consignmentType?: TypeOfConsignment
   ) => {
-    console.log("Handle Export Import", itemId, sourceId, sourceType);
+    console.log("handleExportImportItem", quantity);
+    let url;
+    let action;
+    switch (sourceType) {
+      case "Order":
+        url = `orders/items/${itemId}/export`;
+        action = "Export";
+        break;
+      case "Purchase":
+        url = `purchases/items/${itemId}/import`;
+        action = "Import";
+        break;
+      case "Consignment":
+        url = `consignments/items/${itemId}/handle`;
+        action = consignmentType === "In" ? "Import" : "Export";
+        break;
+    }
+
+    if (!url) {
+      throw new Error(`Invalid source!`);
+    }
+
+    try {
+      const response = await api.post(url, { quantity });
+      console.log(response);
+      refetch();
+      toast.success(`${action} item success!`);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+
+    console.log("Handle Export Import", itemId, sourceType);
   };
 
   const handleRemove = async (
@@ -89,6 +124,6 @@ export const useItemActions = (refetch: () => void) => {
     handleAddItem,
     handleRemove,
     handleCreateAppointmnet,
-    handleExportImport,
+    handleExportImportItem,
   };
 };

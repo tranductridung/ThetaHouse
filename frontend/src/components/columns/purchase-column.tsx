@@ -15,12 +15,12 @@ import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type PurchaseProps = {
   onDetail: (id: number) => void;
-  onEdit: (order: PurchaseType) => void;
+  onImport: (id: number) => void;
 };
 
 export const purchaseColumns = ({
   onDetail,
-  onEdit,
+  onImport,
 }: PurchaseProps): ColumnDef<PurchaseType>[] => [
   {
     accessorKey: "id",
@@ -95,21 +95,20 @@ export const purchaseColumns = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                onEdit(row.original);
-              }}
-            >
-              Edit
-            </DropdownMenuItem>
-            {/* <DropdownMenuItem>Delete</DropdownMenuItem> */}
-
-            <DropdownMenuItem
-              onClick={() => {
                 console.log(row.original);
 
                 onDetail(row.original.id);
               }}
             >
-              More
+              View Purchase
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => {
+                onImport(row.original.id);
+              }}
+            >
+              Import Purchase
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

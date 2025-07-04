@@ -130,10 +130,18 @@ const ServiceForm = ({ onSubmit, type, serviceData }: ServiceProps) => {
                   <FormLabel>Price</FormLabel>
                   <FormControl>
                     <Input
-                      type="text"
+                      {...field}
+                      type="number"
+                      min={1}
                       placeholder="Price of service"
                       className="w-full"
-                      {...field}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value)
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage />

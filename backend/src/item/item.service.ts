@@ -30,7 +30,6 @@ import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { loadItemable } from './helpers/itemable.helper';
 import { SnapshotType } from 'src/common/types/item.types';
-import { Product } from 'src/product/entities/product.entity';
 import { Service } from 'src/service/entities/service.entity';
 import { DiscountService } from 'src/discount/discount.service';
 import { loadEntitySource, loadSource } from './helpers/source.helper';
@@ -88,7 +87,7 @@ export class ItemService {
       : createItemDto.quantity;
 
     // Calculate totalAmount and finalAmount
-    const totalAmount = itemable.unitPrice * updatedQuantity;
+    const totalAmount = createItemDto.unitPrice * updatedQuantity;
 
     const finalAmount = await this.calculateDiscountAmount(
       totalAmount,
@@ -96,15 +95,11 @@ export class ItemService {
     );
 
     // Create snapshot
-    let snapshotData: SnapshotType;
-    if (createItemDto.itemableType === ItemableType.PRODUCT) {
-      snapshotData = {
-        unitPrice: (itemable as Product).unitPrice,
-      };
-    } else {
+    let snapshotData: SnapshotType | undefined = undefined;
+
+    if (createItemDto.itemableType === ItemableType.SERVICE) {
       snapshotData = {
         duration: (itemable as Service).duration,
-        unitPrice: (itemable as Service).unitPrice,
         session: (itemable as Service).session,
         bonusSession: (itemable as Service).bonusSession,
       };

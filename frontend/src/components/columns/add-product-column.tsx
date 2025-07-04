@@ -39,11 +39,20 @@ export const addProductColumns = ({
   },
   {
     accessorFn: (row) =>
-      (row?.unitPrice ?? 0).toLocaleString("vi-VN", {
+      (row?.defaultOrderPrice ?? 0).toLocaleString("vi-VN", {
         style: "currency",
         currency: "VND",
       }),
 
-    header: "Unit Price",
+    header: "Order Price",
+  },
+  {
+    accessorFn: (row) =>
+      (row?.defaultPurchasePrice ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }),
+
+    header: "Purchase Price",
   },
 ];

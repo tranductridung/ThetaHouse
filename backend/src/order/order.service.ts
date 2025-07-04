@@ -264,7 +264,11 @@ export class OrderService {
       undefined,
       isActive ? true : undefined,
     );
-    return { ...order, items: items };
+
+    // Gán items trực tiếp vào instance
+    (order as any).items = items;
+
+    return order;
   }
 
   async exportItem(itemId: number, creatorId: number, quantity?: number) {

@@ -104,7 +104,7 @@ export const orderColumns = ({
                 onDetail(row.original.id);
               }}
             >
-              More
+              View Order
             </DropdownMenuItem>
 
             {row.original.status !== "Cancelled" ? (

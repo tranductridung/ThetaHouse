@@ -248,12 +248,15 @@ export class ConsignmentService {
     const items = await this.itemService.findItemsBySource(
       consignment.id,
       SourceType.CONSIGNMENT,
-      ItemableType.PRODUCT,
+      undefined,
       undefined,
       isActive ? true : undefined,
     );
 
-    return { ...consignment, items: items };
+    // Gán items trực tiếp vào instance
+    (consignment as any).items = items;
+
+    return consignment;
   }
 
   async findOne(id: number, checkActive?: boolean, manager?: EntityManager) {

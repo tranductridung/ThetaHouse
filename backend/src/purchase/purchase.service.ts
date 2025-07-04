@@ -210,7 +210,7 @@ export class PurchaseService {
   async findOneFull(id: number, isActive?: boolean) {
     const purchase = await this.purchaseRepo.findOne({
       where: { id },
-      relations: ['creator', 'supplier'],
+      relations: ['supplier', 'creator'],
     });
 
     if (!purchase) throw new NotFoundException('Purchase not found!');
@@ -221,12 +221,15 @@ export class PurchaseService {
     const items = await this.itemService.findItemsBySource(
       purchase.id,
       SourceType.PURCHASE,
-      ItemableType.PRODUCT,
+      undefined,
       undefined,
       isActive ? true : undefined,
     );
 
-    return { ...purchase, items: items };
+    // Gán items trực tiếp vào instance
+    (purchase as any).items = items;
+
+    return purchase;
   }
 
   async importItem(itemId: number, creatorId: number, quantity?: number) {
@@ -308,11 +311,14 @@ export class PurchaseService {
           itemInventories.push(itemInventory);
         }
       }
-      purchase.status = await this.itemService.getSourceStatus(
+      const purchaseStatus = await this.itemService.getSourceStatus(
         purchaseId,
         SourceType.PURCHASE,
         queryRunner.manager,
       );
+
+      purchase.status = purchaseStatus;
+
       await queryRunner.manager.save(purchase);
 
       await queryRunner.commitTransaction();

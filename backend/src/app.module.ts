@@ -22,6 +22,9 @@ import { RoomModule } from './room/room.module';
 import { ModulesModule } from './modules/modules.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { PaymentModule } from './payment/payment.module';
+import { RevenueModule } from './revenue/revenue.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { ReportsModule } from './reports/reports.module';
 
 config();
 @Module({
@@ -57,6 +60,10 @@ config();
     ModulesModule,
     TransactionModule,
     PaymentModule,
+    RevenueModule,
+    ReportsModule,
+    DashboardModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

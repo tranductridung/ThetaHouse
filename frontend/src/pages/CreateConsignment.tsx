@@ -9,28 +9,8 @@ import type {
 } from "@/components/schemas/source";
 
 import { handleAxiosError } from "@/lib/utils";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 export default function CreateConsignmentPage() {
-  const [products, setProducts] = useState<ProductType[]>([]);
-  const [customers, setCustomers] = useState<PartnerType[]>([]);
-  const [suppliers, setSuppliers] = useState<PartnerType[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const productResponse = await api.get("/products");
-      setProducts(productResponse.data.products);
-
-      const customerResponse = await api.get("partners/customer");
-      setCustomers(customerResponse.data.customers);
-
-      const supplierResponse = await api.get("partners/supplier");
-      setSuppliers(supplierResponse.data.suppliers);
-    };
-
-    fetchData();
-  }, []);
-
   const handleCreateConsignment = async (data: ConsignmentDraftType) => {
     const transformDraftToCreateItem = (
       draft: ItemDraftType
@@ -38,6 +18,7 @@ export default function CreateConsignmentPage() {
       quantity: draft.quantity,
       itemableId: draft.itemableId,
       itemableType: draft.itemableType,
+      unitPrice: draft.unitPrice,
     });
 
     const newItems: CreateItemType[] = data.items.map(
@@ -52,7 +33,6 @@ export default function CreateConsignmentPage() {
       items: newItems,
     };
 
-    console.log("payload", payload);
     try {
       const response = await api.post("/consignments", payload);
       console.log("Create consignment:", response);
@@ -63,7 +43,7 @@ export default function CreateConsignmentPage() {
   };
 
   return (
-    <div className="max-w-[85%] mx-auto py-10 flex flex-col">
+    <div className="md:max-w-[100%] max-w-[85%] mx-auto py-10 flex flex-col">
       <h1 className="font-bold flex justify-center text-2xl mb-5">
         Create Consignment
       </h1>

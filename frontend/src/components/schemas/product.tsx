@@ -4,7 +4,9 @@ export const baseProductSchema = z.object({
   name: z.string(),
   description: z.string(),
   unit: z.enum(["Piece", "Kg", "Box", "Liter", "Package"]),
-  unitPrice: z.number().gt(0),
+  // unitPrice: z.number().gt(0),
+  defaultOrderPrice: z.number().gt(0),
+  defaultPurchasePrice: z.number().gt(0),
 });
 
 export const productFormSchema = baseProductSchema.extend({});

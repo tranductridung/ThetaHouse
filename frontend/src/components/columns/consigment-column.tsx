@@ -14,13 +14,13 @@ import type { ConsignmentType } from "../schemas/source";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type ConsignmentProps = {
-  onEdit: (consignment: ConsignmentType) => void;
   onDetail: (id: number) => void;
+  onHandle: (id: number) => void;
 };
 
 export const consignmentColumns = ({
-  onEdit,
   onDetail,
+  onHandle,
 }: ConsignmentProps): ColumnDef<ConsignmentType>[] => [
   { accessorKey: "id", header: "ID" },
   {
@@ -87,20 +87,18 @@ export const consignmentColumns = ({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                onEdit(row.original);
-              }}
-            >
-              Edit
-            </DropdownMenuItem>
-
-            {/* <DropdownMenuItem>Delete</DropdownMenuItem> */}
-
-            <DropdownMenuItem
-              onClick={() => {
                 onDetail(row.original.id);
               }}
             >
-              More
+              View Consignment
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => {
+                onHandle(row.original.id);
+              }}
+            >
+              {row.original.type === "In" ? "Import" : "Export"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

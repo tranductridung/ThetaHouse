@@ -134,18 +134,25 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
       return;
     }
 
+    const priceTmp =
+      watchedType === "In"
+        ? product.defaultPurchasePrice
+        : product.defaultOrderPrice;
+
     append({
       quantity: 1,
       itemableId: product.id,
       itemableType: "Product",
       name: product.name,
       description: product.description,
-      unitPrice: product.unitPrice,
-      subtotal: product.unitPrice,
+      unitPrice: priceTmp,
+      defaultOrderPrice: product.defaultOrderPrice,
+      defaultPurchasePrice: product.defaultPurchasePrice,
+      subtotal: priceTmp,
     });
 
     setValue("quantity", watchedQuantity + 1);
-    setValue("subtotal", watchedSubtotal + product.unitPrice);
+    setValue("subtotal", watchedSubtotal + priceTmp);
 
     toast.success(`Add product "${product.name}" success!`);
   };
@@ -217,6 +224,20 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
     reset();
   };
 
+  const handleChangeUnitPrice = (index: number, unitPrice: number) => {
+    const item = form.getValues(`items.${index}`);
+
+    const itemSubtotal = unitPrice * item.quantity;
+
+    const allItems = form.getValues("items");
+    const consignmentSubtotal = allItems.reduce((acc, item, i) => {
+      return acc + (i === index ? unitPrice : item.unitPrice);
+    }, 0);
+
+    form.setValue(`subtotal`, consignmentSubtotal);
+    form.setValue(`items.${index}.subtotal`, itemSubtotal);
+  };
+
   useEffect(() => {
     if (watchedPartner) {
       if (watchedType === "In" && watchedPartner.type === "Customer")
@@ -225,110 +246,142 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
       if (watchedType === "Out" && watchedPartner.type === "Supplier")
         form.setValue("partner", undefined);
     }
+
+    const items = form.getValues("items");
+
+    items.forEach((item, idx) => {
+      if (item.itemableType !== "Product") return;
+
+      const newUnitPrice =
+        watchedType === "In"
+          ? item.defaultPurchasePrice
+          : item.defaultOrderPrice;
+
+      form.setValue(`items.${idx}.unitPrice`, newUnitPrice);
+      form.setValue(`items.${idx}.subtotal`, newUnitPrice * item.quantity);
+    });
+
+    // Cập nhật tổng số lượng và giá trị consignment
+    const { quantity, subtotal, discountAmount } = calculateConsignment();
+    form.setValue("quantity", quantity);
+    form.setValue("subtotal", subtotal);
+    form.setValue("discountAmount", discountAmount);
   }, [watchedType]);
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onInternalSubmit)}
-        className="space-y-4 text-xl  h-full w-full"
+        className="space-y-4 text-xl h-full w-full"
       >
-        <div className="flex md:flex-row flex-col">
+        <div className="flex md:flex-row flex-col text-sm md:text-xl bg-red-50">
           {/* Item Lists */}
-          {watchedItems.length === 0 ? (
-            <div className="mb-5 px-5">
-              <Card className="mb-5 px-5 justify-center items-center">
-                <CardContent>
+          <div className="flex flex-2/3 space-y-5">
+            {watchedItems.length === 0 ? (
+              <div className="mb-5 px-5 w-full">
+                <Card className="justify-center items-center w-full h-full">
+                  <CardContent>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => {
+                        setIsShowAddItem(true);
+                      }}
+                      className="text-xl m-auto"
+                    >
+                      Add New Item
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col p-4 space-y-5 justify-start items-end  w-full">
+                  {/* Add new item button */}
                   <Button
                     type="button"
-                    variant="link"
                     onClick={() => {
                       setIsShowAddItem(true);
                     }}
-                    className="text-xl m-auto"
+                    className="w-fit rounded-full p-6 text-right"
                   >
-                    Add New Item
+                    <Plus />
+                    {/* Add New Item */}
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
-                {/* Add new item button */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsShowAddItem(true);
-                  }}
-                  className="w-fit rounded-full p-6 text-right"
-                >
-                  <Plus />
-                  {/* Add New Item */}
-                </Button>
 
-                {fields.map((item, index) => (
-                  <Card key={item.id} className="w-full">
-                    <CardHeader>
-                      <CardTitle>
-                        {item.itemableType} {item.name}
-                      </CardTitle>
-                      <CardDescription>{item.description}</CardDescription>
-                      <CardAction>
-                        <div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => handleRemoveItem(index)}
-                            className="hover:bg-red-200 hover:text-red-500"
-                          >
-                            <X size={28} />
-                          </Button>
-                        </div>
-                      </CardAction>
-                    </CardHeader>
+                  {fields.map((item, index) => (
+                    <Card key={item.id} className="w-full">
+                      <CardHeader>
+                        <CardTitle>
+                          {item.itemableType} {item.name}
+                        </CardTitle>
+                        <CardDescription>{item.description}</CardDescription>
+                        <CardAction>
+                          <div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleRemoveItem(index)}
+                              className="hover:bg-red-200 hover:text-red-500"
+                            >
+                              <X size={28} />
+                            </Button>
+                          </div>
+                        </CardAction>
+                      </CardHeader>
 
-                    {/* Quanity */}
-                    <CardContent className="flex justify-between">
-                      <span>Quantity: </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register(`items.${index}.quantity`, {
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const quantity = Number(e.target.value);
-                            handleQuantityChange(index, quantity);
-                          },
-                        })}
-                        className="w-20 inline-block"
-                      />
-                    </CardContent>
+                      {/* Quanity */}
+                      <CardContent className="flex justify-between">
+                        <span>Quantity: </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.quantity`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const quantity = Number(e.target.value);
+                              handleQuantityChange(index, quantity);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                      </CardContent>
 
-                    {/* Unit Price */}
-                    <CardContent className="flex justify-between">
-                      <span>Unit Price</span>
-                      <span>{item.unitPrice}</span>{" "}
-                    </CardContent>
+                      {/* Unit Price */}
+                      <CardContent className="flex justify-between">
+                        <span>Unit Price: </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.unitPrice`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const unitPrice = Number(e.target.value);
+                              handleChangeUnitPrice(index, unitPrice);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                        {/* <span>{watchedItems?.[index]?.unitPrice || 0}</span>{" "} */}
+                      </CardContent>
 
-                    {/* Subtotal */}
-                    <CardContent className="flex justify-between bconsignment-t-2 pt-2">
+                      {/* Subtotal */}
+                      {/* <CardContent className="flex justify-between">
                       <span>Subtotal:</span>
                       <span>{watchedItems?.[index]?.subtotal || 0}</span>
-                    </CardContent>
+                    </CardContent> */}
 
-                    {/* Item Discount */}
-
-                    {/* Item Total */}
-                    <CardContent className="flex justify-between bconsignment-t-2 pt-2">
-                      <h1 className="font-bold">Total: </h1>
-                      <span>{watchedItems?.[index]?.subtotal}</span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
+                      {/* Item Total */}
+                      <CardContent className="flex justify-between border-t-2 pt-2">
+                        <h1 className="font-bold">Total: </h1>
+                        <span>{watchedItems?.[index]?.subtotal}</span>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* General Information */}
           <div className="flex flex-1/3 flex-col space-y-5 px-5">
@@ -477,7 +530,7 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
                 <span> {watchedCommissionRate}</span>
               </CardContent>
 
-              <CardContent className="flex justify-between bconsignment-t-2 pt-2">
+              <CardContent className="flex justify-between border-t-2 pt-2">
                 <span className="font-bold">Total: </span>
                 <span>
                   {watchedDiscountAmount

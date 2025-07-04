@@ -14,8 +14,8 @@ export const itemSchema = baseItemSchema.extend({
   totalAmount: z.number(),
   finalAmount: z.number(),
   status: z.enum(ItemStatus),
+  unitPrice: z.number(),
   snapshotData: z.object({
-    unitPrice: z.string(),
     session: z.number(),
     bonusSession: z.number(),
   }),
@@ -31,12 +31,13 @@ export const itemDraftSchema = baseItemSchema.extend({
   name: z.string(),
   description: z.string(),
   unitPrice: z.number(),
-  discountAmount: z.number(),
+  discountAmount: z.number().optional(),
   subtotal: z.number(),
 });
 
 export const createItemSchema = baseItemSchema.extend({
   discountId: z.number().optional(),
+  unitPrice: z.number(),
   itemableId: z.number(),
 });
 

@@ -16,6 +16,7 @@ import { DataTable } from "@/components/data-table";
 import { useNavigate } from "react-router-dom";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSourceActions } from "@/hooks/useSourceAction";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -53,22 +54,10 @@ const Order = () => {
     navigate(`/sources/orders/${id}`);
   };
 
+  const { handleExportImport } = useSourceActions(fetchData);
+
   const handleExport = async (id: number) => {
-    console.log("check spam");
-    // try {
-    //   const response = await api.post(`orders/${id}/export`);
-
-    //   // setData((prevData) =>
-    //   //   prevData.map((order) =>
-    //   //     order.id === id ? { ...order, status: "Cancelled" } : order
-    //   //   )
-    //   // );
-
-    //   console.log(response);
-    //   toast.success("Order is exported!");
-    // } catch (error) {
-    //   handleAxiosError(error);
-    // }
+    handleExportImport(id, "Order");
   };
 
   const handleCancel = async (id: number) => {

@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsPositive } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  Min,
+} from 'class-validator';
 import { ItemableType } from 'src/common/enums/enum';
 
 export class CreateItemDto {
@@ -21,4 +28,9 @@ export class CreateItemDto {
   @IsPositive()
   @IsOptional()
   discountId: number;
+
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  unitPrice: number;
 }

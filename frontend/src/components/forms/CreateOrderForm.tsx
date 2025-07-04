@@ -138,7 +138,7 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
 
     const { subtotal, discountAmount } = calculateDiscountAmount(
       1,
-      product.unitPrice
+      product.defaultOrderPrice
     );
 
     append({
@@ -148,13 +148,13 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
       discount: undefined,
       name: product.name,
       description: product.description,
-      unitPrice: product.unitPrice,
+      unitPrice: product.defaultOrderPrice,
       subtotal: subtotal,
       discountAmount: discountAmount,
     });
 
     setValue("quantity", watchedQuantity + 1);
-    setValue("subtotal", watchedSubtotal + product.unitPrice);
+    setValue("subtotal", watchedSubtotal + product.defaultOrderPrice);
 
     toast.success(`Add product "${product.name}" success!`);
   };
@@ -272,25 +272,27 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
   };
 
   const handleRemoveDiscount = (index?: number) => {
+    // Remove discount of item
     if (index !== undefined) {
-      console.log("hello", fields[index]);
-      const { id, ...rest } = fields[index];
+      const itemPath = `items.${index}` as const;
+      const currentItem = form.getValues(itemPath);
 
-      form.setValue("subtotal", watchedSubtotal + rest.discountAmount);
+      form.setValue("subtotal", watchedSubtotal + currentItem.discountAmount);
 
-      update(index, {
-        ...rest,
-        discount: undefined,
-        subtotal: rest.quantity * rest.unitPrice,
-        discountAmount: 0,
-      });
+      form.setValue(`${itemPath}.discount`, undefined);
+      form.setValue(`${itemPath}.discountAmount`, 0);
+      form.setValue(
+        `${itemPath}.subtotal`,
+        currentItem.quantity * currentItem.unitPrice
+      );
 
       toast.success("Remove item discount success!");
-    } else {
-      form.setValue("discountAmount", 0);
-      form.setValue("discount", undefined);
-      toast.success("Remove order discount success!");
+      return;
     }
+
+    form.setValue("discountAmount", 0);
+    form.setValue("discount", undefined);
+    toast.success("Remove order discount success!");
   };
 
   const handleChooseCustomer = (customer: PartnerType) => {
@@ -317,16 +319,13 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
 
     return {
       quantity: orderQuantity,
-      subtotal: orderSubtotal,
+      subtotal: orderSubtotal >= 0 ? orderSubtotal : 0,
       discountAmount,
     };
   };
 
   useEffect(() => {
     const result = calculateOrder();
-    console.log(result);
-
-    console.log("abc");
     const currentSubtotal = form.getValues("subtotal");
     const currentDiscountAmount = form.getValues("discountAmount");
     const currentQuantity = form.getValues("quantity");
@@ -338,201 +337,237 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
     ) {
       setValue(
         "discountAmount",
-        result.discountAmount >= 0 ? result.discountAmount : 0
+        result.discountAmount >= 0 ? result.discountAmount : 0,
+        { shouldDirty: false }
       );
-      setValue("subtotal", result.subtotal >= 0 ? result.subtotal : 0);
-      setValue("quantity", result.quantity >= 0 ? result.quantity : 0);
+      setValue("subtotal", result.subtotal >= 0 ? result.subtotal : 0, {
+        shouldDirty: false,
+      });
+      setValue("quantity", result.quantity >= 0 ? result.quantity : 0, {
+        shouldDirty: false,
+      });
     }
-  }, [watchedDiscount, watchedQuantity, watchedSubtotal]);
+  }, [watchedItems, watchedDiscount, watchedSubtotal]);
 
   const onInternalSubmit = async (data: OrderDraftType) => {
     await onSubmit(data);
     reset();
   };
 
+  const handleChangeUnitPrice = (index: number, unitPrice: number) => {
+    const item = form.getValues(`items.${index}`);
+
+    const itemSubtotal = unitPrice * item.quantity;
+
+    const allItems = form.getValues("items");
+    const orderSubtotal = allItems.reduce((acc, item, i) => {
+      return acc + (i === index ? unitPrice : item.unitPrice);
+    }, 0);
+
+    form.setValue(`subtotal`, orderSubtotal);
+    form.setValue(`items.${index}.subtotal`, itemSubtotal);
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onInternalSubmit)}
-        className="space-y-4 text-xl  h-full w-full"
+        className="space-y-4 text-xl h-full w-full"
       >
-        <div className="flex md:flex-row flex-col">
+        {/* <div className="flex md:flex-row flex-col"> */}
+        <div className="flex md:flex-row flex-col text-sm md:text-xl">
           {/* Item Lists */}
-          {watchedItems.length === 0 ? (
-            // <Card className="flex flex-1 flex-row md:flex-2/3 justify-center items-center mb-5">
-            <div className="mb-5 px-5">
-              <Card className="mb-5 px-5 justify-center items-center">
-                <CardContent className="justify-center items-center">
+          <div className=" flex flex-1/2 space-y-5">
+            {watchedItems.length === 0 ? (
+              // <Card className="flex flex-1 flex-row md:flex-2/3 justify-center items-center mb-5">
+              <div className="mb-5 px-5 w-full">
+                <Card className="justify-center items-center w-full h-full">
+                  <CardContent>
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={() => {
+                        setIsShowAddItem(true);
+                      }}
+                      className="text-xl m-auto"
+                    >
+                      Add New Item
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
+                  {/* Add new item button */}
                   <Button
                     type="button"
-                    variant="link"
                     onClick={() => {
                       setIsShowAddItem(true);
                     }}
-                    className="text-xl m-auto"
+                    className="w-fit rounded-full p-6 text-right"
                   >
-                    Add New Item
+                    <Plus />
                   </Button>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
-                {/* Add new item button */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setIsShowAddItem(true);
-                  }}
-                  className="w-fit rounded-full p-6 text-right"
-                >
-                  <Plus />
-                </Button>
 
-                {fields.map((item, index) => (
-                  <Card key={item.id} className="w-full">
-                    <CardHeader>
-                      <CardTitle>
-                        {item.itemableType} {item.name}
-                      </CardTitle>
-                      <CardDescription>{item.description}</CardDescription>
-                      <CardAction>
-                        <div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => handleRemoveItem(index)}
-                            className="hover:bg-red-200 hover:text-red-500"
-                          >
-                            <X size={28} />
-                          </Button>
-
-                          <Dialog
-                            open={openDialogIndex === index}
-                            onOpenChange={(isOpen) => {
-                              if (!isOpen) {
-                                setOpenDialogIndex(null);
-                              }
-                            }}
-                          >
-                            <DialogContent>
-                              <DialogTitle></DialogTitle>
-                              <AddDiscount
-                                handleAddDiscount={handleAddDiscount}
-                                itemId={index}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </CardAction>
-                    </CardHeader>
-
-                    {/* Button */}
-                    <div>
-                      <Dialog
-                        open={openDialogIndex === index}
-                        onOpenChange={(isOpen) => {
-                          if (!isOpen) {
-                            setOpenDialogIndex(null);
-                          }
-                        }}
-                      >
-                        <DialogContent>
-                          <DialogTitle></DialogTitle>
-                          <AddDiscount
-                            handleAddDiscount={handleAddDiscount}
-                            itemId={index}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-
-                    {/* Quanity */}
-                    <CardContent className="flex justify-between">
-                      <span>Quantity: </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register(`items.${index}.quantity`, {
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const quantity = Number(e.target.value);
-                            handleQuantityChange(index, quantity);
-                          },
-                        })}
-                        className="w-20 inline-block"
-                      />
-                    </CardContent>
-
-                    {/* Unit Price */}
-                    <CardContent className="flex justify-between">
-                      <span>Unit Price</span>
-                      <span>{item.unitPrice}</span>{" "}
-                    </CardContent>
-
-                    {/* Subtotal */}
-                    <CardContent className="flex justify-between border-t-2 pt-2">
-                      <span>Subtotal:</span>
-                      <span>{watchedItems?.[index]?.subtotal || 0}</span>
-                    </CardContent>
-
-                    {/* Item Discount */}
-                    <CardContent className="flex flex-col border-t-2 pt-2">
-                      {item.discount ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span>Discount Code:</span>
-                            <span>{item?.discount?.code ?? ""}</span>
-                          </div>
-
-                          <div className="flex justify-between">
-                            <span>Discount Amount:</span>
-                            <span>{watchedItems?.[index]?.discountAmount}</span>
-                          </div>
-
-                          <div className="text-right text-xl">
+                  {fields.map((item, index) => (
+                    <Card key={item.id} className="w-full">
+                      <CardHeader>
+                        <CardTitle>
+                          {item.itemableType} {item.name}
+                        </CardTitle>
+                        <CardDescription>{item.description}</CardDescription>
+                        <CardAction>
+                          <div>
                             <Button
                               type="button"
-                              variant="link"
-                              onClick={() => handleRemoveDiscount(index)}
-                              className="text-red-500 p-0"
+                              variant="ghost"
+                              onClick={() => handleRemoveItem(index)}
+                              className="hover:bg-red-200 hover:text-red-500"
                             >
-                              Remove
+                              <X size={28} />
                             </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="link"
-                          onClick={() => {
-                            setOpenDialogIndex(index);
-                          }}
-                          className="p-0 text-xl"
-                        >
-                          Add Discount?
-                        </Button>
-                      )}
-                    </CardContent>
 
-                    {/* Item Total */}
-                    <CardContent className="flex justify-between border-t-2 pt-2">
-                      <h1 className="font-bold">Total: </h1>
-                      <span>
-                        {watchedItems?.[index]?.subtotal -
-                          watchedItems?.[index]?.discountAmount >
-                        0
-                          ? watchedItems?.[index]?.subtotal -
-                            watchedItems?.[index]?.discountAmount
-                          : 0}
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
+                            <Dialog
+                              open={openDialogIndex === index}
+                              onOpenChange={(isOpen) => {
+                                if (!isOpen) {
+                                  setOpenDialogIndex(null);
+                                }
+                              }}
+                            >
+                              <DialogContent>
+                                <DialogTitle></DialogTitle>
+                                <AddDiscount
+                                  handleAddDiscount={handleAddDiscount}
+                                  itemId={index}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </CardAction>
+                      </CardHeader>
+
+                      {/* Button */}
+                      <div>
+                        <Dialog
+                          open={openDialogIndex === index}
+                          onOpenChange={(isOpen) => {
+                            if (!isOpen) {
+                              setOpenDialogIndex(null);
+                            }
+                          }}
+                        >
+                          <DialogContent>
+                            <DialogTitle></DialogTitle>
+                            <AddDiscount
+                              handleAddDiscount={handleAddDiscount}
+                              itemId={index}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+
+                      {/* Quanity */}
+                      <CardContent className="flex justify-between">
+                        <span>Quantity: </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.quantity`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const quantity = Number(e.target.value);
+                              handleQuantityChange(index, quantity);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                      </CardContent>
+
+                      {/* Subtotal */}
+                      <CardContent className="flex justify-between">
+                        <span>Unit Price: </span>
+                        <Input
+                          type="number"
+                          min={1}
+                          {...form.register(`items.${index}.unitPrice`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const unitPrice = Number(e.target.value);
+                              handleChangeUnitPrice(index, unitPrice);
+                            },
+                          })}
+                          className="w-20 inline-block"
+                        />
+                      </CardContent>
+
+                      <CardContent className="flex justify-between border-t-2 pt-2">
+                        <span>Subtotal:</span>
+                        <span>{watchedItems?.[index]?.subtotal || 0}</span>
+                      </CardContent>
+
+                      {/* Item Discount */}
+                      <CardContent className="flex flex-col border-t-2 pt-2">
+                        {watchedItems?.[index]?.discount ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span>Discount Code:</span>
+                              <span>
+                                {watchedItems?.[index]?.discount.code}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between">
+                              <span>Discount Amount:</span>
+                              <span>
+                                {watchedItems?.[index]?.discountAmount}
+                              </span>
+                            </div>
+
+                            <div className="text-right text-xl">
+                              <Button
+                                type="button"
+                                variant="link"
+                                onClick={() => handleRemoveDiscount(index)}
+                                className="text-red-500 p-0"
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="link"
+                            onClick={() => {
+                              setOpenDialogIndex(index);
+                            }}
+                            className="p-0 text-xl"
+                          >
+                            Add Discount?
+                          </Button>
+                        )}
+                      </CardContent>
+
+                      {/* Item Total */}
+                      <CardContent className="flex justify-between border-t-2 pt-2">
+                        <h1 className="font-bold">Total: </h1>
+                        <span>
+                          {watchedItems?.[index]?.subtotal -
+                            watchedItems?.[index]?.discountAmount >
+                          0
+                            ? watchedItems?.[index]?.subtotal -
+                              watchedItems?.[index]?.discountAmount
+                            : 0}
+                        </span>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* General Information */}
           <div className="flex flex-1/3 flex-col space-y-5 px-5">

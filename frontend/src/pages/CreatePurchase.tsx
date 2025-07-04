@@ -16,6 +16,7 @@ export default function CreatePurchasePage() {
       quantity: draft.quantity,
       itemableId: draft.itemableId,
       itemableType: draft.itemableType,
+      unitPrice: draft.unitPrice,
     });
 
     const newItems: CreateItemType[] = data.items.map(

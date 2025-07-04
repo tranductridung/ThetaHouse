@@ -5,7 +5,7 @@ export const baseServiceSchema = z.object({
   description: z.string(),
   duration: z.number().gt(0),
   session: z.number().gt(0),
-  bonusSession: z.number().gt(0),
+  bonusSession: z.number().gte(0),
   unitPrice: z.number().gt(0),
 });
 

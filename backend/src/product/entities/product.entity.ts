@@ -24,12 +24,26 @@ export class Product {
   @Column({ type: 'enum', enum: ProductUnit })
   unit: ProductUnit;
 
+  // @Column('decimal', {
+  //   precision: 12,
+  //   scale: 2,
+  //   transformer: new ColumnNumericTransformer(),
+  // })
+  // unitPrice: number;
+
   @Column('decimal', {
     precision: 12,
     scale: 2,
     transformer: new ColumnNumericTransformer(),
   })
-  unitPrice: number;
+  defaultOrderPrice: number;
+
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
+  defaultPurchasePrice: number;
 
   @Column({ default: 0 })
   quantity: number;

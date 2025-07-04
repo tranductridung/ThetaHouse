@@ -52,13 +52,20 @@ export class Item {
   })
   finalAmount: number;
 
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
+  unitPrice: number;
+
   @Column({ default: true })
   isActive: boolean;
 
   @Column({ type: 'enum', enum: AdjustmentType, default: AdjustmentType.INIT })
   adjustmentType: AdjustmentType;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'json', nullable: true })
   snapshotData: any;
 
   @Column({ type: 'enum', enum: ItemStatus, default: ItemStatus.NONE })

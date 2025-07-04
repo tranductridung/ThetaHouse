@@ -51,10 +51,10 @@ const AddItemForm = ({ onSubmit, isService }: AddItemProps) => {
     form.setValue("itemableId", product.id);
     form.setValue("name", product.name);
     form.setValue("description", product.description ?? "");
-    form.setValue("unitPrice", product.unitPrice);
+    form.setValue("unitPrice", product.defaultOrderPrice);
     form.setValue("quantity", 1);
     form.setValue("discountAmount", 0);
-    form.setValue("subtotal", product.unitPrice);
+    form.setValue("subtotal", product.defaultOrderPrice);
     setIsShowAddItem(false);
   };
 

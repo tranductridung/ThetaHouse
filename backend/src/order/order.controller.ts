@@ -9,13 +9,13 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { OrderService } from 'src/common/dtos/pagination.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Request } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { ExportItemDto } from './dto/export-item.dto';
 import { CreateItemDto } from 'src/item/dto/create-item.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { OrderService } from './order.service';
 
 @UseGuards(AuthJwtGuard)
 @Controller('orders')

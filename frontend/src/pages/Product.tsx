@@ -140,6 +140,7 @@ const Product = () => {
 
     fetchData();
   }, [pageIndex, pageSize]);
+
   console.log(data);
   return (
     <div className="p-4">

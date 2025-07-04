@@ -1,7 +1,9 @@
+import { ConsignmentType } from "./../../../backend/src/common/enums/enum";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import { toast } from "sonner";
+import type { SourceType } from "@/components/constants/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,3 +20,27 @@ export function handleAxiosError(error: unknown) {
     });
   }
 }
+
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(value);
+};
+
+export const getDefaultPrice = (
+  sourceType: SourceType,
+  consignmentType?: ConsignmentType
+) => {
+  if (sourceType === "Order") return "defaultOrderPrice";
+  if (sourceType === "Purchase") return "defaultPurchasePrice";
+
+  if (!consignmentType) {
+    toast.error("Consignment Type is required!");
+    return;
+  }
+
+  return consignmentType === "In"
+    ? "defaultPurchasePrice"
+    : "defaultOrderPrice";
+};

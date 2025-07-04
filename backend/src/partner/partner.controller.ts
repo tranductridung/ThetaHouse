@@ -29,11 +29,32 @@ export class PartnerController {
     return await this.partnerService.findAll(paginationDto);
   }
 
+  @Get(':partnerId/transactions')
+  async getTransactionsByPartner(@Param('partnerId') partnerId: number) {
+    return await this.partnerService.getTransactionsByPartner(partnerId);
+  }
+
   @Get('/customer')
   async findAllActiveCustomer(@Query() paginationDto: PaginationDto) {
     return await this.partnerService.findAllByType(
       PartnerType.CUSTOMER,
       paginationDto,
+    );
+  }
+
+  @Get('/customers/:customerId/appointments')
+  async getCustomerOrder(@Param('customerId') customerId: number) {
+    return await this.partnerService.getSourceOfPartner(
+      customerId,
+      PartnerType.CUSTOMER,
+    );
+  }
+
+  @Get('/suppliers/:supplierId/appointments')
+  async getSupplierOrder(@Param('supplierId') supplierId: number) {
+    return await this.partnerService.getSourceOfPartner(
+      supplierId,
+      PartnerType.SUPPLIER,
     );
   }
 

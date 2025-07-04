@@ -59,7 +59,7 @@ const Service = () => {
 
       toast.success("Edit service success!");
     } catch (error) {
-      console.error(error);
+      handleAxiosError(error);
     }
   };
 
@@ -96,8 +96,7 @@ const Service = () => {
 
   const handleRestore = async (id: number) => {
     try {
-      const response = await api.patch(`/services/${id}/restore`);
-      console.log(response);
+      await api.patch(`/services/${id}/restore`);
       setData((prev) =>
         prev.map((service) =>
           service.id === id ? { ...service, status: "Active" } : service
