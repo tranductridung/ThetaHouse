@@ -43,9 +43,12 @@ export class PartnerService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.partnerRepo
       .createQueryBuilder('partner')
-      .orderBy('partner.id', 'ASC');
+      .orderBy('partner.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {
@@ -70,9 +73,12 @@ export class PartnerService {
     const queryBuilder = this.partnerRepo
       .createQueryBuilder('partner')
       .where('partner.type = :type', { type })
-      .orderBy('partner.id', 'ASC');
+      .orderBy('partner.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {
@@ -160,43 +166,144 @@ export class PartnerService {
       throw new NotFoundException(`${partnerType} not exist!`);
   }
 
-  async getSourceOfPartner(partnerId: number, partnerType: PartnerType) {
-    await this.checkPartnerExist(partnerId, partnerType);
+  async getOrderByCustomer(
+    customerId: number,
+    cancelled: boolean,
+    paginationDto?: PaginationDto,
+  ) {
+    await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
 
-    if (partnerType === PartnerType.CUSTOMER) {
-      const consignments = await this.datasource
-        .createQueryBuilder(Consignment, 'c')
-        .leftJoin('c.partner', 'partner')
-        .where('partner.id = :partnerId', { partnerId })
-        .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-        .getMany();
+    const queryBuilder = this.datasource
+      .createQueryBuilder(Order, 'o')
+      .leftJoin('o.customer', 'customer')
+      .where('customer.id = :customerId', { customerId })
+      .addSelect('o.createdAt')
+      .orderBy('o.createdAt', 'DESC');
 
-      const orders = await this.datasource
-        .createQueryBuilder(Order, 'o')
-        .leftJoin('o.customer', 'customer')
-        .where('customer.id = :customerId', { customerId: partnerId })
-        .andWhere('o.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-        .getMany();
+    if (cancelled)
+      queryBuilder.andWhere('o.status <> :cancel', {
+        cancel: SourceStatus.CANCELLED,
+      });
 
-      return { consignments, orders };
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [orders, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { orders, total };
     } else {
-      const consignments = await this.datasource
-        .createQueryBuilder(Consignment, 'c')
-        .leftJoin('c.partner', 'partner')
-        .where('partner.id = :partnerId', { partnerId })
-        .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-        .getMany();
-
-      const purchases = await this.datasource
-        .createQueryBuilder(Purchase, 'p')
-        .leftJoin('p.supplier', 'supplier')
-        .where('supplier.id = :supplierId', { supplierId: partnerId })
-        .andWhere('p.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-        .getMany();
-
-      return { consignments, purchases };
+      const orders = await queryBuilder.getMany();
+      return orders;
     }
   }
+
+  async getConsignmentByPartner(
+    partnerId: number,
+    cancelled: boolean,
+    paginationDto: PaginationDto,
+  ) {
+    await this.checkPartnerExist(partnerId);
+
+    const queryBuilder = this.datasource
+      .createQueryBuilder(Consignment, 'c')
+      .leftJoin('c.partner', 'partner')
+      .where('partner.id = :partnerId', { partnerId });
+
+    if (cancelled)
+      queryBuilder.andWhere('c.status <> :cancel', {
+        cancel: SourceStatus.CANCELLED,
+      });
+
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [consignments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { consignments, total };
+    } else {
+      const consignments = await queryBuilder.getMany();
+      return consignments;
+    }
+  }
+
+  async getPurchaseBySupplier(
+    supplierId: number,
+    cancelled: boolean,
+    paginationDto?: PaginationDto,
+  ) {
+    await this.checkPartnerExist(supplierId, PartnerType.SUPPLIER);
+
+    const queryBuilder = this.datasource
+      .createQueryBuilder(Purchase, 'p')
+      .leftJoin('p.supplier', 'supplier')
+      .addSelect('p.createdAt')
+      .where('supplier.id = :supplierId', { supplierId });
+
+    if (cancelled)
+      queryBuilder.andWhere('p.status <> :cancel', {
+        cancel: SourceStatus.CANCELLED,
+      });
+
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [purchases, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { purchases, total };
+    } else {
+      const purchases = await queryBuilder.getMany();
+      return purchases;
+    }
+  }
+
+  // async getSourceOfPartner(partnerId: number, partnerType: PartnerType) {
+  //   await this.checkPartnerExist(partnerId, partnerType);
+
+  //   if (partnerType === PartnerType.CUSTOMER) {
+  //     const consignments = await this.datasource
+  //       .createQueryBuilder(Consignment, 'c')
+  //       .leftJoin('c.partner', 'partner')
+  //       .where('partner.id = :partnerId', { partnerId })
+  //       .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
+  //       .getMany();
+
+  //     return { consignments, orders };
+  //   } else {
+  //     const consignments = await this.datasource
+  //       .createQueryBuilder(Consignment, 'c')
+  //       .leftJoin('c.partner', 'partner')
+  //       .where('partner.id = :partnerId', { partnerId })
+  //       .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
+  //       .getMany();
+
+  //     const purchases = await this.datasource
+  //       .createQueryBuilder(Purchase, 'p')
+  //       .leftJoin('p.supplier', 'supplier')
+  //       .where('supplier.id = :supplierId', { supplierId: partnerId })
+  //       .andWhere('p.status <> :cancel', { cancel: SourceStatus.CANCELLED })
+  //       .getMany();
+
+  //     return { consignments, purchases };
+  //   }
+  // }
 
   async getTransactionsByPartner(partnerId: number) {
     return this.datasource
@@ -224,5 +331,55 @@ export class PartnerService {
       )
       .orderBy('t.createdAt', 'DESC')
       .getMany();
+  }
+
+  async findAppointmentByCustomer(
+    customerId: number,
+    paginationDto?: PaginationDto,
+  ) {
+    await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
+
+    const queryBuilder = this.datasource
+      .createQueryBuilder(Appointment, 'appointment')
+      .leftJoinAndSelect('appointment.item', 'item')
+      .leftJoinAndSelect('appointment.healer', 'healer')
+      .leftJoinAndSelect('appointment.room', 'room')
+      .leftJoinAndSelect('appointment.customer', 'customer')
+      .select([
+        'appointment.id',
+        'appointment.note',
+        'appointment.startAt',
+        'appointment.endAt',
+        'appointment.createdAt',
+        'appointment.duration',
+        'appointment.status',
+        'appointment.type',
+        'item.id',
+        'healer.fullName',
+        'healer.id',
+        'customer.fullName',
+        'customer.id',
+        'room.name',
+        'room.id',
+      ])
+      .where('customer.id = :customerId', { customerId })
+      .orderBy('appointment.createdAt', 'DESC');
+
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [appointments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { appointments, total };
+    } else {
+      const appointments = await queryBuilder.getMany();
+      return appointments;
+    }
   }
 }

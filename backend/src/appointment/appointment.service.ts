@@ -1,5 +1,5 @@
 import { PaginationDto } from './../common/dtos/pagination.dto';
-import { DataSource } from 'typeorm';
+import { DataSource, Not } from 'typeorm';
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,6 +27,7 @@ import {
   ItemStatus,
   SourceType,
 } from 'src/common/enums/enum';
+import { Order } from 'src/order/entities/order.entity';
 @Injectable()
 export class AppointmentService {
   constructor(
@@ -70,7 +71,11 @@ export class AppointmentService {
       if (!customer) throw new BadRequestException('Customer is required!');
 
       const freeSessionAppointment = await this.appointmentRepo.findOne({
-        where: { customer },
+        where: {
+          customer: { id: customer.id },
+          type: AppointmentType.FREE,
+          status: Not(AppointmentStatus.CANCELLED),
+        },
       });
 
       if (freeSessionAppointment)
@@ -133,11 +138,55 @@ export class AppointmentService {
 
   async create(createAppointmentDto: CreateAppointmentDto) {
     const appointment = this.appointmentRepo.create(createAppointmentDto);
-    // Add customer
+
+    // Get customerId
+    if (createAppointmentDto.itemId) {
+      // Get sourceId from Item
+      const item = await this.dataSource
+        .createQueryBuilder(Item, 'i')
+        .select(['i.sourceId', 'sourceId', 'i.snapshotData', 'snapshotData'])
+        .where('i.id = :itemId', { itemId: createAppointmentDto.itemId })
+        .getRawOne<{ sourceId: number | null; snapshotData: any }>();
+
+      if (!item?.sourceId) {
+        throw new BadRequestException('Item not exist or lack of sourceId!');
+      }
+
+      const order = await this.dataSource
+        .createQueryBuilder(Order, 'o')
+        .leftJoinAndSelect('o.customer', 'customer')
+        .where('o.id = :id', { id: item.sourceId })
+        .getOne();
+
+      if (!order?.customer?.id) {
+        throw new BadRequestException(
+          'Order not exist or order dont have customer ID!',
+        );
+      }
+
+      createAppointmentDto.customerId = order.customer.id;
+
+      appointment.duration = Number(item.snapshotData.duration);
+    } else {
+      if (!createAppointmentDto.customerId) {
+        throw new BadRequestException('Customer ID is required!');
+      }
+    }
+
+    // Get customer by customerId
     const customer = await this.partnerService.findCustomer(
       createAppointmentDto.customerId,
     );
+
+    if (!customer) {
+      throw new BadRequestException('Customer not exitst!');
+    }
+
     appointment.customer = customer;
+    // const customer = await this.partnerService.findCustomer(
+    //   createAppointmentDto.customerId,
+    // );
+    // appointment.customer = customer;
 
     // Validate and create item (for bonus and main)
     if (createAppointmentDto.type !== AppointmentType.FREE) {
@@ -158,11 +207,21 @@ export class AppointmentService {
 
     // Calculate endAt from startAt and duration (if startAt exist)
     if (createAppointmentDto.startAt) {
-      // if (!createAppointmentDto.duration)
-      //   throw new BadRequestException('Duration is required!');
+      // If type = free, dto must contain duration
+      if (
+        createAppointmentDto.type === AppointmentType.FREE &&
+        !createAppointmentDto.duration
+      )
+        throw new BadRequestException('Duration is required!');
+
+      // const durationValue =
+      //   createAppointmentDto.type === AppointmentType.FREE
+      //     ? createAppointmentDto.duration
+      //     : Number(appointment.item.snapshotData.duration);
+
       const endAt = this.calculteEndAt(
         createAppointmentDto.startAt,
-        Number(appointment.item.snapshotData.duration),
+        appointment.duration,
       );
 
       appointment.endAt = endAt;
@@ -209,16 +268,22 @@ export class AppointmentService {
     appoitmentStart: Date,
     appoitmentEnd: Date,
     healerId: number,
+    oldAptId?: number,
   ) {
     const healer = await this.userService.findOne(healerId);
 
-    if (appoitmentStart >= appoitmentEnd)
+    console.log(appoitmentStart);
+    console.log(appoitmentEnd);
+    if (appoitmentStart > appoitmentEnd)
+      // if (appoitmentStart >= appoitmentEnd)
+
       throw new BadRequestException('Start time cannot greater than end time!');
 
     // Get appointment which is conflict with date of new appointment
     const conflictAppointment = await this.appointmentRepo
       .createQueryBuilder('a')
       .where('a.healerId = :healerId', { healerId })
+      .andWhere('a.id <> :oldAptId', { oldAptId })
       .andWhere(
         `
         NOT(
@@ -243,16 +308,22 @@ export class AppointmentService {
     return healer;
   }
 
-  async isRoomFree(appoitmentStart: Date, appoitmentEnd: Date, roomId: number) {
+  async isRoomFree(
+    appoitmentStart: Date,
+    appoitmentEnd: Date,
+    roomId: number,
+    oldAptId?: number,
+  ) {
     const room = await this.roomService.findOne(roomId);
 
-    if (appoitmentStart >= appoitmentEnd)
+    if (appoitmentStart > appoitmentEnd)
       throw new BadRequestException('Start time cannot greater than end time!');
 
     // Get appointment which is conflict with date of new appointment
     const conflictRoom = await this.appointmentRepo
       .createQueryBuilder('a')
       .where('a.roomId = :roomId', { roomId })
+      .andWhere('a.id <> :oldAptId', { oldAptId })
       .andWhere(
         `
         NOT(
@@ -302,19 +373,7 @@ export class AppointmentService {
     // Check and validate startAt
     if (!startAt) throw new BadRequestException('Start time is required!');
 
-    let endAt = appointment.endAt;
-
-    // Calculate endAt if the update DTO has startAt or the appointment doesn't have endAt
-    if (updateAppointmentDto.startAt || !endAt) {
-      // if (!updateAppointmentDto.duration)
-      if (!appointment.item.snapshotData.duration)
-        throw new BadRequestException('Required duration!');
-
-      endAt = this.calculteEndAt(
-        startAt,
-        Number(appointment.item.snapshotData.duration),
-      );
-    }
+    const endAt = this.calculteEndAt(startAt, Number(appointment.duration));
 
     // Check if room free
     if (updateAppointmentDto.roomId) {
@@ -322,6 +381,7 @@ export class AppointmentService {
         startAt,
         endAt,
         updateAppointmentDto.roomId,
+        appointment.id,
       );
     }
 
@@ -339,13 +399,9 @@ export class AppointmentService {
       const customer = await this.partnerService.findOne(
         updateAppointmentDto.customerId,
       );
-      console.log('customer', customer);
-      console.log('appointment customer', appointment.customer);
-      console.log(typeof customer, typeof appointment.customer);
-
       if (customer.id !== appointment.customer.id) {
-        console.log('hallo');
-        if (!item) throw new BadRequestException('Please provide item 1!');
+        if (!item)
+          throw new BadRequestException('Item is required to change owner!');
 
         item.status = ItemStatus.TRANSFERED;
         appointment.customer = customer;
@@ -364,7 +420,8 @@ export class AppointmentService {
           undefined,
         );
       } else {
-        if (!item) throw new BadRequestException('Please provide item 2!');
+        if (!item)
+          throw new BadRequestException('Item is required to update type!');
         await this.validateSession(updateAppointmentDto.type, undefined, item);
       }
       appointment.type = updateAppointmentDto.type;
@@ -396,9 +453,10 @@ export class AppointmentService {
 
   async remove(id: number) {
     const appointment = await this.findOne(id);
-
-    await this.appointmentRepo.remove(appointment);
-    return { message: 'Delete appointment success!' };
+    appointment.status = AppointmentStatus.CANCELLED;
+    await this.appointmentRepo.save(appointment);
+    // await this.appointmentRepo.remove(appointment);
+    return { message: 'Remove appointment success!' };
   }
 
   async setCompleteStatus(appointmentId: number) {
@@ -419,11 +477,13 @@ export class AppointmentService {
       appointment.status = AppointmentStatus.COMPLETED;
       await querryRunner.manager.save(appointment);
 
-      await this.itemService.updateSourceStatus(
-        appointment.item.sourceId,
-        SourceType.ORDER,
-        querryRunner.manager,
-      );
+      if (appointment.item) {
+        await this.itemService.updateSourceStatus(
+          appointment.item.sourceId,
+          SourceType.ORDER,
+          querryRunner.manager,
+        );
+      }
 
       await querryRunner.commitTransaction();
     } catch (error) {
@@ -457,6 +517,7 @@ export class AppointmentService {
         'appointment.note',
         'appointment.startAt',
         'appointment.endAt',
+        'appointment.createdAt',
         'appointment.status',
         'appointment.type',
         'item.id',
@@ -467,9 +528,12 @@ export class AppointmentService {
         'room.name',
         'room.id',
       ])
-      .orderBy('appointment.id', 'ASC');
+      .orderBy('appointment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [appointments, total] = await queryBuilder
@@ -501,6 +565,7 @@ export class AppointmentService {
         'appointment.endAt',
         'appointment.status',
         'appointment.type',
+        'appointment.createdAt',
         'item.id',
         'healer.fullName',
         'customer.fullName',
@@ -509,9 +574,12 @@ export class AppointmentService {
         'customer.id',
         'room.id',
       ])
-      .orderBy('appointment.id', 'ASC');
+      .orderBy('appointment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [appointments, total] = await queryBuilder

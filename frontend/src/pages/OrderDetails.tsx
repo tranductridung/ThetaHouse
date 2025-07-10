@@ -69,7 +69,6 @@ const OrderDetails = () => {
 
   // Open create appointment dialog
   const onCreateAppointment = (id: number) => {
-    console.log("on create appointment:", id);
     setFormManager({ selectedItemId: id, isShow: true });
   };
 
@@ -81,6 +80,7 @@ const OrderDetails = () => {
 
     const response = handleCreateAppointmnet(
       formData,
+      order?.customer.id,
       formManager.selectedItemId
     );
     console.log(response);
@@ -105,7 +105,11 @@ const OrderDetails = () => {
   };
 
   const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
-    await handleAddPayment(paymentDraftType, transaction.id);
+    await handleAddPayment(
+      paymentDraftType,
+      transaction.id,
+      order?.customer?.id
+    );
     setIsShowAddPayment(false);
   };
 
@@ -139,7 +143,8 @@ const OrderDetails = () => {
   const onOpenExportImport = (itemId: number) => {
     setExportImportForm({ isShow: true, selectedItemId: itemId });
   };
-  console.log("aaaaaaaaaaaaaaa", order);
+
+  console.log("payment", transaction?.payments);
   return (
     <>
       <div className="p-4">

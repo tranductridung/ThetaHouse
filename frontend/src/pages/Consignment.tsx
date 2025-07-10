@@ -5,8 +5,13 @@ import { DataTable } from "@/components/data-table";
 import { useNavigate } from "react-router-dom";
 import { consignmentColumns } from "@/components/columns/consigment-column";
 import { useSourceActions } from "@/hooks/useSourceAction";
+import type { TypeOfPartner } from "@/components/constants/constants";
 
-const Consignment = () => {
+type ConsignmentProps = {
+  partnerId?: number | undefined;
+  partnerType?: TypeOfPartner;
+};
+const Consignment = ({ partnerId, partnerType }: ConsignmentProps) => {
   const [data, setData] = useState<ConsignmentType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -23,10 +28,15 @@ const Consignment = () => {
   };
 
   const fetchData = async () => {
-    const response = await api.get(
-      `/consignments?page=${pageIndex}&limit=${pageSize}`
-    );
-    console.log(response);
+    let url = `/consignments?page=${pageIndex}&limit=${pageSize}`;
+
+    if (partnerId && partnerType) {
+      const tmp = partnerType === "Customer" ? "customers" : "suppliers";
+      url = `/partners/${tmp}/${partnerId}/consignments?page=${pageIndex}&limit=${pageSize}`;
+    }
+
+    const response = await api.get(url);
+
     setData(response.data.consignments);
     setTotal(response.data.total);
   };

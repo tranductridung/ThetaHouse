@@ -24,7 +24,10 @@ export type FormManagerType = {
   data: OrderType | null;
 };
 
-const Order = () => {
+type OrderProps = {
+  customerId?: number | undefined;
+};
+const Order = ({ customerId }: OrderProps) => {
   const [showDialog, setShowDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
@@ -36,9 +39,12 @@ const Order = () => {
 
   const fetchData = async () => {
     try {
-      const response = await api.get(
-        `/orders/all?page=${pageIndex}&limit=${pageSize}`
-      );
+      const url = customerId
+        ? `/partners/customers/${customerId}/orders?page=${pageIndex}&limit=${pageSize}`
+        : `/orders/all?page=${pageIndex}&limit=${pageSize}`;
+
+      const response = await api.get(url);
+
       setData(response.data.orders);
       setTotal(response.data.total);
     } catch (error) {
@@ -61,17 +67,9 @@ const Order = () => {
   };
 
   const handleCancel = async (id: number) => {
-    console.log("check spam");
     try {
-      const response = await api.post(`orders/${id}/cancel`);
-
-      setData((prevData) =>
-        prevData.map((order) =>
-          order.id === id ? { ...order, status: "Cancelled" } : order
-        )
-      );
-
-      console.log(response);
+      await api.post(`orders/${id}/cancel`);
+      fetchData();
       toast.success("Order is cancelled!");
     } catch (error) {
       handleAxiosError(error);

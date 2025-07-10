@@ -21,7 +21,7 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Get()
-  async find(@Query() paginationDto: PaginationDto) {
+  async find(@Query() paginationDto?: PaginationDto) {
     return await this.transactionService.findAll(paginationDto);
   }
 

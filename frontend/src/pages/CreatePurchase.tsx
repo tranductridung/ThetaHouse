@@ -6,9 +6,12 @@ import type {
   PurchaseDraftType,
 } from "@/components/schemas/source";
 import { handleAxiosError } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function CreatePurchasePage() {
+  const navigate = useNavigate();
+
   const handleCreatePurchase = async (data: PurchaseDraftType) => {
     const transformDraftToCreateItem = (
       draft: ItemDraftType
@@ -33,7 +36,9 @@ export default function CreatePurchasePage() {
     try {
       const response = await api.post("/purchases", payload);
       console.log("Create purchase:", response);
+
       toast.success("Create purchase success!");
+      navigate(`/sources/purchases/${response.data.purchase.id}/`);
     } catch (error) {
       handleAxiosError(error);
     }

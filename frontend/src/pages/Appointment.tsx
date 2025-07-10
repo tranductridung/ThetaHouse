@@ -1,69 +1,63 @@
 import api from "@/api/api";
 import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { appointmentColumns } from "@/components/columns/appointment-column";
-import { handleAxiosError } from "@/lib/utils";
 import type {
   AppointmentDraftType,
   AppointmentType,
 } from "@/components/schemas/appointment";
 import AppointmentForm from "@/components/forms/AppointmentForm";
-import { toast } from "sonner";
+import { useAptAction } from "@/hooks/useAptAction";
 
 export type FormManagerType = {
   isShow: boolean;
-  type: "add" | "edit";
+  type: "add" | "edit" | "addFree";
   data: AppointmentType | null;
 };
 
-const Appointment = () => {
+type AppointmentProps = {
+  customerId?: number;
+};
+
+const Appointment = forwardRef(({ customerId }: AppointmentProps, ref) => {
   const [data, setData] = useState<AppointmentType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
-
   const [formManager, setFormManager] = useState<FormManagerType>({
     isShow: false,
     type: "add",
     data: null,
   });
 
-  const handleSubmitEdit = async (formData: AppointmentDraftType) => {
-    console.log("formData edit", formData);
-    const newModules: number[] = formData.modules?.map((m) => m.id) ?? [];
+  useImperativeHandle(ref, () => ({
+    openDialog: () => {
+      setFormManager({
+        isShow: true,
+        type: "addFree",
+        data: null,
+      });
+    },
+  }));
 
-    const payload = {
-      note: formData.note,
-      customerId: formData.customer.id,
-      type: formData.type,
-      startAt: formData?.startAt?.toISOString(),
-      roomId: formData.room?.id || undefined,
-      healerId: formData.healer?.id || undefined,
-      moduleIds: newModules,
-    };
+  const handleSubmit = async (formData: AppointmentDraftType) => {
+    if (formManager.type === "edit") {
+      handleSubmitEdit(formData, formManager?.data?.id);
 
-    try {
-      const response = await api.patch(
-        `/appointments/${formManager?.data?.id}`,
-        payload
-      );
-      setData((prev) =>
-        prev.map((appointment) =>
-          appointment.id === formManager.data?.id
-            ? response.data.appointment
-            : appointment
-        )
-      );
       setFormManager({
         isShow: false,
         type: "add",
         data: null,
       });
-      toast.success("Update appointment success!");
-    } catch (error) {
-      handleAxiosError(error);
+    } else {
+      handleCreateAppointmnet(formData, customerId);
+      setFormManager({
+        isShow: false,
+        type: "add",
+        data: null,
+      });
     }
   };
 
@@ -75,20 +69,26 @@ const Appointment = () => {
     });
   };
 
+  const fetchData = async () => {
+    const url = customerId
+      ? `/partners/customers/${customerId}/appointments?page=${pageIndex}&limit=${pageSize}`
+      : `/appointments/all?page=${pageIndex}&limit=${pageSize}`;
+
+    const response = await api.get(url);
+    setData(response.data.appointments);
+    setTotal(response.data.total);
+  };
+
   useEffect(() => {
-    try {
-      const fetchData = async () => {
-        const response = await api.get(
-          `/appointments/all?page=${pageIndex}&limit=${pageSize}`
-        );
-        setData(response.data.appointments);
-        setTotal(response.data.total);
-      };
-      fetchData();
-    } catch (error) {
-      handleAxiosError(error);
-    }
-  }, []);
+    fetchData();
+  }, [pageIndex, pageSize]);
+
+  const {
+    handleCreateAppointmnet,
+    handleSubmitEdit,
+    handleSetComplete,
+    removeAppointment,
+  } = useAptAction(fetchData);
 
   return (
     <div className="p-4">
@@ -96,6 +96,8 @@ const Appointment = () => {
         onAdd={undefined}
         columns={appointmentColumns({
           onEdit,
+          handleSetComplete,
+          onRemove: removeAppointment,
         })}
         data={data}
         total={total}
@@ -127,7 +129,7 @@ const Appointment = () => {
         >
           <DialogTitle></DialogTitle>
           <AppointmentForm
-            onSubmit={handleSubmitEdit}
+            onSubmit={handleSubmit}
             appointmentData={formManager.data}
             type={formManager.type}
             setIsSelectOpen={setIsSelectOpen}
@@ -136,6 +138,6 @@ const Appointment = () => {
       </Dialog>
     </div>
   );
-};
+});
 
 export default Appointment;

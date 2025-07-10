@@ -1,4 +1,13 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDate,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
+import { SexType } from 'src/common/enums/enum';
 
 export class CreateUserDTO {
   @IsString()
@@ -10,4 +19,13 @@ export class CreateUserDTO {
   @IsString()
   @MinLength(8)
   password: string;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  dob?: Date;
+
+  @IsOptional()
+  @IsEnum(SexType)
+  sex?: SexType;
 }

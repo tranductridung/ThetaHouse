@@ -7,7 +7,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { UserStatus, UserRole } from '../../common/enums/enum';
+import { UserStatus, UserRole, SexType } from '../../common/enums/enum';
 import { IsEnum } from 'class-validator';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import { Order } from 'src/order/entities/order.entity';
@@ -43,6 +43,12 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: [UserRole.EMPLOYEE] })
   @IsEnum(UserRole)
   role: UserRole;
+
+  @Column({ type: 'enum', enum: SexType, default: SexType.UNDEFINED })
+  sex: SexType;
+
+  @Column({ nullable: true })
+  dob: Date;
 
   @CreateDateColumn({ select: false })
   createdAt: Date;

@@ -1,16 +1,17 @@
 import api from "@/api/api";
 import CreateConsignmentForm from "@/components/forms/CreateConsignmentForm";
 import type { CreateItemType, ItemDraftType } from "@/components/schemas/item";
-import type { PartnerType } from "@/components/schemas/partner";
-import type { ProductType } from "@/components/schemas/product";
 import type {
   ConsignmentDraftType,
   CreateConsignmentType,
 } from "@/components/schemas/source";
 
 import { handleAxiosError } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 export default function CreateConsignmentPage() {
+  const navigate = useNavigate();
+
   const handleCreateConsignment = async (data: ConsignmentDraftType) => {
     const transformDraftToCreateItem = (
       draft: ItemDraftType
@@ -37,6 +38,7 @@ export default function CreateConsignmentPage() {
       const response = await api.post("/consignments", payload);
       console.log("Create consignment:", response);
       toast.success("Create consignment success!");
+      navigate(`/sources/consignments/${response.data.consignment.id}/`);
     } catch (error) {
       handleAxiosError(error);
     }

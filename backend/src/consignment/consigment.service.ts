@@ -143,8 +143,8 @@ export class ConsignmentService {
       const createTransactionDto: CreateTransactionDto = {
         type:
           consignment.type === ConsignmentType.IN
-            ? TransactionType.INCOME
-            : TransactionType.EXPENSE,
+            ? TransactionType.EXPENSE
+            : TransactionType.INCOME,
         sourceType: SourceType.CONSIGNMENT,
         sourceId: consignment.id,
         totalAmount: finalAmount,
@@ -180,13 +180,17 @@ export class ConsignmentService {
         'consignment.finalAmount',
         'consignment.commissionRate',
         'consignment.status',
+        'consignment.createdAt',
         'consignment.note',
         'creator.fullName',
         'partner.fullName',
       ])
-      .orderBy('consignment.id', 'ASC');
+      .orderBy('consignment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [consignments, total] = await queryBuilder
@@ -212,14 +216,18 @@ export class ConsignmentService {
         'consignment.type',
         'consignment.totalAmount',
         'consignment.finalAmount',
+        'consignment.createdAt',
         'consignment.commissionRate',
         'consignment.note',
         'creator.fullName',
         'partner.fullName',
       ])
-      .orderBy('consignment.id', 'ASC');
+      .orderBy('consignment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [consignments, total] = await queryBuilder
@@ -415,7 +423,6 @@ export class ConsignmentService {
             ? TransactionType.INCOME
             : TransactionType.EXPENSE,
         totalAmount: oldTransaction.paidAmount,
-        paidAmount: 0,
         note: `Refund for consignment #${consignment.id}`,
       };
 

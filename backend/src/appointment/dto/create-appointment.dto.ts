@@ -4,6 +4,7 @@ import {
   IsDate,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
@@ -23,8 +24,9 @@ export class CreateAppointmentDto {
 
   @Type(() => Number)
   @IsInt()
+  @IsOptional()
   @IsPositive()
-  customerId: number;
+  customerId?: number;
 
   @IsEnum(AppointmentType)
   type: AppointmentType;
@@ -34,10 +36,11 @@ export class CreateAppointmentDto {
   @IsOptional()
   startAt?: Date;
 
-  // @Type(() => Number)
-  // @IsNumber()
-  // @IsPositive()
-  // duration?: number;
+  @Type(() => Number)
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  duration?: number;
 
   @Type(() => Number)
   @IsInt()

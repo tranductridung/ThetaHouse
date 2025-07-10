@@ -89,4 +89,15 @@ export class UserController {
   async changePassword(@Req() req: Request, @Body() data: ChangePasswordDTO) {
     return await this.userService.changePassword(data, Number(req?.user?.id));
   }
+
+  @Get('/:healerId/appointments')
+  async findAppointmentByCustomer(
+    @Param('healerId') healerId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.userService.findAppointmentByHealer(
+      healerId,
+      paginationDto,
+    );
+  }
 }

@@ -7,7 +7,8 @@ import { purchaseColumns } from "@/components/columns/purchase-column";
 import { handleAxiosError } from "@/lib/utils";
 import { useSourceActions } from "@/hooks/useSourceAction";
 
-const Purchase = () => {
+type PurchaseProps = { supplierId?: number };
+const Purchase = ({ supplierId }: PurchaseProps) => {
   const [data, setData] = useState<PurchaseType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -16,9 +17,12 @@ const Purchase = () => {
 
   const fetchData = async () => {
     try {
-      const response = await api.get(
-        `/purchases?page=${pageIndex}&limit=${pageSize}`
-      );
+      const url = supplierId
+        ? `/partners/suppliers/${supplierId}/purchases?page=${pageIndex}&limit=${pageSize}`
+        : `/purchases/all?page=${pageIndex}&limit=${pageSize}`;
+
+      const response = await api.get(url);
+
       setData(response.data.purchases);
       setTotal(response.data.total);
     } catch (error) {

@@ -27,9 +27,12 @@ export class ProductService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.productRepo
       .createQueryBuilder('product')
-      .orderBy('product.id', 'ASC');
+      .orderBy('product.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [products, total] = await queryBuilder
@@ -49,7 +52,10 @@ export class ProductService {
       .createQueryBuilder('product')
       .where('product.status = :status', { status: CommonStatus.ACTIVE });
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [products, total] = await queryBuilder

@@ -13,15 +13,18 @@ import { toast } from "sonner";
 export const useSourceActions = (refetch: () => void) => {
   const handleAddPayment = async (
     paymentDraftType: PaymentDraftType,
-    transactionId: number
+    transactionId: number,
+    partnerId?: number | undefined
   ) => {
     const payload: CreatePaymentType = {
       note: paymentDraftType.note,
       amount: paymentDraftType.amount,
       method: paymentDraftType.method,
-      customerId: paymentDraftType.customer.id,
+      partnerId: partnerId,
       transactionId: transactionId,
     };
+
+    // payload.partnerId = partnerId;
 
     try {
       await api.post(`payments`, payload);

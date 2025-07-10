@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
 
 type UserProps = {
   toggleStatus: (id: number) => void;
@@ -50,6 +51,21 @@ export const userColumns = ({
   {
     accessorKey: "address",
     header: "Address",
+  },
+  {
+    accessorKey: "sex",
+    header: "Sex",
+  },
+  {
+    accessorKey: "dob",
+    header: "Dob",
+    cell: ({ row }) => {
+      const value = row.getValue("dob");
+      if (!value) return null;
+
+      const date = new Date(value as string);
+      return format(date, "dd/MM/yyyy");
+    },
   },
   {
     accessorKey: "status",
@@ -82,7 +98,6 @@ export const userColumns = ({
         <Select
           value={currentRole}
           onValueChange={(newRole) => {
-            // đảm bảo newRole là giá trị enum đúng
             handleChangeRole(userId, newRole as UserRoleEnum);
           }}
         >

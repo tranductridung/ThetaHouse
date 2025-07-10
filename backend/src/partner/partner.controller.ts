@@ -42,19 +42,62 @@ export class PartnerController {
     );
   }
 
-  @Get('/customers/:customerId/appointments')
-  async getCustomerOrder(@Param('customerId') customerId: number) {
-    return await this.partnerService.getSourceOfPartner(
+  @Get('/customers/:customerId/orders')
+  async getCustomerOrder(
+    @Param('customerId') customerId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.getOrderByCustomer(
       customerId,
-      PartnerType.CUSTOMER,
+      false,
+      paginationDto,
     );
   }
 
-  @Get('/suppliers/:supplierId/appointments')
-  async getSupplierOrder(@Param('supplierId') supplierId: number) {
-    return await this.partnerService.getSourceOfPartner(
+  @Get('/customers/:customerId/consignments')
+  async getCustomerConsignments(
+    @Param('customerId') customerId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.getConsignmentByPartner(
+      customerId,
+      false,
+      paginationDto,
+    );
+  }
+
+  @Get('/suppliers/:supplierId/purchases')
+  async getSupplierPurchase(
+    @Param('supplierId') supplierId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.getPurchaseBySupplier(
       supplierId,
-      PartnerType.SUPPLIER,
+      false,
+      paginationDto,
+    );
+  }
+
+  @Get('/suppliers/:supplierId/consignments')
+  async getSupplierConsignments(
+    @Param('supplierId') supplierId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.getConsignmentByPartner(
+      supplierId,
+      false,
+      paginationDto,
+    );
+  }
+
+  @Get('/customers/:customerId/appointments')
+  async findAppointmentByCustomer(
+    @Param('customerId') customerId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.findAppointmentByCustomer(
+      customerId,
+      paginationDto,
     );
   }
 

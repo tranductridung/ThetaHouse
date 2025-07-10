@@ -12,6 +12,8 @@ import { partnerColumns } from "@/components/columns/partner-column";
 import PartnerForm from "@/components/forms/PartnerForm";
 import { toast } from "sonner";
 import { handleAxiosError } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import type { TypeOfPartner } from "@/components/constants/constants";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -29,27 +31,32 @@ const Partner = () => {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const navigate = useNavigate();
+
+  const fetchData = async () => {
+    try {
+      const response = await api.get(
+        `/partners?page=${pageIndex}&limit=${pageSize}`
+      );
+      setData(response.data.partners);
+      setTotal(response.data.total);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
 
   const handleSubmit = async (
     formData: CreatePartnerFormType | EditPartnerFormType
   ) => {
     try {
       if (formManager.type === "add") {
-        const response = await api.post("/partners", formData);
-        setData((prev) => [...prev, response.data.partner]);
+        await api.post("/partners", formData);
+        fetchData();
         toast.success(`Create partner success!`);
       } else if (formManager.type === "edit" && formManager.data?.id) {
-        const response = await api.patch(
-          `/partners/${formManager.data.id}`,
-          formData
-        );
-        setData((prev) =>
-          prev.map((partner) =>
-            partner.id === formManager.data?.id
-              ? response.data.partner
-              : partner
-          )
-        );
+        await api.patch(`/partners/${formManager.data.id}`, formData);
+
+        fetchData();
         toast.success(`Edit partner success!`);
       }
 
@@ -79,18 +86,13 @@ const Partner = () => {
     });
   };
 
+  const onDetail = (partnerId: number, partnerType: TypeOfPartner) => {
+    const tmp = partnerType.toLowerCase();
+
+    navigate(`/partners/${tmp}s/${partnerId}`);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get(
-          `/partners?page=${pageIndex}&limit=${pageSize}`
-        );
-        setData(response.data.partners);
-        setTotal(response.data.total);
-      } catch (error) {
-        handleAxiosError(error);
-      }
-    };
     fetchData();
   }, [pageIndex, pageSize]);
 
@@ -100,6 +102,7 @@ const Partner = () => {
         onAdd={onAdd}
         columns={partnerColumns({
           onEdit,
+          onDetail,
         })}
         data={data}
         total={total}
@@ -109,6 +112,7 @@ const Partner = () => {
         setPageSize={setPageSize}
       />
 
+      {/* Create partner */}
       <Dialog
         open={formManager.isShow}
         onOpenChange={(isOpen) => {

@@ -6,8 +6,11 @@ import type {
   OrderDraftType,
 } from "@/components/schemas/source";
 import { handleAxiosError } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 export default function CreateOrderPage() {
+  const navigate = useNavigate();
+
   const handleCreateOrder = async (data: OrderDraftType) => {
     const transformDraftToCreateItem = (
       draft: ItemDraftType
@@ -35,6 +38,7 @@ export default function CreateOrderPage() {
       const response = await api.post("/orders", payload);
       console.log("Create order:", response);
       toast.success("Create order success!");
+      navigate(`/sources/orders/${response.data.order.id}/`);
     } catch (error) {
       handleAxiosError(error);
     }

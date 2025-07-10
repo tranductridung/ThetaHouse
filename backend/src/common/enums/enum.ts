@@ -120,3 +120,9 @@ export enum SourceStatus {
   COMPLETED = 'Completed',
   CANCELLED = 'Cancelled',
 }
+
+export enum SexType {
+  UNDEFINED = 'Undefined',
+  MALE = 'Male',
+  FEMALE = 'Female',
+}

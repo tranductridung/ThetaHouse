@@ -31,5 +31,6 @@ export class CreatePaymentDto {
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  customerId: number;
+  @IsOptional()
+  partnerId?: number;
 }

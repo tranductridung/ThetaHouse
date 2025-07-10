@@ -31,11 +31,10 @@ import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { Input } from "../ui/input";
 import { RoomComboBox } from "../ComboBoxs/Room";
 import { UserComboBox } from "../ComboBoxs/User";
-import { PartnerComboBox } from "../ComboBoxs/Partner";
 import { MultiModuleComboBox } from "../ComboBoxs/Module";
 
 type AppointmentProps = {
-  type: "add" | "edit";
+  type: "add" | "edit" | "addFree";
   onSubmit: (formData: AppointmentDraftType) => void;
   appointmentData: AppointmentType | null;
   setIsSelectOpen: (isOpen: boolean) => void;
@@ -47,15 +46,16 @@ const AppointmentForm = ({
   type,
   setIsSelectOpen,
 }: AppointmentProps) => {
+  console.log(appointmentData);
   const form = useForm<AppointmentDraftType>({
     resolver: zodResolver(appointmentDraftSchema),
     defaultValues: {
       note: appointmentData?.note ?? "",
-      customer: appointmentData?.customer,
       healer: appointmentData?.healer ?? undefined,
       room: appointmentData?.room ?? undefined,
-      type: appointmentData?.type,
+      type: appointmentData?.type ?? "Free",
       modules: appointmentData?.modules ?? [],
+      duration: appointmentData?.duration,
       startAt: appointmentData?.startAt
         ? new Date(appointmentData.startAt)
         : undefined,
@@ -66,12 +66,20 @@ const AppointmentForm = ({
     <>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(
+            (data) => {
+              console.log("✅ Data submitted:", data);
+              onSubmit(data);
+            },
+            (errors) => {
+              console.error("❌ Validation errors:", errors); // << chỗ này sẽ in ra lỗi
+            }
+          )}
           className="space-y-6 overflow-y-auto "
         >
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-2xl font-bold">
-              {type === "add" ? "Create Appointment" : "Edit Appointment"}
+              {type === "edit" ? "Edit Appointment" : "Create Appointment"}
             </h1>
           </div>
 
@@ -163,51 +171,62 @@ const AppointmentForm = ({
           />
 
           {/* Type */}
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem className="flex flex-1/2 flex-col w-full">
-                <FormLabel>Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  onOpenChange={setIsSelectOpen}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a type of appointment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup className="w-full">
-                      <SelectItem value="Main">Main</SelectItem>
-                      <SelectItem value="Bonus">Bonus</SelectItem>
-                      <SelectItem value="Free">Free</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+          {type === "add" && (
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem className="flex flex-1/2 flex-col w-full">
+                  <FormLabel>Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    onOpenChange={setIsSelectOpen}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a type of appointment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup className="w-full">
+                        <SelectItem value="Main">Main</SelectItem>
+                        <SelectItem value="Bonus">Bonus</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
 
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
-          {/* Customer */}
-          <FormField
-            control={form.control}
-            name="customer"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Customer</FormLabel>
-                <FormControl>
-                  <PartnerComboBox
-                    value={field.value}
-                    onChange={(customer) => field.onChange(customer)}
-                    type="Customer"
+          {/* Duration */}
+          {type !== "add" && (
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem className="flex flex-1/2 flex-col w-full">
+                  <FormLabel>Duration</FormLabel>
+                  <Input
+                    disabled={type === "edit"}
+                    placeholder="0"
+                    min={0}
+                    type="number"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Healer */}
           <FormField
@@ -262,8 +281,9 @@ const AppointmentForm = ({
               </FormItem>
             )}
           />
+
           <Button type="submit" className="w-full">
-            {type === "add" ? "Create" : "Save"}
+            {type === "edit" ? "Save" : "Create"}
           </Button>
         </form>
       </Form>

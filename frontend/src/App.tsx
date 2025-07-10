@@ -32,7 +32,8 @@ import CreatePurchase from "./pages/CreatePurchase";
 import CreateOrder from "./pages/CreateOrder";
 import CreateConsignment from "./pages/CreateConsignment";
 import CreateAppointment from "./pages/CreateAppointment";
-import CustomerDetail from "./pages/CustomerDetail";
+import PartnerDetail from "./pages/PartnerDetail";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   return (
@@ -59,7 +60,10 @@ const App = () => {
             <Route path="resources/rooms" element={<Room />} />
             <Route path="resources/discounts" element={<Discount />} />
 
-            <Route path="partners/customers/:id" element={<CustomerDetail />} />
+            <Route
+              path="partners/:partnerType/:id"
+              element={<PartnerDetail />}
+            />
 
             <Route path="/sources" element={<SourcePage />}>
               <Route path="purchases" element={<Purchase />} />
@@ -81,11 +85,13 @@ const App = () => {
 
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/signup" element={<Signup />} />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
 
       <Toaster
-        swipeDirections={["right", "left"]}
+        swipeDirections={["left", "top"]}
         richColors
         closeButton
       ></Toaster>

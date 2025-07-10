@@ -43,9 +43,12 @@ export class ServiceService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.serviceRepo
       .createQueryBuilder('service')
-      .orderBy('service.id', 'ASC');
+      .orderBy('service.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [services, total] = await queryBuilder
@@ -64,8 +67,11 @@ export class ServiceService {
     const queryBuilder = this.serviceRepo
       .createQueryBuilder('service')
       .where('service.status  = :status', { status: CommonStatus.ACTIVE })
-      .orderBy('service.id', 'ASC');
-    if (paginationDto) {
+      .orderBy('service.createdAt', 'DESC');
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [services, total] = await queryBuilder

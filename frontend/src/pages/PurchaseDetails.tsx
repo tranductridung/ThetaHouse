@@ -72,7 +72,7 @@ const PurchaseDetails = () => {
   };
 
   const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
-    await handleAddPayment(paymentDraftType, transaction.id);
+    await handleAddPayment(paymentDraftType, transaction.id, undefined);
     setIsShowAddPayment(false);
   };
 

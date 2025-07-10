@@ -46,8 +46,6 @@ export class OrderService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto, creatorId: number) {
-    console.log('createOrderDto', createOrderDto);
-
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -170,6 +168,7 @@ export class OrderService {
         'order.id',
         'order.quantity',
         'order.totalAmount',
+        'order.createdAt',
         'order.status',
         'order.finalAmount',
         'order.note',
@@ -177,9 +176,12 @@ export class OrderService {
         'customer.fullName',
         'discount.code',
       ])
-      .orderBy('order.id', 'ASC');
+      .orderBy('order.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [orders, total] = await queryBuilder
@@ -207,14 +209,18 @@ export class OrderService {
         'order.totalAmount',
         'order.finalAmount',
         'order.status',
+        'order.createdAt',
         'order.note',
         'creator.fullName',
         'customer.fullName',
         'discount.code',
       ])
-      .orderBy('order.id', 'ASC');
+      .orderBy('order.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [orders, total] = await queryBuilder
@@ -405,7 +411,6 @@ export class OrderService {
       const createTransactionNoSourceDto: CreateTransactionNoSourceDto = {
         type: TransactionType.EXPENSE,
         totalAmount: oldTransaction.paidAmount,
-        paidAmount: 0,
         note: `Refund for order #${order.id}`,
       };
 

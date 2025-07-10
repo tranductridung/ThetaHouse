@@ -131,6 +131,7 @@ export class PurchaseService {
       .leftJoinAndSelect('purchase.supplier', 'supplier')
       .select([
         'purchase.id',
+        'purchase.createdAt',
         'purchase.quantity',
         'purchase.totalAmount',
         'purchase.finalAmount',
@@ -140,9 +141,12 @@ export class PurchaseService {
         'creator.fullName',
         'supplier.fullName',
       ])
-      .orderBy('purchase.id', 'ASC');
+      .orderBy('purchase.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [purchases, total] = await queryBuilder
@@ -170,12 +174,16 @@ export class PurchaseService {
         'purchase.finalAmount',
         'purchase.status',
         'purchase.discountAmount',
+        'purchase.createdAt',
         'purchase.note',
         'creator.fullName',
         'supplier.fullName',
       ])
-      .orderBy('purchase.id', 'ASC');
-    if (paginationDto) {
+      .orderBy('purchase.createdAt', 'DESC');
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [purchases, total] = await queryBuilder
@@ -357,7 +365,6 @@ export class PurchaseService {
       const createTransactionNoSourceDto: CreateTransactionNoSourceDto = {
         type: TransactionType.INCOME,
         totalAmount: oldTransaction.paidAmount,
-        paidAmount: 0,
         note: `Refund for purchase #${purchase.id}`,
       };
 

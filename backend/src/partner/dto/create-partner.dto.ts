@@ -1,5 +1,6 @@
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
-import { PartnerType } from 'src/common/enums/enum';
+import { Type } from 'class-transformer';
+import { IsDate, IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { PartnerType, SexType } from 'src/common/enums/enum';
 
 export class CreatePartnerDto {
   @IsEmail()
@@ -23,4 +24,13 @@ export class CreatePartnerDto {
 
   @IsEnum(PartnerType)
   type: PartnerType;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  dob?: Date;
+
+  @IsOptional()
+  @IsEnum(SexType)
+  sex?: SexType;
 }

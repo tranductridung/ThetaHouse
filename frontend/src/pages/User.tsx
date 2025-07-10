@@ -15,6 +15,18 @@ const User = () => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
+  const fetchData = async () => {
+    try {
+      const response = await api.get(
+        `/users?page=${pageIndex}&limit=${pageSize}`
+      );
+      setData(response.data.users);
+      setTotal(response.data.total);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
   const toggleStatus = async (id: number) => {
     try {
       await api.patch(`/users/${id}/toggle-status`);
@@ -62,18 +74,6 @@ const User = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get(
-          `/users?page=${pageIndex}&limit=${pageSize}`
-        );
-        setData(response.data.users);
-        setTotal(response.data.total);
-      } catch (error) {
-        handleAxiosError(error);
-      }
-    };
-
     fetchData();
   }, [pageIndex, pageSize]);
 

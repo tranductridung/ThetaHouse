@@ -230,6 +230,7 @@ export class InventoryService {
         'inventory.id',
         'inventory.quantity',
         'inventory.action',
+        'inventory.createdAt',
         'inventory.note',
         'creator.fullName',
         'product.name',
@@ -237,9 +238,12 @@ export class InventoryService {
         'product.unitPrice',
         'item.id',
       ])
-      .orderBy('inventory.id', 'ASC');
+      .orderBy('inventory.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [inventories, total] = await queryBuilder

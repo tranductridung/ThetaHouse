@@ -57,9 +57,11 @@ export class TransactionService {
     const repo = manager
       ? manager.getRepository(Transaction)
       : this.transactionRepo;
-
+    console.log('1');
     const transaction = repo.create({
       ...createTransactionNoSourceDto,
+      paidAmount: 0,
+      status: TransactionStatus.UNPAID,
     });
 
     transaction.status = this.getTransactionStatus(
@@ -174,6 +176,7 @@ export class TransactionService {
       .select([
         'transaction.id',
         'transaction.type',
+        'transaction.createdAt',
         'transaction.sourceType',
         'transaction.totalAmount',
         'transaction.paidAmount',
@@ -181,18 +184,20 @@ export class TransactionService {
         'transaction.note',
         'creator.fullName',
       ])
-      .orderBy('transaction.id', 'ASC');
+      .orderBy('transaction.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const [transactions, total] = await queryBuilder
         .skip(paginationDto.page * paginationDto.limit)
         .take(paginationDto.limit)
         .getManyAndCount();
-
       return { transactions, total };
-    } else {
-      const transactions = await queryBuilder.getMany();
-      return transactions;
     }
+
+    const transactions = await queryBuilder.getMany();
+    return { transactions };
   }
 }

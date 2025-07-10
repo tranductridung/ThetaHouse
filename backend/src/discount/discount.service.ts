@@ -58,9 +58,12 @@ export class DiscountService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.discountRepo
       .createQueryBuilder('discount')
-      .orderBy('discount.id', 'ASC');
+      .orderBy('discount.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [discounts, total] = await queryBuilder
@@ -79,9 +82,12 @@ export class DiscountService {
     const queryBuilder = this.discountRepo
       .createQueryBuilder('discount')
       .where('discount.status = :status', { status: CommonStatus.ACTIVE })
-      .orderBy('discount.id', 'ASC');
+      .orderBy('discount.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [discounts, total] = await queryBuilder

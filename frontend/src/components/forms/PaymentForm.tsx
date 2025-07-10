@@ -30,19 +30,17 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { paymentDraftSchema, type PaymentDraftType } from "../schemas/payment";
 import { toast } from "sonner";
-import type { PartnerType } from "../schemas/partner";
 import { useEffect, useState } from "react";
-import ChooseCustomerSupplier from "../ChooseCustomerSupplier";
 import ChooseTransaction from "../ChooseTransaction";
 import type { TransactionType } from "../schemas/transaction";
-import { Edit, Mail, Phone, User } from "lucide-react";
+import { Edit } from "lucide-react";
 
 type PaymentProps = {
   onSubmit: (formData: PaymentDraftType) => void;
 };
 
 const PaymentForm = ({ onSubmit }: PaymentProps) => {
-  const [openCustomerDialog, setOpenCustomerDialog] = useState<boolean>(false);
+  // const [openCustomerDialog, setOpenCustomerDialog] = useState<boolean>(false);
   const [openTransactionDialog, setOpenTransactionDialog] =
     useState<boolean>(false);
 
@@ -55,23 +53,21 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
     },
   });
 
-  // const { control, setValue, reset } = form;
-
   const watchedAmount = useWatch({
     control: form.control,
     name: "amount",
   });
 
-  const watchedTransaction = useWatch({
-    control: form.control,
-    name: "transaction",
-  });
+  // const watchedTransaction = useWatch({
+  //   control: form.control,
+  //   name: "transaction",
+  // });
 
-  const handleChooseCustomer = (customer: PartnerType) => {
-    form.setValue("customer", customer);
-    setOpenCustomerDialog(false);
-    toast.success("Choose customer success!");
-  };
+  // const handleChooseCustomer = (customer: PartnerType) => {
+  //   form.setValue("customer", customer);
+  //   setOpenCustomerDialog(false);
+  //   toast.success("Choose customer success!");
+  // };
 
   const handleChooseTransaction = (transaction: TransactionType) => {
     form.setValue("transaction", transaction);
@@ -81,6 +77,7 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
 
   useEffect(() => {
     if (!watchedTransaction) return;
+
     const { paidAmount, totalAmount } = watchedTransaction;
     const remainAmount = totalAmount - paidAmount;
 
@@ -122,12 +119,24 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
                 <FormControl>
                   <Input
                     type="number"
-                    min={0}
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
+                  />
+
+                  {/* <Input
+                    type="number"
+                    min={1}
                     {...form.register(`amount`, {
                       valueAsNumber: true,
                     })}
                     className="w-full inline-block"
-                  />
+                  /> */}
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -168,7 +177,7 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
         </div>
 
         {/* Choose Customer Dialog */}
-        <Dialog
+        {/* <Dialog
           open={openCustomerDialog}
           onOpenChange={(isOpen) => {
             if (!isOpen) {
@@ -185,9 +194,9 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
               />
             </div>
           </DialogContent>
-        </Dialog>
+        </Dialog> */}
 
-        {/* Choose Customer Dialog */}
+        {/* Choose Transaction Dialog */}
         <Dialog
           open={openTransactionDialog}
           onOpenChange={(isOpen) => {
@@ -207,7 +216,7 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
         </Dialog>
 
         {/* Customer */}
-        <FormField
+        {/* <FormField
           control={form.control}
           name="customer"
           render={({ field }) => (
@@ -260,7 +269,7 @@ const PaymentForm = ({ onSubmit }: PaymentProps) => {
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         {/* Transaction */}
         <FormField

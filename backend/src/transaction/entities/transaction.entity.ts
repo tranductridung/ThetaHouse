@@ -45,7 +45,11 @@ export class Transaction {
   })
   paidAmount: number;
 
-  @Column({ type: 'enum', enum: TransactionStatus })
+  @Column({
+    type: 'enum',
+    enum: TransactionStatus,
+    default: TransactionStatus.UNPAID,
+  })
   status: TransactionStatus;
 
   @Column({ type: 'text', nullable: true })

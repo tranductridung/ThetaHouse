@@ -11,7 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ItemService } from 'src/item/item.service';
 import { Payment } from './entities/payment.entity';
 import { User } from 'src/user/entities/user.entity';
-import { TransactionStatus } from 'src/common/enums/enum';
+import { TransactionStatus, TransactionType } from 'src/common/enums/enum';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
@@ -52,11 +52,22 @@ export class PaymentService {
           id: creatorId,
         },
       });
-      payment.customer = await queryRunner.manager.findOneOrFail(Partner, {
-        where: {
-          id: createPaymentDto.customerId,
-        },
-      });
+
+      if (
+        transaction.type === TransactionType.INCOME &&
+        !createPaymentDto.partnerId
+      )
+        throw new BadRequestException(
+          'Partner ID is required to create payment for income transaction!',
+        );
+
+      if (createPaymentDto.partnerId) {
+        payment.partner = await queryRunner.manager.findOneOrFail(Partner, {
+          where: {
+            id: createPaymentDto.partnerId,
+          },
+        });
+      }
 
       const balance = transaction.totalAmount - transaction.paidAmount;
 
@@ -76,17 +87,18 @@ export class PaymentService {
         queryRunner.manager,
       );
 
-      await this.itemService.updateSourceStatus(
-        transaction.sourceId,
-        transaction.sourceType,
-        queryRunner.manager,
-        transaction.status,
-      );
+      if (transaction.sourceId) {
+        await this.itemService.updateSourceStatus(
+          transaction.sourceId,
+          transaction.sourceType,
+          queryRunner.manager,
+          transaction.status,
+        );
+      }
 
       await queryRunner.manager.save(payment);
       await queryRunner.commitTransaction();
     } catch (error) {
-      console.log(error);
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
@@ -98,7 +110,7 @@ export class PaymentService {
     const queryBuilder = this.paymentRepo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.creator', 'creator')
-      .leftJoinAndSelect('payment.customer', 'customer')
+      .leftJoinAndSelect('payment.partner', 'partner')
       .leftJoinAndSelect('payment.transaction', 'transaction')
       .select([
         'payment.id',
@@ -106,12 +118,16 @@ export class PaymentService {
         'payment.amount',
         'payment.method',
         'payment.note',
+        'payment.createdAt',
         'creator.fullName',
-        'customer.fullName',
+        'partner.fullName',
       ])
-      .orderBy('payment.id', 'ASC');
+      .orderBy('payment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [payments, total] = await queryBuilder
@@ -139,21 +155,25 @@ export class PaymentService {
     const queryBuilder = this.paymentRepo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.creator', 'creator')
-      .leftJoinAndSelect('payment.customer', 'customer')
+      .leftJoinAndSelect('payment.partner', 'partner')
       .leftJoinAndSelect('payment.transaction', 'transaction')
       .where('transaction.id = :transactionId', { transactionId })
       .select([
         'payment.id',
+        'payment.createdAt',
         'transaction.id',
         'payment.amount',
         'payment.method',
         'payment.note',
         'creator.fullName',
-        'customer.fullName',
+        'partner.fullName',
       ])
-      .orderBy('payment.id', 'ASC');
+      .orderBy('payment.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
       const [payments, total] = await queryBuilder
         .skip(page * limit)

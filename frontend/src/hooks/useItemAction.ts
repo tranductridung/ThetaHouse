@@ -69,7 +69,8 @@ export const useItemActions = (refetch: () => void) => {
 
   const handleCreateAppointmnet = async (
     formData: AppointmentDraftType,
-    selectedItemId: number
+    customerId: number,
+    selectedItemId?: number
   ) => {
     console.log("form data", formData);
 
@@ -77,7 +78,7 @@ export const useItemActions = (refetch: () => void) => {
 
     const payload = {
       note: formData.note,
-      customerId: formData.customer.id,
+      customerId: customerId,
       type: formData.type,
       startAt: formData.startAt,
       roomId: formData.room?.id || undefined,
@@ -86,9 +87,10 @@ export const useItemActions = (refetch: () => void) => {
       itemId: selectedItemId,
     };
 
+    console.log("payload", payload);
+
     try {
       const response = await api.post(`/appointments`, payload);
-      console.log("response", response);
       toast.success("Create appointment success!");
       return response;
     } catch (error) {

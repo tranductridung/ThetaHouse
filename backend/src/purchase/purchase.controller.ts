@@ -23,9 +23,16 @@ export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}
 
   @Post()
-  create(@Body() createPurchaseDto: CreatePurchaseDto, @Req() req: Request) {
+  async create(
+    @Body() createPurchaseDto: CreatePurchaseDto,
+    @Req() req: Request,
+  ) {
     const userId = Number(req.user?.id);
-    return this.purchaseService.create(createPurchaseDto, userId);
+    const purchase = await this.purchaseService.create(
+      createPurchaseDto,
+      userId,
+    );
+    return { purchase };
   }
 
   @Get('all')

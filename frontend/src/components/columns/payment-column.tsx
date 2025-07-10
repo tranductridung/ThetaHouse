@@ -37,8 +37,8 @@ export const paymentColumns: ColumnDef<PaymentType>[] = [
     header: "Creator",
   },
   {
-    accessorFn: (row) => row.customer?.fullName ?? "",
-    header: "Customer",
+    accessorFn: (row) => row.partner?.fullName ?? "",
+    header: "Partner",
   },
   {
     accessorKey: "note",

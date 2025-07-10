@@ -1,4 +1,5 @@
-export const TypeOfPartner = ["Customer", "Supplier"] as const;
+export const PartnerTypeConst = ["Customer", "Supplier"] as const;
+export const SexType = ["Undefined", "Male", "Female"] as const;
 export const UserStatus = [
   "Active",
   "Inactive",
@@ -48,17 +49,13 @@ export const SourceStatus = [
 export const TypeOfAppointment = ["Main", "Free", "Bonus"] as const;
 
 // Type
-// export type SourceStatusType = (typeof SourceStatus)[keyof typeof SourceStatus];
-// export type ItemStatusType = (typeof ItemStatus)[keyof typeof ItemStatus];
-// export type TransactionStatusType =
-//   (typeof TransactionStatus)[keyof typeof TransactionStatus];
-
 export type SourceType = (typeof TypeOfSource)[number];
 export type SourceStatusType = (typeof SourceStatus)[number];
 export type AppointmentStatusType = (typeof AppointmentStatus)[number];
 export type ItemStatusType = (typeof ItemStatus)[number];
 export type TransactionStatusType = (typeof TransactionStatus)[number];
 export type TypeOfConsignment = (typeof ConsignmentType)[number];
+export type TypeOfPartner = (typeof PartnerTypeConst)[number];
 
 // Enum
 export enum UserRoleEnum {

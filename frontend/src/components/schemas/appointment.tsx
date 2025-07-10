@@ -32,7 +32,6 @@ export const appointmentSchema = baseAppointmentSchema.extend({
 
 export const editAppointmentSchema = baseAppointmentSchema.extend({
   note: z.string().optional(),
-  customerId: z.number(),
   type: z.enum(TypeOfAppointment),
   startAt: z.date().optional(),
   roomId: z.number().optional(),
@@ -41,32 +40,36 @@ export const editAppointmentSchema = baseAppointmentSchema.extend({
 });
 
 export const createAppointmentSchema = editAppointmentSchema.extend({
-  // itemId: z.number(),
+  customerId: z.number().optional(),
 });
 
-export const appointmentDraftSchema = z.object({
-  note: z.string().optional(),
-  // item: z
-  //   .object({
-  //     id: z.number(),
-  //   })
-  //   .optional(),
-  customer: z.object({
-    id: z.number(),
-    fullName: z.string(),
-  }),
-  healer: z
-    .object({
-      id: z.number(),
-      fullName: z.string(),
-    })
-    .optional(),
-  room: z.object({ name: z.string(), id: z.number() }).optional(),
-  // id: z.number().optional(),
-  startAt: z.date().optional(),
-  modules: z.array(moduleSchema).optional(),
-  type: z.enum(TypeOfAppointment),
-});
+export const appointmentDraftSchema = z
+  .object({
+    note: z.string().optional(),
+    healer: z
+      .object({
+        id: z.number(),
+        fullName: z.string(),
+      })
+      .optional(),
+    room: z.object({ name: z.string(), id: z.number() }).optional(),
+    startAt: z.date().optional(),
+    modules: z.array(moduleSchema).optional(),
+    type: z.enum(TypeOfAppointment),
+    duration: z.number().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.type === "Free" &&
+      (data.duration === undefined || isNaN(data.duration))
+    ) {
+      ctx.addIssue({
+        path: ["duration"],
+        code: z.ZodIssueCode.custom,
+        message: "Duration is required!",
+      });
+    }
+  });
 
 export type AppointmentType = z.infer<typeof appointmentSchema>;
 export type CreateAppointmentType = z.infer<typeof createAppointmentSchema>;

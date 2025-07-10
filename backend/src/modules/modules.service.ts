@@ -34,9 +34,12 @@ export class ModulesService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.moduleRepo
       .createQueryBuilder('module')
-      .orderBy('module.id', 'ASC');
+      .orderBy('module.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {
@@ -61,9 +64,12 @@ export class ModulesService {
     const queryBuilder = this.moduleRepo
       .createQueryBuilder('module')
       .where('status = :status', { status: CommonStatus.ACTIVE })
-      .orderBy('module.id', 'ASC');
+      .orderBy('module.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {

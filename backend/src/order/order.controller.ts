@@ -25,7 +25,8 @@ export class OrderController {
   @Post()
   async create(@Body() createOrderDto: CreateOrderDto, @Req() req: Request) {
     const userId = Number(req.user?.id);
-    return await this.orderService.create(createOrderDto, userId);
+    const order = await this.orderService.create(createOrderDto, userId);
+    return { order };
   }
 
   @Get('/all')

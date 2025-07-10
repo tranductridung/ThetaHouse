@@ -49,9 +49,9 @@ export class Payment {
   @JoinColumn({ name: 'creatorId' })
   creator: User;
 
-  @ManyToOne(() => Partner, (customer) => customer.payments, {
+  @ManyToOne(() => Partner, (partner) => partner.payments, {
     onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'customerId' })
-  customer: Partner;
+  @JoinColumn({ name: 'partnerId' })
+  partner: Partner;
 }

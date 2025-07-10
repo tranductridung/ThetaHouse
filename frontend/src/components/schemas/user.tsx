@@ -1,10 +1,12 @@
 import { z } from "zod";
-import { UserRole, UserStatus } from "../constants/constants";
+import { SexType, UserRole, UserStatus } from "../constants/constants";
 
 export const baseUserSchema = z.object({
   fullName: z.string(),
-  phoneNumber: z.string(),
-  address: z.string(),
+  phoneNumber: z.string().optional(),
+  address: z.string().optional(),
+  sex: z.enum(SexType).optional(),
+  dob: z.date().optional(),
 });
 
 export const editUserFormSchema = baseUserSchema.extend({});

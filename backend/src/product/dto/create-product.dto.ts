@@ -13,11 +13,6 @@ export class CreateProductDto {
   @IsEnum(ProductUnit)
   unit: ProductUnit;
 
-  // @Type(() => Number)
-  // @IsNumber({ maxDecimalPlaces: 2 })
-  // @Min(0)
-  // unitPrice: number;
-
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)

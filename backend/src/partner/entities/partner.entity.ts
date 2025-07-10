@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { PartnerType } from 'src/common/enums/enum';
+import { PartnerType, SexType } from 'src/common/enums/enum';
 import { Order } from 'src/order/entities/order.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
@@ -36,6 +36,12 @@ export class Partner {
   @Column({ type: 'enum', enum: PartnerType })
   type: PartnerType;
 
+  @Column({ nullable: true })
+  dob?: Date;
+
+  @Column({ type: 'enum', enum: SexType, default: SexType.UNDEFINED })
+  sex: SexType;
+
   @CreateDateColumn({ select: false })
   createdAt: Date;
 
@@ -54,6 +60,6 @@ export class Partner {
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
   appointments: Appointment[];
 
-  @OneToMany(() => Payment, (payments) => payments.customer)
+  @OneToMany(() => Payment, (payments) => payments.partner)
   payments: Payment[];
 }

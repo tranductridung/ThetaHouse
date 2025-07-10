@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PartnerComboBox } from "../ComboBoxs/Partner";
 
 type AddPaymentProps = {
   onSubmit: (paymentDraftType: PaymentDraftType) => void;
@@ -57,7 +56,7 @@ const AddPaymentForm = ({ onSubmit }: AddPaymentProps) => {
           />
 
           {/* Customer */}
-          <FormField
+          {/* <FormField
             control={form.control}
             name="customer"
             render={({ field }) => (
@@ -73,7 +72,7 @@ const AddPaymentForm = ({ onSubmit }: AddPaymentProps) => {
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
 
           <div className="flex md:flex-row flex-col gap-x-5">
             {/* Amount */}
@@ -108,13 +107,13 @@ const AddPaymentForm = ({ onSubmit }: AddPaymentProps) => {
               name="method"
               render={({ field }) => (
                 <FormItem className="flex flex-1/2 flex-col">
-                  <FormLabel>Modules</FormLabel>
+                  <FormLabel>Method</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a type of module" />
+                      <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup className="w-full">

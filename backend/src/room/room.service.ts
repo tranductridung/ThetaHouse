@@ -30,9 +30,12 @@ export class RoomService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.roomRepo
       .createQueryBuilder('room')
-      .orderBy('room.id', 'ASC');
+      .orderBy('room.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {

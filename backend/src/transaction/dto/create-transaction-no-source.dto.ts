@@ -11,10 +11,10 @@ export class CreateTransactionNoSourceDto {
   @Min(0)
   totalAmount: number;
 
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  paidAmount: number;
+  // @Type(() => Number)
+  // @IsNumber({ maxDecimalPlaces: 2 })
+  // @Min(0)
+  // paidAmount: number;
 
   @IsString()
   @IsOptional()

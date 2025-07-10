@@ -77,7 +77,16 @@ const ConsignmentDetails = () => {
   };
 
   const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
-    await handleAddPayment(paymentDraftType, transaction.id);
+    const partnerId =
+      consignment?.type === "In" ? undefined : consignment?.partner.id;
+
+    console.log("--------", consignment, partnerId);
+
+    await handleAddPayment(
+      paymentDraftType,
+      transaction.id,
+      partnerId ? partnerId : undefined
+    );
     setIsShowAddPayment(false);
   };
 

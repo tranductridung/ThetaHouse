@@ -133,9 +133,12 @@ export class ItemService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.itemRepo
       .createQueryBuilder('item')
-      .orderBy('item.id', 'ASC');
+      .orderBy('item.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [items, total] = await queryBuilder
@@ -154,9 +157,12 @@ export class ItemService {
     const queryBuilder = this.itemRepo
       .createQueryBuilder('item')
       .where('item.isActive = :isActive', { isActive: true })
-      .orderBy('item.id', 'ASC');
+      .orderBy('item.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit } = paginationDto;
 
       const [items, total] = await queryBuilder

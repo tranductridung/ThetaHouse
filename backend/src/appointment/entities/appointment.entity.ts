@@ -40,6 +40,9 @@ export class Appointment {
   @Column({ type: 'enum', enum: AppointmentType })
   type: AppointmentType;
 
+  @Column()
+  duration: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

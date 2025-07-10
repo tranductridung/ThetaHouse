@@ -7,28 +7,33 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDTO } from './dto/change-pass.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole, UserStatus } from 'src/common/enums/enum';
+import { Appointment } from 'src/appointment/entities/appointment.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private dataSource: DataSource,
     private readonly configService: ConfigService,
   ) {}
 
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.userRepo
       .createQueryBuilder('user')
-      .orderBy('user.id', 'ASC');
+      .orderBy('user.createdAt', 'DESC');
 
-    if (paginationDto) {
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
       const { page, limit, search } = paginationDto;
 
       if (search) {
@@ -144,5 +149,59 @@ export class UserService {
     await this.userRepo.save(user);
 
     return { message: 'Change password success!' };
+  }
+
+  async findAppointmentByHealer(
+    healerId: number,
+    paginationDto?: PaginationDto,
+  ) {
+    const isHealerExist = await this.userRepo.exists({
+      where: { id: healerId },
+    });
+
+    if (!isHealerExist) throw new NotFoundException(`Headler not exist!`);
+
+    const queryBuilder = this.dataSource
+      .createQueryBuilder(Appointment, 'appointment')
+      .leftJoinAndSelect('appointment.item', 'item')
+      .leftJoinAndSelect('appointment.healer', 'healer')
+      .leftJoinAndSelect('appointment.room', 'room')
+      .leftJoinAndSelect('appointment.customer', 'customer')
+      .select([
+        'appointment.id',
+        'appointment.note',
+        'appointment.startAt',
+        'appointment.endAt',
+        'appointment.createdAt',
+        'appointment.duration',
+        'appointment.status',
+        'appointment.type',
+        'item.id',
+        'healer.fullName',
+        'healer.id',
+        'customer.fullName',
+        'customer.id',
+        'room.name',
+        'room.id',
+      ])
+      .where('healer.id = :healerId', { healerId })
+      .orderBy('appointment.createdAt', 'DESC');
+
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [appointments, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { appointments, total };
+    } else {
+      const appointments = await queryBuilder.getMany();
+      return appointments;
+    }
   }
 }

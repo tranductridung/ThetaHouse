@@ -16,12 +16,16 @@ import { getAppointmentStatusIcon } from "../styles/SourceStatus";
 
 type AppointmentProps = {
   onEdit: (product: AppointmentType) => void;
+  handleSetComplete: (appointmentId: number) => void;
+  onRemove: (appointmentId: number) => void;
 };
 
 export const appointmentColumns = ({
   onEdit,
+  handleSetComplete,
+  onRemove,
 }: AppointmentProps): ColumnDef<AppointmentType>[] => [
-  { accessorFn: (row) => row.item?.id ?? "", header: "ID" },
+  { accessorFn: (row) => row.item?.id ?? "", header: "ItemID" },
   { accessorFn: (row) => row.customer?.fullName ?? "", header: "Customer" },
   { accessorFn: (row) => row.healer?.fullName ?? "", header: "Healer" },
   { accessorFn: (row) => row.room?.name ?? "", header: "Room" },
@@ -49,6 +53,7 @@ export const appointmentColumns = ({
   },
   {
     accessorKey: "status",
+    header: "Status",
     cell: ({ row }) => (
       <Badge
         variant="outline"
@@ -63,7 +68,10 @@ export const appointmentColumns = ({
     accessorKey: "type",
     header: "Type",
   },
-  { accessorKey: "note", header: "Note" },
+  {
+    accessorKey: "note",
+    header: "Note",
+  },
   {
     id: "actions",
     cell: ({ row }) => {
@@ -84,6 +92,27 @@ export const appointmentColumns = ({
             >
               Edit
             </DropdownMenuItem>
+
+            {row.original.status !== "Completed" &&
+              row.original.status !== "Cancelled" && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    handleSetComplete(row.original.id);
+                  }}
+                >
+                  Mark as Completed
+                </DropdownMenuItem>
+              )}
+
+            {row.original.status !== "Cancelled" && (
+              <DropdownMenuItem
+                onClick={() => {
+                  onRemove(row.original.id);
+                }}
+              >
+                Remove
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

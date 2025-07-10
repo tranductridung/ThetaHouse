@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   ConsignmentType,
   SourceStatus,
-  TypeOfPartner,
+  PartnerTypeConst,
 } from "../constants/constants";
 import { createItemSchema, itemDraftSchema } from "./item";
 import { discountSchema } from "./discount";
@@ -120,7 +120,7 @@ export const consignmentDraftSchema = z
     partner: z
       .object({
         id: z.number(),
-        type: z.enum(TypeOfPartner),
+        type: z.enum(PartnerTypeConst),
         fullName: z.string(),
         email: z.string(),
         phoneNumber: z.string(),
