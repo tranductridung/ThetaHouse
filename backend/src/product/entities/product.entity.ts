@@ -24,13 +24,38 @@ export class Product {
   @Column({ type: 'enum', enum: ProductUnit })
   unit: ProductUnit;
 
-  // @Column('decimal', {
-  //   precision: 12,
-  //   scale: 2,
-  //   transformer: new ColumnNumericTransformer(),
-  // })
-  // unitPrice: number;
+  // Base quantity: so luong co so
+  // VD: 1 cai chuong nang 10kg thi 10 la so luong co so
+  @Column()
+  useBaseQuantityPricing: boolean;
 
+  // Value of 1 base quantity
+  @Column('decimal', {
+    precision: 6,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+    nullable: true,
+  })
+  baseQuantityPerUnit: number;
+
+  // Order and Purchase price for 1 base quantity
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+    nullable: true,
+  })
+  orderPricePerBaseQuantity: number;
+
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+    nullable: true,
+  })
+  purchasePricePerBaseQuantity: number;
+
+  // Default price use for all system
   @Column('decimal', {
     precision: 12,
     scale: 2,

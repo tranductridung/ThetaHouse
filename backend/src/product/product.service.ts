@@ -19,6 +19,53 @@ export class ProductService {
   ) {}
 
   async create(createProductDto: CreateProductDto) {
+    if (createProductDto.useBaseQuantityPricing) {
+      if (
+        createProductDto.defaultOrderPrice ||
+        createProductDto.defaultPurchasePrice
+      )
+        throw new BadRequestException('Default price should not exist!');
+
+      // Calculate product
+      if (
+        !createProductDto.orderPricePerBaseQuantity ||
+        !createProductDto.purchasePricePerBaseQuantity
+      )
+        throw new BadRequestException('Price per base quantity is required!');
+
+      if (!createProductDto.baseQuantityPerUnit)
+        throw new BadRequestException('Base quantity per unit is required!');
+
+      // Calculate default price by base quantity and price of 1 base quantity
+      createProductDto.defaultOrderPrice =
+        createProductDto.baseQuantityPerUnit *
+        createProductDto.orderPricePerBaseQuantity;
+
+      createProductDto.defaultPurchasePrice =
+        createProductDto.baseQuantityPerUnit *
+        createProductDto.purchasePricePerBaseQuantity;
+    } else {
+      if (
+        !createProductDto.defaultOrderPrice &&
+        !createProductDto.defaultPurchasePrice
+      )
+        throw new BadRequestException('Default price is required!');
+      // Set base quantity value to undefined
+
+      if (
+        createProductDto.orderPricePerBaseQuantity ||
+        createProductDto.purchasePricePerBaseQuantity
+      )
+        throw new BadRequestException(
+          'Price for base quantity should not exist!',
+        );
+
+      if (createProductDto.baseQuantityPerUnit)
+        throw new BadRequestException(
+          'Base quantity per unit should not exist!',
+        );
+    }
+
     const product = this.productRepo.create(createProductDto);
     await this.productRepo.save(product);
     return product;
@@ -85,6 +132,41 @@ export class ProductService {
     });
     if (!product) throw new NotFoundException('Product not found!');
 
+    // Validate DTO
+    if (product.useBaseQuantityPricing) {
+      if (
+        updateProductDto.defaultOrderPrice ||
+        updateProductDto.defaultPurchasePrice
+      )
+        throw new BadRequestException('Default price should not exist!');
+
+      // Calculate default price by base quantity and price of 1 base quantity
+      const baseQuantityPerUnit =
+        updateProductDto.baseQuantityPerUnit ?? product.baseQuantityPerUnit;
+      const orderPricePerBaseQuantity =
+        updateProductDto.orderPricePerBaseQuantity ??
+        product.orderPricePerBaseQuantity;
+      const purchasePricePerBaseQuantity =
+        updateProductDto.purchasePricePerBaseQuantity ??
+        product.purchasePricePerBaseQuantity;
+
+      // Update default price of product
+      updateProductDto.defaultOrderPrice =
+        baseQuantityPerUnit * orderPricePerBaseQuantity;
+      updateProductDto.defaultPurchasePrice =
+        baseQuantityPerUnit * purchasePricePerBaseQuantity;
+    } else {
+      if (updateProductDto.baseQuantityPerUnit)
+        throw new BadRequestException(
+          'Base quantity per unit should not exist!',
+        );
+      if (
+        updateProductDto.orderPricePerBaseQuantity ||
+        updateProductDto.purchasePricePerBaseQuantity
+      )
+        throw new BadRequestException('Base price per unit should not exist!');
+    }
+
     this.productRepo.merge(product, updateProductDto);
     await this.productRepo.save(product);
 
@@ -138,7 +220,8 @@ export class ProductService {
     manager?: EntityManager,
   ) {
     const repo = manager ? manager.getRepository(Product) : this.productRepo;
-    const product = await repo.findOneByOrFail({ id });
+    const product = await repo.findOneBy({ id });
+    if (!product) throw new NotFoundException('Product not found!');
 
     return quantityTarget <= product.quantity;
   }
