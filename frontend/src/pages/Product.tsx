@@ -3,12 +3,13 @@ import { DataTable } from "@/components/data-table";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type {
-  ProductFormType,
+  CreateProductType,
+  EditProductType,
   ProductType,
 } from "@/components/schemas/product";
 import { productColumns } from "@/components/columns/product-column";
 import ProductForm from "@/components/forms/ProductForm";
-import { handleAxiosError } from "@/lib/utils";
+import { handleAxiosError, omitFields } from "@/lib/utils";
 import { toast } from "sonner";
 
 export type FormManagerType = {
@@ -28,32 +29,52 @@ const Product = () => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
-  const handleSubmit = async (formData: ProductFormType) => {
+  const fetchData = async () => {
+    try {
+      const response = await api.get(
+        `/products/all?page=${pageIndex}&limit=${pageSize}`
+      );
+      setData(response.data.products);
+      setTotal(response.data.total);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
+  const handleSubmit = async (
+    formData: CreateProductType | EditProductType
+  ) => {
     try {
       if (formManager.type === "add") {
-        const response = await api.post("/products", formData);
-        setData((prev) => [...prev, response.data.product]);
+        await api.post("/products", formData);
+        toast.success("Add product success!");
       } else if (formManager.type === "edit" && formManager.data?.id) {
-        const response = await api.patch(
-          `/products/${formManager.data.id}`,
-          formData
+        const excludeFields = formData.useBaseQuantityPricing
+          ? [
+              "defaultOrderPrice",
+              "defaultPurchasePrice",
+              "useBaseQuantityPricing",
+            ]
+          : [
+              "baseQuantityPerUnit",
+              "orderPricePerBaseQuantity",
+              "purchasePricePerBaseQuantity",
+              "useBaseQuantityPricing",
+            ];
+
+        const payload = omitFields(
+          formData,
+          excludeFields as (keyof typeof formData)[]
         );
-        setData((prev) =>
-          prev.map((product) =>
-            product.id === formManager.data?.id
-              ? response.data.product
-              : product
-          )
-        );
+
+        await api.patch(`/products/${formManager.data.id}`, payload);
+        toast.success("Edit product success!");
       }
 
-      setFormManager({
-        isShow: false,
-        type: "add",
-        data: null,
-      });
+      fetchData();
+      setFormManager({ isShow: false, type: "add", data: null });
     } catch (error) {
-      console.error(error);
+      handleAxiosError(error);
     }
   };
 
@@ -126,22 +147,9 @@ const Product = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await api.get(
-          `/products/all?page=${pageIndex}&limit=${pageSize}`
-        );
-        setData(response.data.products);
-        setTotal(response.data.total);
-      } catch (error) {
-        handleAxiosError(error);
-      }
-    };
-
     fetchData();
   }, [pageIndex, pageSize]);
 
-  console.log(data);
   return (
     <div className="p-4">
       <DataTable

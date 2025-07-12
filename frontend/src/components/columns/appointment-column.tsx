@@ -26,9 +26,60 @@ export const appointmentColumns = ({
   onRemove,
 }: AppointmentProps): ColumnDef<AppointmentType>[] => [
   { accessorFn: (row) => row.item?.id ?? "", header: "ItemID" },
-  { accessorFn: (row) => row.customer?.fullName ?? "", header: "Customer" },
-  { accessorFn: (row) => row.healer?.fullName ?? "", header: "Healer" },
-  { accessorFn: (row) => row.room?.name ?? "", header: "Room" },
+  {
+    accessorFn: (row) => row.customer?.fullName ?? "",
+    header: "Customer",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
+  },
+  {
+    accessorFn: (row) => row.healer?.fullName ?? "",
+    header: "Healer",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
+  },
+  {
+    accessorFn: (row) => row.room?.name ?? "",
+    header: "Room",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
+  },
   {
     accessorKey: "startAt",
     header: "Start Time",
@@ -71,6 +122,20 @@ export const appointmentColumns = ({
   {
     accessorKey: "note",
     header: "Note",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     id: "actions",

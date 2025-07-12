@@ -25,6 +25,20 @@ export const partnerColumns = ({
   {
     accessorKey: "fullName",
     header: "Full Name",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "email",
@@ -37,10 +51,38 @@ export const partnerColumns = ({
   {
     accessorKey: "address",
     header: "Address",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "note",
     header: "Note",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "type",

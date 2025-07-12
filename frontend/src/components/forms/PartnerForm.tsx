@@ -48,7 +48,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
   const schema =
     type === "add" ? createPartnerFormSchema : editPartnerFormSchema;
 
-  console.log("Edit ", partnerData);
   const form = useForm<CreatePartnerFormType | EditPartnerFormType>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -62,7 +61,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
       dob: partnerData?.dob ? new Date(partnerData.dob) : undefined,
     },
   });
-  console.log(partnerData);
   useEffect(() => {
     if (type === "edit" && partnerData) {
       form.reset({

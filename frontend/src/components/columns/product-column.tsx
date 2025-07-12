@@ -33,10 +33,38 @@ export const productColumns = ({
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "description",
     header: "Description",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "quantity",
@@ -50,6 +78,35 @@ export const productColumns = ({
     accessorKey: "unit",
     header: "Unit",
   },
+  {
+    accessorFn: (row) => {
+      if (!row.useBaseQuantityPricing) return "-";
+      return row.baseQuantityPerUnit;
+    },
+    header: "Base Qty",
+  },
+  {
+    accessorFn: (row) => {
+      if (!row.useBaseQuantityPricing) return "-";
+      return (row?.orderPricePerBaseQuantity ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      });
+    },
+    header: "Order Base",
+  },
+  {
+    accessorFn: (row) => {
+      if (!row.useBaseQuantityPricing) return "-";
+
+      return (row?.purchasePricePerBaseQuantity ?? 0).toLocaleString("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      });
+    },
+    header: "Purchase Base",
+  },
+
   {
     accessorFn: (row) =>
       (row?.defaultOrderPrice ?? 0).toLocaleString("vi-VN", {
@@ -66,10 +123,10 @@ export const productColumns = ({
       }),
     header: "Purchase Price",
   },
+
   {
     accessorKey: "status",
     header: "Status",
-
     cell: ({ row }) => (
       <Badge
         variant="outline"

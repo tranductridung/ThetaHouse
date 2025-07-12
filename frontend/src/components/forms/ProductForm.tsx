@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -21,29 +21,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  productFormSchema,
-  type ProductFormType,
+  createProductSchema,
+  editProductSchema,
+  type CreateProductType,
+  type EditProductType,
   type ProductType,
 } from "../schemas/product";
 
 type ProductProps = {
   type: "add" | "edit";
-  onSubmit: (formData: ProductFormType) => void;
+  onSubmit: (formData: CreateProductType | EditProductType) => void;
   productData: ProductType | null;
 };
 
 const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
-  const form = useForm<ProductFormType>({
-    resolver: zodResolver(productFormSchema),
+  const schema = type === "add" ? createProductSchema : editProductSchema;
+
+  const form = useForm<CreateProductType | EditProductType>({
+    resolver: zodResolver(schema),
     defaultValues: {
       name: productData?.name,
-      description: productData?.description,
-      defaultOrderPrice: productData?.defaultOrderPrice,
-      defaultPurchasePrice: productData?.defaultPurchasePrice,
+      description: productData?.description ?? undefined,
+      defaultOrderPrice: productData?.defaultOrderPrice ?? undefined,
+      defaultPurchasePrice: productData?.defaultPurchasePrice ?? undefined,
       unit: productData?.unit,
+
+      baseQuantityPerUnit: productData?.baseQuantityPerUnit ?? undefined,
+      orderPricePerBaseQuantity:
+        productData?.orderPricePerBaseQuantity ?? undefined,
+      purchasePricePerBaseQuantity:
+        productData?.purchasePricePerBaseQuantity ?? undefined,
+      useBaseQuantityPricing: productData?.useBaseQuantityPricing ?? false,
     },
   });
 
+  const watchedUseBaseQuantity = useWatch({
+    control: form.control,
+    name: "useBaseQuantityPricing",
+  });
   return (
     <>
       <Form {...form}>
@@ -53,7 +68,6 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
               {type === "add" ? "Create Product" : "Edit Product"}
             </h1>
           </div>
-
           {/* Name */}
           <FormField
             control={form.control}
@@ -68,7 +82,6 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
               </FormItem>
             )}
           />
-
           {/* Description */}
           <FormField
             control={form.control}
@@ -88,81 +101,63 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
             )}
           />
 
-          {/* Unit */}
-          <FormField
-            control={form.control}
-            name="unit"
-            render={({ field }) => (
-              <FormItem className="w-full">
-                <FormLabel>Unit</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a unit of product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup className="w-full">
-                      <SelectItem value="Piece">Piece</SelectItem>
-                      <SelectItem value="Kg">Kg</SelectItem>
-                      <SelectItem value="Box">Box</SelectItem>
-                      <SelectItem value="Liter">Liter</SelectItem>
-                      <SelectItem value="Package">Package</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <div className="flex flex-col space-y-5 md:flex-row md:space-x-5 md:space-y-0">
-            {/* Default Order Price */}
+            {/* Use Base Quantity */}
             <FormField
               control={form.control}
-              name="defaultOrderPrice"
+              name="useBaseQuantityPricing"
               render={({ field }) => (
                 <FormItem className="w-full md:flex-1/2">
-                  <FormLabel>Default Order Price</FormLabel>
+                  <FormLabel>Pricing Method</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
-                        )
+                    <Select
+                      disabled={type === "edit"}
+                      onValueChange={(value) =>
+                        field.onChange(value === "baseQuantity")
                       }
-                    />
+                      value={field.value ? "baseQuantity" : "default"}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="baseQuantity">
+                          Base Quantity
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Default Order Price */}
+            {/* Unit */}
             <FormField
               control={form.control}
-              name="defaultPurchasePrice"
+              name="unit"
               render={({ field }) => (
-                <FormItem className="w-full md:flex-1/2 ">
-                  <FormLabel>Default Purchase Price</FormLabel>
+                <FormItem className="w-full md:flex-1/2">
+                  <FormLabel>Unit</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
-                        )
-                      }
-                    />
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a unit of product" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup className="w-full">
+                          <SelectItem value="Piece">Piece</SelectItem>
+                          <SelectItem value="Kg">Kg</SelectItem>
+                          <SelectItem value="Box">Box</SelectItem>
+                          <SelectItem value="Liter">Liter</SelectItem>
+                          <SelectItem value="Package">Package</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -170,6 +165,133 @@ const ProductForm = ({ onSubmit, type, productData }: ProductProps) => {
             />
           </div>
 
+          {watchedUseBaseQuantity ? (
+            <>
+              <FormField
+                control={form.control}
+                name="baseQuantityPerUnit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Base Quantity Per Unit</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step={"any"}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col space-y-5 md:flex-row md:space-x-5 md:space-y-0">
+                <FormField
+                  control={form.control}
+                  name="orderPricePerBaseQuantity"
+                  render={({ field }) => (
+                    <FormItem className="w-full md:flex-1/2">
+                      <FormLabel>Order Pricing Base Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step={"any"}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="purchasePricePerBaseQuantity"
+                  render={({ field }) => (
+                    <FormItem className="w-full md:flex-1/2">
+                      <FormLabel>Purchase Pricing Base Quantity</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step={"any"}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col space-y-5 md:flex-row md:space-x-5 md:space-y-0">
+              {/* Default Order Price */}
+              <FormField
+                control={form.control}
+                name="defaultOrderPrice"
+                render={({ field }) => (
+                  <FormItem className="w-full md:flex-1/2">
+                    <FormLabel>Default Order Price</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step={"any"}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Default Purchase Price */}
+              <FormField
+                control={form.control}
+                name="defaultPurchasePrice"
+                render={({ field }) => (
+                  <FormItem className="w-full md:flex-1/2 ">
+                    <FormLabel>Default Purchase Price</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step={"any"}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
           <Button type="submit" className="w-full">
             {type === "add" ? "Create" : "Save"}
           </Button>

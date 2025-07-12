@@ -22,6 +22,20 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
   {
     accessorFn: (row) => row.product?.name ?? "",
     header: "Product Name",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorFn: (row) => row.product?.unit ?? "",
@@ -60,6 +74,20 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
   {
     accessorKey: "note",
     header: "Note",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "itemId",

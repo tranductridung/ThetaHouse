@@ -19,7 +19,6 @@ export const addDiscountColumns = ({
       return (
         <Button
           onClick={() => {
-            console.log("in column", row.original, itemId);
             handleAddDiscount(row.original, itemId);
           }}
         >
@@ -31,6 +30,20 @@ export const addDiscountColumns = ({
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "code",

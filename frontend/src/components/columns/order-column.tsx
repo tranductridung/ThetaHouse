@@ -51,6 +51,20 @@ export const orderColumns = ({
   {
     accessorFn: (row) => row.creator?.fullName ?? "",
     header: "Creator",
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 20 ? value.slice(0, 20) + "..." : value;
+
+      return (
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
+        </div>
+      );
+    },
   },
   {
     accessorFn: (row) => row.customer?.fullName ?? "",
@@ -63,11 +77,17 @@ export const orderColumns = ({
   {
     accessorKey: "note",
     header: "Note",
-    cell: ({ row }) => {
-      const note = row.getValue("note") as string;
+    cell: ({ getValue }) => {
+      const value = getValue() as string | undefined;
+      if (!value) return null;
+
+      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+
       return (
-        <div className="line-clamp-2 max-w-xs text-sm text-muted-foreground">
-          {note}
+        <div>
+          <h1 title={value} className="cursor-help">
+            {truncated}
+          </h1>
         </div>
       );
     },
