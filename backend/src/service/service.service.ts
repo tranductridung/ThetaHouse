@@ -18,7 +18,6 @@ export class ServiceService {
   ) {}
 
   async create(createServiceDto: CreateServiceDto) {
-    console.log('create');
     // Session = 1 and bonusSession = 0 (with single service)
     // duration = 60 (with single service)
     if (createServiceDto.type === ServiceType.SINGLE) {
@@ -87,14 +86,12 @@ export class ServiceService {
   }
 
   async findOne(id: number) {
-    console.log('findOne');
     const service = await this.serviceRepo.findOneBy({ id });
     if (!service) throw new NotFoundException('Service not found!');
     return service;
   }
 
   async update(id: number, updateServiceDto: UpdateServiceDto) {
-    console.log('update');
     const service = await this.serviceRepo.findOne({
       where: {
         id,

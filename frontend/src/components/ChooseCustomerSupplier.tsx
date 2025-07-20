@@ -1,10 +1,10 @@
 import api from "@/api/api";
-import { choosePartnerColumns } from "@/components/columns/choose-partner";
+import { choosePartnerColumns } from "@/components/columns/choose-partner.column";
 import { DataTable } from "@/components/data-table";
 import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import type { TypeOfPartner } from "./constants/constants";
-import type { PartnerType } from "./schemas/partner";
+import type { PartnerType } from "./schemas/partner.schema";
 type ChooseCustomerSupplierProps = {
   type: (typeof TypeOfPartner)[number];
   handleChoosePartner: (partner: PartnerType) => void;

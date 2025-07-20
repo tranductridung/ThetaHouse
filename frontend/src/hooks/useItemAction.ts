@@ -3,8 +3,11 @@ import type {
   SourceType,
   TypeOfConsignment,
 } from "@/components/constants/constants";
-import type { AppointmentDraftType } from "@/components/schemas/appointment";
-import type { CreateItemType, ItemDraftType } from "@/components/schemas/item";
+import type { AppointmentDraftType } from "@/components/schemas/appointment.schema";
+import type {
+  CreateItemType,
+  ItemDraftType,
+} from "@/components/schemas/item.schema";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
 

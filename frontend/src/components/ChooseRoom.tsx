@@ -1,9 +1,9 @@
 import api from "@/api/api";
 import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
-import type { RoomType } from "./schemas/room";
+import type { RoomType } from "./schemas/room.schema";
 import { DataTable } from "@/components/data-table";
-import { chooseRoomColumns } from "./columns/choose-room";
+import { chooseRoomColumns } from "./columns/choose-room.column";
 
 type ChooseroomProps = {
   handleChooseRoom: (room: RoomType) => void;

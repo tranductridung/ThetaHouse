@@ -15,6 +15,7 @@ import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
+import { CourseStaff } from '../../course/entities/course-staff.entity';
 
 @Entity()
 export class User {
@@ -76,4 +77,7 @@ export class User {
 
   @OneToMany(() => Payment, (payments) => payments.creator)
   payments: Payment[];
+
+  @OneToMany(() => CourseStaff, (cs) => cs.staff)
+  courseStaffs: CourseStaff[];
 }

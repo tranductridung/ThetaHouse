@@ -7,33 +7,36 @@ import {
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Auth/Login";
 import Signup from "@/pages/Auth/Signup";
-import Dashboard from "@/pages/Dashboard";
-import Product from "@/pages/Product";
-import Service from "@/pages/Service";
-import Appointment from "@/pages/Appointment";
-import Consignment from "@/pages/Consignment";
-import Order from "@/pages/Order";
-import Purchase from "@/pages/Purchase";
-import Inventory from "@/pages/Inventory";
-import Module from "@/pages/Module";
-import Room from "@/pages/Room";
-import Partner from "@/pages/Partner";
-import User from "@/pages/User";
-import Transaction from "@/pages/Transaction";
-import Payment from "@/pages/Payment";
-import Item from "@/pages/Item";
+import Dashboard from "@/pages/dashboard.page";
+import Product from "@/pages/product.page";
+import Service from "@/pages/service.page";
+import Appointment from "@/pages/appointment.page";
+import Consignment from "@/pages/consignment.page";
+import Order from "@/pages/order.page";
+import Purchase from "@/pages/purchase.page";
+import Inventory from "@/pages/inventory.page";
+import Module from "@/pages/module.page";
+import Room from "@/pages/room.page";
+import Partner from "@/pages/partner.page";
+import User from "@/pages/user.page";
+import Transaction from "@/pages/transaction.page";
+import Payment from "@/pages/payment.page";
+import Item from "@/pages/item.page";
 import { Toaster } from "./components/ui/sonner";
 import SourcePage from "./pages/SourcePage";
-import Discount from "./pages/Discount";
-import OrderDetails from "./pages/OrderDetails";
-import PurchaseDetails from "./pages/PurchaseDetails";
-import ConsignmentDetails from "./pages/ConsignmentDetails";
-import CreatePurchase from "./pages/CreatePurchase";
-import CreateOrder from "./pages/CreateOrder";
-import CreateConsignment from "./pages/CreateConsignment";
-import CreateAppointment from "./pages/CreateAppointment";
-import PartnerDetail from "./pages/PartnerDetail";
-import NotFound from "./pages/NotFound";
+import Discount from "./pages/discount.page";
+import OrderDetails from "./pages/order-detail.page";
+import PurchaseDetails from "./pages/purchase-detail.page";
+import ConsignmentDetails from "./pages/consignment-detail.page";
+import CreatePurchase from "./pages/create-purchase.page";
+import CreateOrder from "./pages/create-order.page";
+import CreateConsignment from "./pages/create-consignment.page";
+import PartnerDetail from "./pages/partner-detail.page";
+import NotFound from "./pages/not-found.page";
+import Course from "./pages/course.page";
+import Enrollment from "./pages/enrollment.page";
+import CourseDetail from "./pages/course-detail.page";
+import CourseStaff from "./pages/course-staff.page";
 
 const App = () => {
   return (
@@ -44,14 +47,18 @@ const App = () => {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="services" element={<Service />} />
             <Route path="products" element={<Product />} />
+            <Route path="courses" element={<Course />} />
+            <Route path="courses/staff" element={<CourseStaff />} />
+            <Route path="courses/:id" element={<CourseDetail />} />
+            <Route path="enrollments" element={<Enrollment />} />
             <Route path="partners" element={<Partner />} />
             <Route path="users" element={<User />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="items" element={<Item />} />
 
-            <Route path="appointments/scheduled" element={<Appointment />} />
-            <Route path="appointments/create" element={<CreateAppointment />} />
+            <Route path="appointments" element={<Appointment />} />
+            {/* <Route path="appointments/create" element={<CreateAppointment />} /> */}
 
             <Route path="/finance/payments" element={<Payment />} />
             <Route path="/finance/transactions" element={<Transaction />} />

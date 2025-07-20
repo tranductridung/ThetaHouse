@@ -47,6 +47,7 @@ export enum SourceType {
 }
 
 export enum ItemableType {
+  COURSE = 'Course',
   SERVICE = 'Service',
   PRODUCT = 'Product',
 }
@@ -125,4 +126,21 @@ export enum SexType {
   UNDEFINED = 'Undefined',
   MALE = 'Male',
   FEMALE = 'Female',
+}
+
+export enum CourseMode {
+  ONLINE = 'Online',
+  OFFLINE = 'Offline',
+  COMBINE = 'Combine',
+}
+
+export enum EnrollmentStatus {
+  PENDING = 'Pending',
+  ENROLLED = 'Enrolled',
+  WITHDRAWN = 'Withdrawn',
+}
+
+export enum CourseRole {
+  COACH = 'Coach',
+  TRAINER = 'Trainer',
 }

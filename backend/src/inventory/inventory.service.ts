@@ -235,7 +235,8 @@ export class InventoryService {
         'creator.fullName',
         'product.name',
         'product.unit',
-        'product.unitPrice',
+        'product.defaultOrderPrice',
+        'product.defaultPurchasePrice',
         'item.id',
       ])
       .orderBy('inventory.createdAt', 'DESC');

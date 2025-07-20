@@ -7,6 +7,7 @@ import {
 } from 'src/common/enums/enum';
 import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Discount } from 'src/discount/entities/discount.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import {
   Column,
@@ -88,4 +89,7 @@ export class Item {
 
   @OneToMany(() => Appointment, (appointment) => appointment.item)
   appointments: Appointment[];
+
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
+  enrollments: Enrollment[];
 }

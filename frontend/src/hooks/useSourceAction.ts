@@ -6,7 +6,7 @@ import type {
 import type {
   CreatePaymentType,
   PaymentDraftType,
-} from "@/components/schemas/payment";
+} from "@/components/schemas/payment.schema";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
 

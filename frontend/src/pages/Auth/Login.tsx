@@ -1,4 +1,4 @@
-import LoginForm from "@/components/forms/LoginForm";
+import LoginForm from "@/components/forms/login.form";
 export default function Login() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

@@ -1,4 +1,4 @@
-import Purchase from "@/pages/Purchase";
+import Purchase from "@/pages/purchase.page";
 
 type PurchaseHistoryProps = {
   supplierId: number;

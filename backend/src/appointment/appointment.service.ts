@@ -348,12 +348,17 @@ export class AppointmentService {
     return room;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, isActive?: boolean) {
     const appointment = await this.appointmentRepo.findOne({
       where: { id },
       relations: ['room', 'healer', 'customer', 'item'],
     });
+
     if (!appointment) throw new NotFoundException('Appointment not found!');
+
+    if (isActive && appointment.status === AppointmentStatus.CANCELLED)
+      throw new NotFoundException('Appointment is cancelled!');
+
     return appointment;
   }
 
@@ -367,7 +372,7 @@ export class AppointmentService {
     updateAppointmentDto: UpdateAppointmentDto,
     item?: Item,
   ) {
-    const appointment = await this.findOne(id);
+    const appointment = await this.findOne(id, true);
     const startAt = updateAppointmentDto.startAt ?? appointment.startAt;
 
     // Check and validate startAt
@@ -455,7 +460,6 @@ export class AppointmentService {
     const appointment = await this.findOne(id);
     appointment.status = AppointmentStatus.CANCELLED;
     await this.appointmentRepo.save(appointment);
-    // await this.appointmentRepo.remove(appointment);
     return { message: 'Remove appointment success!' };
   }
 
@@ -466,13 +470,19 @@ export class AppointmentService {
 
     try {
       const appointment = await querryRunner.manager.findOne(Appointment, {
-        where: { id: appointmentId },
-        relations: ['item'],
+        where: { id: appointmentId, status: Not(AppointmentStatus.CANCELLED) },
+        relations: ['item', 'healer'],
       });
+
       if (!appointment) throw new NotFoundException('Appointment not found!');
 
       if (appointment.status === AppointmentStatus.COMPLETED)
         throw new BadRequestException('Appointment status is completed!');
+
+      if (!appointment.healer)
+        throw new BadRequestException(
+          'Healer is required to mark appointment as completed!',
+        );
 
       appointment.status = AppointmentStatus.COMPLETED;
       await querryRunner.manager.save(appointment);
@@ -519,6 +529,7 @@ export class AppointmentService {
         'appointment.endAt',
         'appointment.createdAt',
         'appointment.status',
+        'appointment.duration',
         'appointment.type',
         'item.id',
         'healer.fullName',
@@ -564,6 +575,7 @@ export class AppointmentService {
         'appointment.startAt',
         'appointment.endAt',
         'appointment.status',
+        'appointment.duration',
         'appointment.type',
         'appointment.createdAt',
         'item.id',

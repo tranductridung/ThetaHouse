@@ -1,4 +1,4 @@
-import Order from "@/pages/Order";
+import Order from "@/pages/order.page";
 
 type OrderHistoryProps = {
   customerId: number;
@@ -7,7 +7,7 @@ type OrderHistoryProps = {
 const OrderHistory = ({ customerId }: OrderHistoryProps) => {
   return (
     <div>
-      <Order customerId={Number(customerId)}></Order>
+      <Order isUseTitle={false} customerId={Number(customerId)}></Order>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/data-table";
-import type { TransactionType } from "./schemas/transaction";
-import { chooseTransactionColumns } from "./columns/choose-transaction";
+import type { TransactionType } from "./schemas/transaction.schema";
+import { chooseTransactionColumns } from "./columns/choose-transaction.column";
 import api from "@/api/api";
 import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";

@@ -9,12 +9,17 @@ import { UpdatePartnerDto } from './dto/update-partner.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Partner } from './entities/partner.entity';
 import { Repository, DataSource } from 'typeorm';
-import { PartnerType, SourceStatus } from 'src/common/enums/enum';
+import {
+  EnrollmentStatus,
+  PartnerType,
+  SourceStatus,
+} from 'src/common/enums/enum';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Order } from 'src/order/entities/order.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Injectable()
 export class PartnerService {
@@ -163,7 +168,7 @@ export class PartnerService {
     });
 
     if (!isPartnerExist)
-      throw new NotFoundException(`${partnerType} not exist!`);
+      throw new NotFoundException(`${partnerType} not exist hehe!`);
   }
 
   async getOrderByCustomer(
@@ -183,6 +188,51 @@ export class PartnerService {
     if (cancelled)
       queryBuilder.andWhere('o.status <> :cancel', {
         cancel: SourceStatus.CANCELLED,
+      });
+
+    if (
+      paginationDto?.page !== undefined &&
+      paginationDto?.limit !== undefined
+    ) {
+      const { page, limit } = paginationDto;
+
+      const [orders, total] = await queryBuilder
+        .skip(page * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      return { orders, total };
+    } else {
+      const orders = await queryBuilder.getMany();
+      return orders;
+    }
+  }
+
+  async getEnrollmentByCustomer(
+    customerId: number,
+    withdrawned: boolean,
+    paginationDto?: PaginationDto,
+  ) {
+    await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
+
+    const queryBuilder = this.datasource
+      .createQueryBuilder(Enrollment, 'e')
+      .leftJoin('e.student', 'student')
+      .leftJoin('e.course', 'course')
+      .where('student.id = :studentId', { studentId: customerId })
+      .addSelect([
+        'e.createdAt',
+        'student.id',
+        'student.fullName',
+        'course.name',
+        'course.mode',
+        'course.startDate',
+      ])
+      .orderBy('e.createdAt', 'DESC');
+
+    if (withdrawned)
+      queryBuilder.andWhere('e.status <> :withdrawned', {
+        withdrawned: EnrollmentStatus.WITHDRAWN,
       });
 
     if (
@@ -273,37 +323,6 @@ export class PartnerService {
       return purchases;
     }
   }
-
-  // async getSourceOfPartner(partnerId: number, partnerType: PartnerType) {
-  //   await this.checkPartnerExist(partnerId, partnerType);
-
-  //   if (partnerType === PartnerType.CUSTOMER) {
-  //     const consignments = await this.datasource
-  //       .createQueryBuilder(Consignment, 'c')
-  //       .leftJoin('c.partner', 'partner')
-  //       .where('partner.id = :partnerId', { partnerId })
-  //       .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-  //       .getMany();
-
-  //     return { consignments, orders };
-  //   } else {
-  //     const consignments = await this.datasource
-  //       .createQueryBuilder(Consignment, 'c')
-  //       .leftJoin('c.partner', 'partner')
-  //       .where('partner.id = :partnerId', { partnerId })
-  //       .andWhere('c.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-  //       .getMany();
-
-  //     const purchases = await this.datasource
-  //       .createQueryBuilder(Purchase, 'p')
-  //       .leftJoin('p.supplier', 'supplier')
-  //       .where('supplier.id = :supplierId', { supplierId: partnerId })
-  //       .andWhere('p.status <> :cancel', { cancel: SourceStatus.CANCELLED })
-  //       .getMany();
-
-  //     return { consignments, purchases };
-  //   }
-  // }
 
   async getTransactionsByPartner(partnerId: number) {
     return this.datasource

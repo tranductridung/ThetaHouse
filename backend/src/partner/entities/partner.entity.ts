@@ -12,6 +12,7 @@ import { Payment } from 'src/payment/entities/payment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 
 @Entity()
 export class Partner {
@@ -62,4 +63,7 @@ export class Partner {
 
   @OneToMany(() => Payment, (payments) => payments.partner)
   payments: Payment[];
+
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
+  enrollments: Enrollment[];
 }

@@ -8,6 +8,7 @@ import {
   AdjustmentType,
   AppointmentStatus,
   CommonStatus,
+  EnrollmentStatus,
   InventoryAction,
   ItemableType,
   ItemStatus,
@@ -34,6 +35,8 @@ import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { CreateTransactionDto } from 'src/transaction/dto/create-transaction.dto';
 import { CreateTransactionNoSourceDto } from 'src/transaction/dto/create-transaction-no-source.dto';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { EnrollmentService } from 'src/enrollment/enrollment.service';
 
 @Injectable()
 export class OrderService {
@@ -42,6 +45,7 @@ export class OrderService {
     private itemService: ItemService,
     private inventoryService: InventoryService,
     private transactionService: TransactionService,
+    private enrollmentService: EnrollmentService,
     private dataSource: DataSource,
   ) {}
 
@@ -79,9 +83,9 @@ export class OrderService {
     let totalAmount = 0;
     let orderQuantity = 0;
     try {
-      for (const item of createOrderDto.items) {
+      for (const itemDto of createOrderDto.items) {
         const itemResult = await this.itemService.add(
-          item,
+          itemDto,
           order.id,
           SourceType.ORDER,
           queryRunner.manager,
@@ -252,8 +256,10 @@ export class OrderService {
 
   // The isActive parameter is used to check whether the order is cancelled or not.
   // If isActive is not used, the function will retrieve the order without checking its active status.
-  async findOneFull(id: number, isActive?: boolean) {
-    const order = await this.orderRepo.findOne({
+  async findOneFull(id: number, isActive?: boolean, manager?: EntityManager) {
+    const repo = manager ? manager.getRepository(Order) : this.orderRepo;
+
+    const order = await repo.findOne({
       where: { id },
       relations: ['creator', 'customer', 'discount'],
     });
@@ -383,7 +389,8 @@ export class OrderService {
     await queryRunner.startTransaction();
 
     // Load order
-    const order = await this.findOne(orderId, true, queryRunner.manager);
+    // const order = await this.findOne(orderId, true, queryRunner.manager);
+    const order = await this.findOneFull(orderId, true, queryRunner.manager);
 
     // Load active items of order
     const items = await queryRunner.manager.find(Item, {
@@ -443,12 +450,22 @@ export class OrderService {
 
             await queryRunner.manager.save(product);
           }
-        } else {
+        } else if (item.itemableType === ItemableType.SERVICE) {
           await queryRunner.manager
             .createQueryBuilder()
             .update(Appointment)
             .set({ status: AppointmentStatus.CANCELLED })
             .where('itemId = :itemId', { itemId: item.id })
+            .execute();
+        } else {
+          // Withdraw all enrollment of this item
+          await queryRunner.manager
+            .createQueryBuilder()
+            .update(Enrollment)
+            .set({ status: EnrollmentStatus.WITHDRAWN })
+            .andWhere('itemId = :itemId', {
+              itemId: item.id,
+            })
             .execute();
         }
 
@@ -562,6 +579,7 @@ export class OrderService {
         id: orderId,
         status: Not(SourceStatus.CANCELLED),
       },
+      relations: ['customer'],
     });
 
     if (!order) throw new NotFoundException('Order not found!');
@@ -587,11 +605,23 @@ export class OrderService {
         );
       }
 
+      // Withdrawn enrollment
+      if (item.itemableType === ItemableType.COURSE) {
+        await queryRunner.manager.update(
+          Enrollment,
+          {
+            item: { id: item.id },
+          },
+          { status: EnrollmentStatus.WITHDRAWN },
+        );
+      }
+
       // Update item information
       item.isActive = false;
       item.adjustmentType = AdjustmentType.REMOVE;
 
       await queryRunner.manager.save(item);
+
       // Update item order
       order.quantity -= item.quantity;
       order.totalAmount -= item.finalAmount;
@@ -623,6 +653,8 @@ export class OrderService {
 
       await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
+
+      return { message: 'Remove item success!' };
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -631,4 +663,97 @@ export class OrderService {
       await queryRunner.release();
     }
   }
+
+  // async transferCourseItem(
+  //   orderId: number,
+  //   itemId: number,
+  //   newCourseId: number,
+  // ) {
+  //   const queryRunner = this.dataSource.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
+
+  //   const order = await queryRunner.manager.findOne(Order, {
+  //     where: {
+  //       id: orderId,
+  //       status: Not(SourceStatus.CANCELLED),
+  //     },
+  //     relations: ['customer'],
+  //   });
+  //   if (!order) throw new NotFoundException('Order not found!');
+
+  //   const item = await queryRunner.manager.findOne(Item, {
+  //     where: {
+  //       id: itemId,
+  //       sourceId: orderId,
+  //       sourceType: SourceType.ORDER,
+  //       isActive: true,
+  //     },
+  //   });
+
+  //   if (!item) throw new NotFoundException('Item not found!');
+
+  //   if (item.itemableType !== ItemableType.COURSE)
+  //     throw new BadRequestException(
+  //       'Cannot transfer item that is not a course!',
+  //     );
+
+  //   try {
+  //     // Update enrollment status
+  //     const enrollment = await this.enrollmentService.findOneByCourseAndStudent(
+  //       item.itemableId,
+  //       order.customer.id,
+  //     );
+
+  //     console.log('-----------', enrollment);
+
+  //     await this.enrollmentService.transfer(enrollment.id, newCourseId);
+
+  //     // Update item information
+  //     item.isActive = false;
+  //     item.adjustmentType = AdjustmentType.REPLACE;
+
+  //     await queryRunner.manager.save(item);
+
+  //     // Update item order
+  //     order.quantity -= item.quantity;
+  //     order.totalAmount -= item.finalAmount;
+  //     order.finalAmount = await this.itemService.calculateDiscountAmount(
+  //       order.totalAmount,
+  //       order.discount?.id ?? null,
+  //     );
+
+  //     // Update transaction
+  //     const transaction = await queryRunner.manager.findOne(Transaction, {
+  //       where: { sourceId: orderId, sourceType: SourceType.ORDER },
+  //       select: ['id', 'totalAmount', 'paidAmount', 'status'],
+  //     });
+  //     if (!transaction) throw new NotFoundException('Transaction not found!');
+
+  //     transaction.totalAmount = order.finalAmount;
+  //     transaction.status = this.transactionService.getTransactionStatus(
+  //       transaction.paidAmount,
+  //       transaction.totalAmount,
+  //     );
+  //     await queryRunner.manager.save(transaction);
+
+  //     order.status = await this.itemService.getSourceStatus(
+  //       orderId,
+  //       SourceType.ORDER,
+  //       queryRunner.manager,
+  //       transaction.status,
+  //     );
+
+  //     await queryRunner.manager.save(order);
+  //     await queryRunner.commitTransaction();
+
+  //     return { message: 'Transfer course success!' };
+  //   } catch (error) {
+  //     console.log(error);
+  //     await queryRunner.rollbackTransaction();
+  //     throw error;
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 }

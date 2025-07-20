@@ -1,9 +1,9 @@
 import api from "@/api/api";
-import AppointmentForm from "@/components/forms/AppointmentForm";
+import AppointmentForm from "@/components/forms/appointment.form";
 import type {
   AppointmentDraftType,
   AppointmentType,
-} from "@/components/schemas/appointment";
+} from "@/components/schemas/appointment.schema";
 import { useState } from "react";
 export type FormManagerType = {
   isShow: boolean;

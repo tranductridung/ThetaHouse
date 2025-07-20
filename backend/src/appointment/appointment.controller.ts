@@ -67,7 +67,7 @@ export class AppointmentController {
 
   @Post(':id/complete')
   async setCompleteStatus(@Param('id') id: string) {
-    const result = await this.appointmentService.setCompleteStatus(+id);
-    return { message: 'set complete', result };
+    await this.appointmentService.setCompleteStatus(+id);
+    return { message: 'Appointment is mark as completed!' };
   }
 }

@@ -1,9 +1,9 @@
 import api from "@/api/api";
 import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
-import type { ModuleType } from "./schemas/module";
+import type { ModuleType } from "./schemas/module.schema";
 import { DataTable } from "@/components/data-table";
-import { chooseModuleColumns } from "./columns/choose-module";
+import { chooseModuleColumns } from "./columns/choose-module.column";
 
 type ChooseModuleProps = {
   handleChooseModule: (module: ModuleType) => void;

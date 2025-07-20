@@ -79,23 +79,24 @@ export class PurchaseService {
           queryRunner.manager,
           undefined,
         );
+
         totalAmount += itemResult.finalAmount;
         purchaseQuantity += itemResult.quantity;
       }
-      console.log('hello', createPurchaseDto.discountAmount);
+
       const finalAmount = createPurchaseDto.discountAmount
         ? totalAmount - createPurchaseDto.discountAmount > 0
           ? totalAmount - createPurchaseDto.discountAmount
           : 0
         : totalAmount;
 
-      console.log(finalAmount);
       queryRunner.manager.merge(Purchase, purchase, {
         quantity: purchaseQuantity,
         totalAmount,
         finalAmount,
         discountAmount: createPurchaseDto.discountAmount,
       });
+
       await queryRunner.manager.save(purchase);
 
       // Create transaction

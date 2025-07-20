@@ -1,4 +1,4 @@
-import Consignment from "@/pages/Consignment";
+import Consignment from "@/pages/consignment.page";
 import type { TypeOfPartner } from "../constants/constants";
 
 type ConsignmentHistoryProps = {

@@ -47,6 +47,9 @@ export const SourceStatus = [
   "Cancelled",
 ] as const;
 export const TypeOfAppointment = ["Main", "Free", "Bonus"] as const;
+export const CourseMode = ["Online", "Offline", "Combine"] as const;
+export const CourseRole = ["Trainer", "Coach"] as const;
+export const EnrollmentStatus = ["Pending", "Enrolled", "Withdrawn"] as const;
 
 // Type
 export type SourceType = (typeof TypeOfSource)[number];

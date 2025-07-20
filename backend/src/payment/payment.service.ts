@@ -11,11 +11,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ItemService } from 'src/item/item.service';
 import { Payment } from './entities/payment.entity';
 import { User } from 'src/user/entities/user.entity';
-import { TransactionStatus, TransactionType } from 'src/common/enums/enum';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
 import { TransactionService } from 'src/transaction/transaction.service';
+import { TransactionStatus, TransactionType } from 'src/common/enums/enum';
 import { UpdateTransactionDto } from './../transaction/dto/update-transaction.dto';
 @Injectable()
 export class PaymentService {

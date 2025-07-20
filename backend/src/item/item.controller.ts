@@ -7,23 +7,6 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 export class ItemController {
   constructor(private readonly itemService: ItemService) {}
 
-  // @Post()
-  // async add(
-  //   @Body()
-  //   data: {
-  //     createItemDto: CreateItemDto;
-  //     sourceId: number;
-  //     sourceType: SourceType;
-  //   },
-  // ) {
-  //   const item = await this.itemService.add(
-  //     data.createItemDto,
-  //     data.sourceId,
-  //     data.sourceType,
-  //   );
-  //   return { item };
-  // }
-
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.itemService.findAll(paginationDto);

@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Button } from "../ui/button";
-import Appointment from "@/pages/Appointment";
+import Appointment from "@/pages/appointment.page";
 
 type TherapyAppointmentProps = {
   customerId: number;

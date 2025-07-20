@@ -1,7 +1,7 @@
 import api from "@/api/api";
-import { addProductColumns } from "@/components/columns/add-product-column";
+import { addProductColumns } from "@/components/columns/add-product.column";
 import { DataTable } from "@/components/data-table";
-import type { ProductType } from "@/components/schemas/product";
+import type { ProductType } from "@/components/schemas/product.schema";
 import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";
 

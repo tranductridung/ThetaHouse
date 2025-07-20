@@ -54,6 +54,18 @@ export class PartnerController {
     );
   }
 
+  @Get('/customers/:customerId/enrollments')
+  async getCustomerEnrollment(
+    @Param('customerId') customerId: number,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.getEnrollmentByCustomer(
+      customerId,
+      false,
+      paginationDto,
+    );
+  }
+
   @Get('/customers/:customerId/consignments')
   async getCustomerConsignments(
     @Param('customerId') customerId: number,

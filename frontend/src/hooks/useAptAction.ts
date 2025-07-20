@@ -1,5 +1,5 @@
 import api from "@/api/api";
-import type { AppointmentDraftType } from "@/components/schemas/appointment";
+import type { AppointmentDraftType } from "@/components/schemas/appointment.schema";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -60,8 +60,7 @@ export const useAptAction = (refetch: () => void) => {
 
   const handleSetComplete = async (appointmentId: number) => {
     try {
-      const response = await api.post(`appointments/${appointmentId}/complete`);
-      console.log(response);
+      await api.post(`appointments/${appointmentId}/complete`);
       refetch();
       toast.success("Appointment is set to completed!");
     } catch (error) {

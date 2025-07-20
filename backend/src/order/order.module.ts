@@ -9,6 +9,7 @@ import { ItemModule } from 'src/item/item.module';
 import { InventoryModule } from 'src/inventory/inventory.module';
 import { TransactionModule } from 'src/transaction/transaction.module';
 import { OrderService } from './order.service';
+import { EnrollmentModule } from 'src/enrollment/enrollment.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { OrderService } from './order.service';
     ItemModule,
     InventoryModule,
     TransactionModule,
+    EnrollmentModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

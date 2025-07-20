@@ -36,6 +36,7 @@ import { loadEntitySource, loadSource } from './helpers/source.helper';
 import { AppointmentService } from 'src/appointment/appointment.service';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
+import { EnrollmentService } from 'src/enrollment/enrollment.service';
 @Injectable()
 export class ItemService {
   constructor(
@@ -43,6 +44,7 @@ export class ItemService {
     private discountService: DiscountService,
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
+    private enrollmentService: EnrollmentService,
     private dataSource: DataSource,
   ) {}
 
@@ -50,14 +52,15 @@ export class ItemService {
     createItemDto: CreateItemDto,
     sourceId: number,
     sourceType: SourceType,
-    manager?: EntityManager,
+    manager: EntityManager,
     adjustmentType?: AdjustmentType,
   ) {
-    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+    // const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+    const repo = manager.getRepository(Item);
 
     if (sourceType !== SourceType.ORDER && createItemDto.discountId)
       throw new BadRequestException(
-        'Cannot use discount for item of source which is not order!',
+        `Cannot use discount for item of ${sourceType} which is not order!`,
       );
 
     // Load itemable
@@ -126,7 +129,13 @@ export class ItemService {
         finalAmount,
       });
 
-      return await repo.save(item);
+      const savedItem = await repo.save(item);
+      if (savedItem.itemableType === ItemableType.COURSE) {
+        console.log('savedItemmmmmmmmmmmmm', savedItem);
+        await this.enrollmentService.createForItem(savedItem.id, manager);
+      }
+
+      return savedItem;
     }
   }
 
@@ -257,6 +266,7 @@ export class ItemService {
     });
   }
 
+  // CHUA CHECKKKKKKKKKKKKKKKKKKKKK
   async update(
     id: number,
     updateItemDto: UpdateItemDto,

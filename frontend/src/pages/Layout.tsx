@@ -6,7 +6,7 @@ import { Outlet } from "react-router-dom";
 export default function Layout() {
   return (
     <SidebarProvider>
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset"></AppSidebar>
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col mt-3">

@@ -1,9 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { addProductColumns } from "@/components/columns/add-product-column";
-import { addServiceColumns } from "@/components/columns/add-service-column";
+import { addProductColumns } from "@/components/columns/add-product.column";
+import { addServiceColumns } from "@/components/columns/add-service.column";
 import { DataTable } from "@/components/data-table";
-import type { ProductType } from "@/components/schemas/product";
-import type { ServiceType } from "@/components/schemas/service";
+import type { ProductType } from "@/components/schemas/product.schema";
+import type { ServiceType } from "@/components/schemas/service.schema";
 import api from "@/api/api";
 import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";

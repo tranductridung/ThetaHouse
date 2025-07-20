@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/data-table";
-import type { UserType } from "./schemas/user";
-import { chooseUserColumns } from "./columns/choose-user";
+import type { UserType } from "./schemas/user.schema";
+import { chooseUserColumns } from "./columns/choose-user.column";
 import { useEffect, useState } from "react";
 import api from "@/api/api";
 import { handleAxiosError } from "@/lib/utils";

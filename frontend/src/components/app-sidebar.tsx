@@ -39,12 +39,14 @@ const data = {
     },
 
     {
-      title: "Products & Services",
+      title: "Solutions",
       url: "/",
       icon: BoxIcon,
       items: [
         { title: "Products", url: "/products" },
         { title: "Services", url: "/services" },
+        { title: "Courses", url: "/courses" },
+        { title: "Enrollments", url: "/enrollments" },
       ],
     },
 
@@ -53,7 +55,7 @@ const data = {
       url: "/inventory",
       icon: WarehouseIcon,
       items: [
-        { title: "Stock Levels", url: "/inventory/stock-levels" },
+        { title: "Stock Levels", url: "/inventory" },
         { title: "Incoming Stock", url: "/inventory/incoming" },
         { title: "Outgoing Stock", url: "/inventory/outgoing" },
       ],
@@ -72,13 +74,8 @@ const data = {
       title: "Appointments",
       url: "/appointments",
       icon: CalendarIcon,
-      items: [
-        { title: "Scheduled", url: "/appointments/scheduled" },
-        { title: "Healer", url: "/appointments/healer" },
-        { title: "Room", url: "/appointments/room" },
-      ],
+      isActive: true,
     },
-
     {
       title: "Partners",
       url: "/partners",

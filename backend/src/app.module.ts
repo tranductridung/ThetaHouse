@@ -25,6 +25,8 @@ import { PaymentModule } from './payment/payment.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
+import { CourseModule } from './course/course.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
 
 config();
 @Module({
@@ -64,6 +66,8 @@ config();
     ReportsModule,
     DashboardModule,
     ReportsModule,
+    CourseModule,
+    EnrollmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

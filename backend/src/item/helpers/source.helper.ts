@@ -1,9 +1,9 @@
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { Order } from 'src/order/entities/order.entity';
-import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SourceType } from 'src/common/enums/enum';
 import { DataSource, EntityManager } from 'typeorm';
+import { Purchase } from 'src/purchase/entities/purchase.entity';
 
 export const SourceEntityMap = {
   [SourceType.CONSIGNMENT]: Consignment,
@@ -23,7 +23,18 @@ export async function loadSource(
   }
 
   const repo = managerOrDataSource.getRepository(entityClass);
-  const source = await repo.findOneBy({ id: sourceId });
+  let relation;
+
+  if (sourceType === SourceType.ORDER) relation = 'customer';
+  else if (sourceType === SourceType.PURCHASE) relation = 'supplier';
+  else relation = 'partner';
+
+  const source = await repo.findOne({
+    where: {
+      id: sourceId,
+    },
+    relations: [relation],
+  });
 
   if (!source) {
     throw new NotFoundException(`Source not found!`);
