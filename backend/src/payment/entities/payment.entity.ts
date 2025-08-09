@@ -1,6 +1,5 @@
 import { PaymentMethod } from 'src/common/enums/enum';
 import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
-import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { User } from 'src/user/entities/user.entity';
 import {
@@ -48,10 +47,4 @@ export class Payment {
   })
   @JoinColumn({ name: 'creatorId' })
   creator: User;
-
-  @ManyToOne(() => Partner, (partner) => partner.payments, {
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({ name: 'partnerId' })
-  partner: Partner;
 }

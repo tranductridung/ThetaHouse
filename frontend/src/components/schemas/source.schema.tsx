@@ -66,26 +66,18 @@ export const purchaseDraftSchema = z.object({
   supplier: z.object({
     id: z.number(),
     fullName: z.string(),
-    email: z.string(),
-    phoneNumber: z.string(),
   }),
-  // items: z.array(
-  //   z.object({
-  //     itemableType: z.enum(ItemableType),
-  //     quantity: z.number(),
-  //     name: z.string(),
-  //     itemableId: z.number(),
-  //     description: z.string(),
-  //     unitPrice: z.number(),
-  //     subtotal: z.number(),
-  //   })
-  // ),
+  payer: z.object({
+    id: z.number(),
+    fullName: z.string(),
+  }),
   items: z.array(itemDraftSchema),
 });
 export const createPurchaseSchema = z.object({
   note: z.string().optional(),
   discountAmount: z.number().optional(),
   supplierId: z.number(),
+  payerId: z.number(),
   items: z.array(createItemSchema),
 });
 
@@ -99,6 +91,12 @@ export const consignmentSchema = baseSourceSchema.extend({
   customer: z.object({
     fullName: z.string(),
   }),
+  payer: z
+    .object({
+      fullName: z.string(),
+    })
+    .nullable()
+    .optional(),
   type: z.enum(ConsignmentType),
 });
 export const createConsignmentSchema = z.object({
@@ -106,6 +104,7 @@ export const createConsignmentSchema = z.object({
   note: z.string().optional(),
   commissionRate: z.number().gte(0).lte(100).optional(),
   partnerId: z.number(),
+  payerId: z.number().nullable().optional(),
   items: z.array(createItemSchema),
 });
 
@@ -122,9 +121,15 @@ export const consignmentDraftSchema = z
         id: z.number(),
         type: z.enum(PartnerTypeConst),
         fullName: z.string(),
-        email: z.string(),
-        phoneNumber: z.string(),
       })
+      .nullable()
+      .optional(),
+    payer: z
+      .object({
+        id: z.number(),
+        fullName: z.string(),
+      })
+      .nullable()
       .optional(),
     items: z.array(
       itemDraftSchema.extend({
@@ -142,7 +147,16 @@ export const consignmentDraftSchema = z
       });
       return;
     }
+
+    if (data.type === "In" && !data.payer) {
+      ctx.addIssue({
+        path: ["payer"],
+        code: z.ZodIssueCode.custom,
+        message: "Payer is required.",
+      });
+    }
   });
+
 // Order
 export type OrderType = z.infer<typeof orderSchema>;
 export type CreateOrderType = z.infer<typeof createOrderSchema>;

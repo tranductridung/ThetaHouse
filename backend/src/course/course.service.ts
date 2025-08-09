@@ -62,6 +62,13 @@ export class CourseService {
       createCourseDto?.offlineSession ?? undefined,
     );
 
+    if (createCourseDto.mode === CourseMode.OFFLINE) {
+      if (createCourseDto.meetingLink)
+        throw new BadRequestException('Meeting link should not exist!');
+
+      if (createCourseDto.meetingPassword)
+        throw new BadRequestException('Meeting password should not exist!');
+    }
     const course = this.courseRepo.create(createCourseDto);
     await this.courseRepo.save(course);
     return course;
@@ -230,12 +237,18 @@ export class CourseService {
 
     if (mode !== CourseMode.COMBINE) {
       if (course.mode === CourseMode.OFFLINE) {
+        // if (updateCourseDto.mode === CourseMode.OFFLINE) {
+        //   if (updateCourseDto.meetingLink)
+        //     throw new BadRequestException('Meeting link should not exist!');
+
+        //   if (updateCourseDto.meetingPassword)
+        //     throw new BadRequestException('Meeting password should not exist!');
+        // }
+
         course.onlineSession = null;
-        console.log('offline mode and online = ', course.onlineSession);
-      } else {
-        course.offlineSession = null;
-        console.log('online mode and offline = ', course.offlineSession);
-      }
+        // course.meetingLink = undefined;
+        // course.meetingPassword = undefined;
+      } else course.offlineSession = null;
     }
 
     await this.courseRepo.save(course);

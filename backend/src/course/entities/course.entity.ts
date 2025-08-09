@@ -47,6 +47,12 @@ export class Course {
   @Column()
   maxStudent: number;
 
+  @Column({ nullable: true, type: 'text' })
+  meetingLink?: string;
+
+  @Column({ nullable: true, type: 'text' })
+  meetingPassword?: string;
+
   @CreateDateColumn({ select: false })
   createdAt: Date;
 

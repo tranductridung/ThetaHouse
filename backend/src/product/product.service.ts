@@ -80,7 +80,13 @@ export class ProductService {
       paginationDto?.page !== undefined &&
       paginationDto?.limit !== undefined
     ) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(product.fullName) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [products, total] = await queryBuilder
         .skip(page * limit)
@@ -103,7 +109,13 @@ export class ProductService {
       paginationDto?.page !== undefined &&
       paginationDto?.limit !== undefined
     ) {
-      const { page, limit } = paginationDto;
+      const { page, limit, search } = paginationDto;
+
+      if (search) {
+        queryBuilder.where('LOWER(product.fullName) LIKE :search', {
+          search: `%${search.toLowerCase()}%`,
+        });
+      }
 
       const [products, total] = await queryBuilder
         .skip(page * limit)

@@ -90,11 +90,14 @@ export class PurchaseController {
   @Post(':id/items')
   async addItem(
     @Param('id') purchaseId: string,
-    @Body() createItemDto: CreateItemDto,
+    @Body() createItemDtos: CreateItemDto[],
+    @Req() req: Request,
   ) {
+    const creatorId = Number(req.user?.id);
     const result = await this.purchaseService.addItem(
       +purchaseId,
-      createItemDto,
+      createItemDtos,
+      +creatorId,
     );
     return result;
   }

@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import { DataSource, Not } from 'typeorm';
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
@@ -11,7 +11,7 @@ import { Appointment } from './entities/appointment.entity';
 import { PartnerService } from 'src/partner/partner.service';
 import { ModulesService } from 'src/modules/modules.service';
 import { Partner } from 'src/partner/entities/partner.entity';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { CreateTherapyAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import {
   BadRequestException,
@@ -21,13 +21,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  AppointmentCategory,
   AppointmentStatus,
   AppointmentType,
   ItemableType,
   ItemStatus,
+  ResponseCalendarStatus,
   SourceType,
 } from 'src/common/enums/enum';
-import { Order } from 'src/order/entities/order.entity';
+import { CreateConsultationAppointmentDto } from './dto/create-consultation-appointment.dto';
+import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
+import { GoogleCalendarService } from 'src/google-calendar/google-calendar.service';
+import { CreateCalendarDto } from 'src/google-calendar/dtos/create-calendar.dto';
+
 @Injectable()
 export class AppointmentService {
   constructor(
@@ -41,6 +47,7 @@ export class AppointmentService {
     private userService: UserService,
     @Inject(forwardRef(() => PartnerService))
     private partnerService: PartnerService,
+    private googleCalendarService: GoogleCalendarService,
   ) {}
 
   async countSessionOfItem(itemId: number, type: AppointmentType) {
@@ -92,6 +99,7 @@ export class AppointmentService {
           where: {
             item: { id: item.id },
             type: AppointmentType.MAIN,
+            status: Not(AppointmentStatus.CANCELLED),
           },
         });
 
@@ -128,130 +136,301 @@ export class AppointmentService {
           Math.floor(mainSessionCompleted / Number(item.snapshotData.session)) *
           Number(item.snapshotData.bonusSession);
 
+        console.log(
+          'validate sessionnnnnnnnnnnnnnnn',
+          bonusSessionCreated,
+          validBonusSession,
+        );
+
         if (bonusSessionCreated >= validBonusSession)
           throw new BadRequestException(
-            'Completed all main session of service to use bonus session!',
+            'Completed main session of service to use bonus session!',
           );
       }
     }
   }
 
-  async create(createAppointmentDto: CreateAppointmentDto) {
-    const appointment = this.appointmentRepo.create(createAppointmentDto);
+  async createTherapyApt(
+    createTherapyAppointmentDto: CreateTherapyAppointmentDto,
+  ) {
+    if (createTherapyAppointmentDto.type === AppointmentType.FREE) {
+      if (!createTherapyAppointmentDto.customerId)
+        throw new BadRequestException(
+          'Customer ID is required for free appointment!',
+        );
+      if (createTherapyAppointmentDto.itemId)
+        throw new BadRequestException(
+          'Free appointment should not exist itemId!',
+        );
+    } else {
+      if (!createTherapyAppointmentDto.itemId)
+        throw new BadRequestException(
+          'ItemId is required for non-free appointment!',
+        );
+      if (createTherapyAppointmentDto.customerId)
+        throw new BadRequestException(
+          'Customer ID should not be provided for main or bonus!',
+        );
+    }
+
+    const appointment = this.appointmentRepo.create({
+      ...createTherapyAppointmentDto,
+      category: AppointmentCategory.THERAPY,
+    });
 
     // Get customerId
-    if (createAppointmentDto.itemId) {
+    if (createTherapyAppointmentDto.itemId) {
+      if (createTherapyAppointmentDto.customerId)
+        throw new BadRequestException('Customer ID should not exist!');
       // Get sourceId from Item
       const item = await this.dataSource
         .createQueryBuilder(Item, 'i')
-        .select(['i.sourceId', 'sourceId', 'i.snapshotData', 'snapshotData'])
-        .where('i.id = :itemId', { itemId: createAppointmentDto.itemId })
-        .getRawOne<{ sourceId: number | null; snapshotData: any }>();
+        .select([
+          'sourceId',
+          'snapshotData',
+          'currentCustomerId',
+          'i.sourceId',
+          'i.snapshotData',
+          'i.currentCustomerId',
+        ])
+        .where('i.id = :itemId', {
+          itemId: createTherapyAppointmentDto.itemId,
+        })
+        .andWhere('i.itemableType = :itemableType', {
+          itemableType: ItemableType.SERVICE,
+        })
+        .andWhere('i.isActive = :active', {
+          active: true,
+        })
+        .getRawOne<{
+          sourceId: number | null;
+          snapshotData: any;
+          currentCustomerId: number;
+        }>();
 
       if (!item?.sourceId) {
         throw new BadRequestException('Item not exist or lack of sourceId!');
       }
 
-      const order = await this.dataSource
-        .createQueryBuilder(Order, 'o')
-        .leftJoinAndSelect('o.customer', 'customer')
-        .where('o.id = :id', { id: item.sourceId })
-        .getOne();
-
-      if (!order?.customer?.id) {
-        throw new BadRequestException(
-          'Order not exist or order dont have customer ID!',
-        );
-      }
-
-      createAppointmentDto.customerId = order.customer.id;
+      createTherapyAppointmentDto.customerId = item.currentCustomerId;
 
       appointment.duration = Number(item.snapshotData.duration);
     } else {
-      if (!createAppointmentDto.customerId) {
+      if (!createTherapyAppointmentDto.customerId) {
         throw new BadRequestException('Customer ID is required!');
       }
     }
 
     // Get customer by customerId
     const customer = await this.partnerService.findCustomer(
-      createAppointmentDto.customerId,
+      createTherapyAppointmentDto.customerId,
     );
 
     if (!customer) {
-      throw new BadRequestException('Customer not exitst!');
+      throw new BadRequestException('Customer not exist!');
     }
 
     appointment.customer = customer;
-    // const customer = await this.partnerService.findCustomer(
-    //   createAppointmentDto.customerId,
-    // );
-    // appointment.customer = customer;
 
     // Validate and create item (for bonus and main)
-    if (createAppointmentDto.type !== AppointmentType.FREE) {
+    if (createTherapyAppointmentDto.type !== AppointmentType.FREE) {
       // Check if itemId exists
-      if (!createAppointmentDto.itemId)
+      if (!createTherapyAppointmentDto.itemId)
         throw new BadRequestException(`ItemId is required!`);
 
       const item = await this.itemService.findOne(
-        createAppointmentDto.itemId,
+        createTherapyAppointmentDto.itemId,
         true,
       );
       appointment.item = item;
 
-      await this.validateSession(createAppointmentDto.type, undefined, item);
+      await this.validateSession(
+        createTherapyAppointmentDto.type,
+        undefined,
+        item,
+      );
     } else {
       await this.validateSession(AppointmentType.FREE, customer, undefined);
     }
 
     // Calculate endAt from startAt and duration (if startAt exist)
-    if (createAppointmentDto.startAt) {
+    if (createTherapyAppointmentDto.startAt) {
       // If type = free, dto must contain duration
       if (
-        createAppointmentDto.type === AppointmentType.FREE &&
-        !createAppointmentDto.duration
+        createTherapyAppointmentDto.type === AppointmentType.FREE &&
+        !createTherapyAppointmentDto.duration
       )
         throw new BadRequestException('Duration is required!');
 
-      // const durationValue =
-      //   createAppointmentDto.type === AppointmentType.FREE
-      //     ? createAppointmentDto.duration
-      //     : Number(appointment.item.snapshotData.duration);
-
-      const endAt = this.calculteEndAt(
-        createAppointmentDto.startAt,
+      const endAt = this.calculateEndAt(
+        createTherapyAppointmentDto.startAt,
         appointment.duration,
       );
 
       appointment.endAt = endAt;
 
       // Add healer
-      if (createAppointmentDto.healerId) {
+      if (createTherapyAppointmentDto.healerId) {
         appointment.healer = await this.isHealerFree(
-          createAppointmentDto.startAt,
+          createTherapyAppointmentDto.startAt,
           endAt,
-          createAppointmentDto.healerId,
+          createTherapyAppointmentDto.healerId,
         );
       }
 
       // Add room
-      if (createAppointmentDto.roomId) {
+      if (createTherapyAppointmentDto.roomId) {
         appointment.room = await this.isRoomFree(
-          createAppointmentDto.startAt,
+          createTherapyAppointmentDto.startAt,
           endAt,
-          createAppointmentDto.roomId,
+          createTherapyAppointmentDto.roomId,
         );
       }
     }
 
     // Add modules
-    if (createAppointmentDto.moduleIds) {
+    if (createTherapyAppointmentDto.moduleIds) {
       const modules = await this.modulesService.findByIds(
-        createAppointmentDto.moduleIds,
+        createTherapyAppointmentDto.moduleIds,
       );
 
       appointment.modules = modules;
+    }
+
+    // Set status
+    const isFullInfo = this.checkStatus(appointment);
+    if (isFullInfo) appointment.status = AppointmentStatus.CONFIRMED;
+    else appointment.status = AppointmentStatus.PENDING;
+
+    await this.appointmentRepo.save(appointment);
+
+    const calendar = await this.createAppointmentCalendar(appointment);
+
+    return {
+      appointment,
+      calendar,
+    };
+  }
+
+  async createAppointmentCalendar(appointment: Appointment) {
+    if (appointment.healer.id && appointment.startAt && appointment.endAt) {
+      const { accessToken, refreshToken } =
+        await this.googleCalendarService.getUserTokens(appointment.healer.id);
+
+      if (!accessToken && !refreshToken) {
+        return {
+          status: ResponseCalendarStatus.NOT_CONNECTED,
+          error: 'Google token missing. Please connect with google calendar!',
+        };
+      }
+
+      try {
+        const createCalendarDto: CreateCalendarDto = {
+          userId: appointment.healer.id,
+          summary: `${appointment.category} Appointment`,
+          description: `Appointment with ${appointment.customer.fullName}`,
+          startDateTime: appointment.startAt,
+          endDateTime: appointment.endAt,
+        };
+
+        await this.googleCalendarService.createEvent(
+          accessToken!,
+          refreshToken!,
+          createCalendarDto,
+        );
+
+        return {
+          status: ResponseCalendarStatus.SUCCESS,
+        };
+      } catch (error) {
+        console.log(error);
+        return {
+          status: ResponseCalendarStatus.FAILED,
+          error: 'Failed to create calendar event!',
+        };
+      }
+    } else
+      // fallback khi dữ liệu appointment không đủ
+      return {
+        status: ResponseCalendarStatus.FAILED,
+        error: 'Missing appointment data!',
+      };
+  }
+
+  async createConsultationApt(
+    createConsultationAppointmentDto: CreateConsultationAppointmentDto,
+  ) {
+    const appointment = this.appointmentRepo.create({
+      ...createConsultationAppointmentDto,
+      category: AppointmentCategory.CONSULTATION,
+    });
+
+    // Get customer by customerId
+    appointment.customer = await this.partnerService.findCustomer(
+      createConsultationAppointmentDto.customerId,
+    );
+
+    // Calculate endAt from startAt and duration
+    const endAt = this.calculateEndAt(
+      createConsultationAppointmentDto.startAt,
+      createConsultationAppointmentDto.duration,
+    );
+
+    appointment.endAt = endAt;
+
+    // Add healer
+    appointment.healer = await this.isHealerFree(
+      createConsultationAppointmentDto.startAt,
+      endAt,
+      createConsultationAppointmentDto.healerId,
+    );
+
+    // Set status
+    const isFullInfo = this.checkStatus(appointment);
+    if (isFullInfo) appointment.status = AppointmentStatus.CONFIRMED;
+    else appointment.status = AppointmentStatus.PENDING;
+
+    await this.appointmentRepo.save(appointment);
+
+    const calendar = await this.createAppointmentCalendar(appointment);
+
+    return {
+      appointment,
+      calendar,
+    };
+  }
+
+  async updateConsultationApt(
+    aptId: number,
+    updateConsultationAppointmentDto: UpdateConsultationAppointmentDto,
+  ) {
+    const appointment = await this.findOneFull(
+      aptId,
+      AppointmentCategory.CONSULTATION,
+      false,
+    );
+
+    this.appointmentRepo.merge(appointment, updateConsultationAppointmentDto);
+
+    // Calculate endAt from startAt and duration
+    if (
+      updateConsultationAppointmentDto.startAt ||
+      updateConsultationAppointmentDto.duration
+    ) {
+      appointment.endAt = this.calculateEndAt(
+        appointment.startAt!,
+        appointment.duration,
+      );
+    }
+
+    // Add healer
+    if (updateConsultationAppointmentDto.healerId) {
+      appointment.healer = await this.isHealerFree(
+        appointment.startAt!,
+        appointment.endAt!,
+        updateConsultationAppointmentDto.healerId,
+        appointment.id,
+      );
     }
 
     // Set status
@@ -272,20 +451,17 @@ export class AppointmentService {
   ) {
     const healer = await this.userService.findOne(healerId);
 
-    console.log(appoitmentStart);
-    console.log(appoitmentEnd);
     if (appoitmentStart > appoitmentEnd)
-      // if (appoitmentStart >= appoitmentEnd)
-
       throw new BadRequestException('Start time cannot greater than end time!');
 
-    // Get appointment which is conflict with date of new appointment
-    const conflictAppointment = await this.appointmentRepo
+    const queryBuilder = this.appointmentRepo
       .createQueryBuilder('a')
-      .where('a.healerId = :healerId', { healerId })
-      .andWhere('a.id <> :oldAptId', { oldAptId })
-      .andWhere(
-        `
+      .where('a.healerId = :healerId', { healerId });
+
+    if (oldAptId) queryBuilder.andWhere('a.id <> :oldAptId', { oldAptId });
+
+    queryBuilder.andWhere(
+      `
         NOT(
           (
         a.startAt >= :appoitmentEnd
@@ -300,9 +476,10 @@ export class AppointmentService {
           )
         )
         `,
-        { appoitmentStart, appoitmentEnd },
-      )
-      .getOne();
+      { appoitmentStart, appoitmentEnd },
+    );
+
+    const conflictAppointment = await queryBuilder.getOne();
 
     if (conflictAppointment) throw new BadRequestException('Healer busy!');
     return healer;
@@ -320,12 +497,14 @@ export class AppointmentService {
       throw new BadRequestException('Start time cannot greater than end time!');
 
     // Get appointment which is conflict with date of new appointment
-    const conflictRoom = await this.appointmentRepo
+    const queryBuilder = this.appointmentRepo
       .createQueryBuilder('a')
-      .where('a.roomId = :roomId', { roomId })
-      .andWhere('a.id <> :oldAptId', { oldAptId })
-      .andWhere(
-        `
+      .where('a.roomId = :roomId', { roomId });
+
+    if (oldAptId) queryBuilder.andWhere('a.id <> :oldAptId', { oldAptId });
+
+    queryBuilder.andWhere(
+      `
         NOT(
         (
           a.startAt >= :appoitmentEnd
@@ -340,17 +519,21 @@ export class AppointmentService {
         )
         )
         `,
-        { appoitmentStart, appoitmentEnd },
-      )
-      .getOne();
+      { appoitmentStart, appoitmentEnd },
+    );
+    const conflictRoom = await queryBuilder.getOne();
 
     if (conflictRoom) throw new BadRequestException('Room busy!');
     return room;
   }
 
-  async findOne(id: number, isActive?: boolean) {
+  async findOneFull(
+    id: number,
+    category?: AppointmentCategory,
+    isActive?: boolean,
+  ) {
     const appointment = await this.appointmentRepo.findOne({
-      where: { id },
+      where: { id, category },
       relations: ['room', 'healer', 'customer', 'item'],
     });
 
@@ -362,23 +545,54 @@ export class AppointmentService {
     return appointment;
   }
 
-  calculteEndAt(startAt: Date, duration: number) {
+  async findOne(
+    id: number,
+    category?: AppointmentCategory,
+    isActive?: boolean,
+  ) {
+    const appointment = await this.appointmentRepo.findOne({
+      where: { id, category },
+    });
+
+    if (!appointment) throw new NotFoundException('Appointment not found!');
+
+    if (isActive && appointment.status === AppointmentStatus.CANCELLED)
+      throw new NotFoundException('Appointment is cancelled!');
+
+    return appointment;
+  }
+
+  calculateEndAt(startAt: Date, duration: number) {
     const endAt = new Date(startAt.getTime() + duration * 60000);
     return endAt;
   }
 
-  async update(
+  // check lai
+  async updateTherapyApt(
     id: number,
     updateAppointmentDto: UpdateAppointmentDto,
     item?: Item,
   ) {
-    const appointment = await this.findOne(id, true);
+    const appointment = await this.findOneFull(
+      id,
+      AppointmentCategory.THERAPY,
+      false,
+    );
+
+    if (
+      updateAppointmentDto.healerId &&
+      appointment.status === AppointmentStatus.COMPLETED
+    )
+      throw new BadRequestException(
+        'Cannot change healer for completed appointment!',
+      );
+
     const startAt = updateAppointmentDto.startAt ?? appointment.startAt;
 
     // Check and validate startAt
     if (!startAt) throw new BadRequestException('Start time is required!');
 
-    const endAt = this.calculteEndAt(startAt, Number(appointment.duration));
+    const endAt = this.calculateEndAt(startAt, Number(appointment.duration));
 
     // Check if room free
     if (updateAppointmentDto.roomId) {
@@ -396,21 +610,8 @@ export class AppointmentService {
         startAt,
         endAt,
         updateAppointmentDto.healerId,
+        appointment.id,
       );
-    }
-
-    // Change owner
-    if (updateAppointmentDto.customerId) {
-      const customer = await this.partnerService.findOne(
-        updateAppointmentDto.customerId,
-      );
-      if (customer.id !== appointment.customer.id) {
-        if (!item)
-          throw new BadRequestException('Item is required to change owner!');
-
-        item.status = ItemStatus.TRANSFERED;
-        appointment.customer = customer;
-      }
     }
 
     // Change type of appointment
@@ -457,7 +658,8 @@ export class AppointmentService {
   }
 
   async remove(id: number) {
-    const appointment = await this.findOne(id);
+    const appointment = await this.findOne(id, undefined, true);
+
     appointment.status = AppointmentStatus.CANCELLED;
     await this.appointmentRepo.save(appointment);
     return { message: 'Remove appointment success!' };
@@ -475,7 +677,6 @@ export class AppointmentService {
       });
 
       if (!appointment) throw new NotFoundException('Appointment not found!');
-
       if (appointment.status === AppointmentStatus.COMPLETED)
         throw new BadRequestException('Appointment status is completed!');
 
@@ -494,7 +695,6 @@ export class AppointmentService {
           querryRunner.manager,
         );
       }
-
       await querryRunner.commitTransaction();
     } catch (error) {
       console.log(error);
@@ -508,7 +708,11 @@ export class AppointmentService {
 
   checkStatus(appointment: Appointment) {
     // Change status
-    const requiredFields = ['startAt', 'endAt', 'healer', 'room', 'customer'];
+    const requiredFields =
+      appointment.category === AppointmentCategory.THERAPY
+        ? ['startAt', 'endAt', 'healer', 'room', 'customer']
+        : ['startAt', 'endAt', 'healer', 'customer'];
+
     const allFieldsHaveValue = requiredFields.every(
       (key) => appointment[key] !== null && appointment[key] !== undefined,
     );
@@ -530,6 +734,7 @@ export class AppointmentService {
         'appointment.createdAt',
         'appointment.status',
         'appointment.duration',
+        'appointment.category',
         'appointment.type',
         'item.id',
         'healer.fullName',
@@ -578,6 +783,7 @@ export class AppointmentService {
         'appointment.duration',
         'appointment.type',
         'appointment.createdAt',
+        'appointment.category',
         'item.id',
         'healer.fullName',
         'customer.fullName',
@@ -622,8 +828,6 @@ export class AppointmentService {
     quantity: number,
     manager?: EntityManager,
   ): Promise<boolean> {
-    console.log(itemId);
-
     const repo = manager
       ? manager.getRepository(Appointment)
       : this.appointmentRepo;
@@ -644,8 +848,6 @@ export class AppointmentService {
         status: AppointmentStatus.COMPLETED,
       },
     });
-
-    console.log(mainCount, totalSession, bonusCount, totalBonusSession);
 
     return mainCount === totalSession && bonusCount === totalBonusSession;
   }

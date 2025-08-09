@@ -19,7 +19,7 @@ import type { TransactionType } from "@/components/schemas/transaction.schema";
 import DisplayUser from "@/components/DisplayUser";
 import { useItemActions } from "@/hooks/useItemAction";
 import { toast } from "sonner";
-import type { ItemDraftType } from "@/components/schemas/item.schema";
+import type { ItemDraftListType } from "@/components/schemas/item.schema";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import type { PaymentDraftType } from "@/components/schemas/payment.schema";
 import PageTitle from "@/components/Title";
@@ -72,47 +72,51 @@ const PurchaseDetails = ({ isUseTitle = true }: PurchaseDetailProps) => {
     fetchData();
   }, []);
 
-  const { handleAddItem, handleRemove, handleExportImportItem } =
+  const { handleAddItemList, handleRemove, handleExportImportItem } =
     useItemActions(fetchData);
   const { handleAddPayment } = useSourceActions(fetchData);
 
-  const onRemove = (itemId: number) => {
-    console.log("on remove");
+  const onRemove = async (itemId: number) => {
     if (!purchase) {
       toast.error("Purchase ID is required!");
       return;
     }
-    handleRemove(itemId, purchase.id, "Purchase");
+    await handleRemove(itemId, purchase.id, "Purchase");
   };
 
-  const onAddSubmitPayment = async (paymentDraftType: PaymentDraftType) => {
+  const onSubmitAddPayment = async (paymentDraftType: PaymentDraftType) => {
     if (!transaction?.id) return;
 
-    await handleAddPayment(paymentDraftType, transaction?.id, undefined);
-    onClosePayment();
+    const isSuccess = await handleAddPayment(paymentDraftType, transaction?.id);
+    if (isSuccess) onClosePayment();
   };
 
-  const onSubmitAddItem = (itemDraftType: ItemDraftType) => {
+  const onSubmitAddItem = async (itemDraftList: ItemDraftListType) => {
     if (!purchase) {
       toast.error("Purchase ID is required!");
       return;
     }
-    handleAddItem(itemDraftType, purchase?.id, "Purchase");
-    onCloseItem();
+
+    const isSuccesss = await handleAddItemList(
+      itemDraftList,
+      purchase?.id,
+      "Purchase"
+    );
+    if (isSuccesss) onCloseItem();
   };
 
-  const onSubmitExportImport = (quantity: number) => {
+  const onSubmitExportImport = async (quantity: number) => {
     if (!exportImportFormManager.selectedItemId) {
       toast.error("Item ID is required to export/import product!");
       return;
     }
 
-    handleExportImportItem(
+    const isSuccess = await handleExportImportItem(
       exportImportFormManager.selectedItemId,
       "Purchase",
       quantity
     );
-    onCloseExportImport();
+    if (isSuccess) onCloseExportImport();
   };
 
   return (
@@ -140,6 +144,7 @@ const PurchaseDetails = ({ isUseTitle = true }: PurchaseDetailProps) => {
         <div className="flex flex-col space-y-5">
           <DataTable
             columns={itemColumns({
+              hasAction: true,
               onRemove,
               onAddExportImport,
             })}
@@ -261,11 +266,12 @@ const PurchaseDetails = ({ isUseTitle = true }: PurchaseDetailProps) => {
           formManager={itemFormManager}
           handleSubmit={onSubmitAddItem}
           onClose={onCloseItem}
+          source={"Purchase"}
         ></ItemModal>
         {/* Add payment modal */}
         <PaymentModal
           formManager={paymentFormManager}
-          handleSubmit={onAddSubmitPayment}
+          handleSubmit={onSubmitAddPayment}
           onClose={onClosePayment}
         ></PaymentModal>
         {/* Export or Import item modal */}

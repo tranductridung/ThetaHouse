@@ -12,11 +12,17 @@ import { ItemService } from 'src/item/item.service';
 import { Payment } from './entities/payment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Partner } from 'src/partner/entities/partner.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
 import { TransactionService } from 'src/transaction/transaction.service';
-import { TransactionStatus, TransactionType } from 'src/common/enums/enum';
+import {
+  PayerType,
+  SourceStatus,
+  TransactionStatus,
+} from 'src/common/enums/enum';
 import { UpdateTransactionDto } from './../transaction/dto/update-transaction.dto';
+import { loadSource } from 'src/item/helpers/source.helper';
+import { PaymentWithName } from './interfaces/payment.interfaces';
+import { Partner } from 'src/partner/entities/partner.entity';
 @Injectable()
 export class PaymentService {
   constructor(
@@ -41,10 +47,24 @@ export class PaymentService {
 
       if (transaction.status === TransactionStatus.PAID)
         throw new BadRequestException('Transaction is paid!');
+      else if (transaction.status === TransactionStatus.OVERPAID)
+        throw new BadRequestException('Transaction is overpaid!');
 
-      const payment = queryRunner.manager.create(Payment, {
-        ...createPaymentDto,
-      });
+      if (transaction.sourceId && transaction.sourceType) {
+        const source = await loadSource(
+          transaction.sourceId,
+          transaction.sourceType,
+          queryRunner.manager,
+        );
+
+        if (source && source.status === SourceStatus.CANCELLED) {
+          throw new BadRequestException(
+            `${transaction.sourceType} is cancelled!`,
+          );
+        }
+      }
+
+      const payment = queryRunner.manager.create(Payment, createPaymentDto);
 
       payment.transaction = transaction;
       payment.creator = await queryRunner.manager.findOneOrFail(User, {
@@ -52,22 +72,6 @@ export class PaymentService {
           id: creatorId,
         },
       });
-
-      if (
-        transaction.type === TransactionType.INCOME &&
-        !createPaymentDto.partnerId
-      )
-        throw new BadRequestException(
-          'Partner ID is required to create payment for income transaction!',
-        );
-
-      if (createPaymentDto.partnerId) {
-        payment.partner = await queryRunner.manager.findOneOrFail(Partner, {
-          where: {
-            id: createPaymentDto.partnerId,
-          },
-        });
-      }
 
       const balance = transaction.totalAmount - transaction.paidAmount;
 
@@ -107,39 +111,61 @@ export class PaymentService {
   }
 
   async findAll(paginationDto?: PaginationDto) {
-    const queryBuilder = this.paymentRepo
+    const baseQueryBuilder = this.paymentRepo
       .createQueryBuilder('payment')
-      .leftJoinAndSelect('payment.creator', 'creator')
-      .leftJoinAndSelect('payment.partner', 'partner')
-      .leftJoinAndSelect('payment.transaction', 'transaction')
+      .leftJoin('payment.creator', 'creator')
+      .leftJoin('payment.transaction', 'transaction')
+      .leftJoin(
+        User,
+        'payer_user',
+        'payer_user.id = transaction.payerId AND transaction.payerType = :payerUserType',
+        { payerUserType: PayerType.USER },
+      )
+      .leftJoin(
+        Partner,
+        'payer_partner',
+        'payer_partner.id = transaction.payerId AND transaction.payerType = :payerPartnerType',
+        { payerPartnerType: PayerType.PARTNER },
+      )
       .select([
         'payment.id',
         'transaction.id',
-        'payment.amount',
-        'payment.method',
-        'payment.note',
+        'payment.amount AS amount',
+        'payment.method AS method',
+        'payment.note AS note',
         'payment.createdAt',
-        'creator.fullName',
-        'partner.fullName',
+        'creator.fullName AS creatorFullName',
+        'COALESCE(payer_user.fullName, payer_partner.fullName) AS payerFullName',
       ])
       .orderBy('payment.createdAt', 'DESC');
 
-    if (
-      paginationDto?.page !== undefined &&
-      paginationDto?.limit !== undefined
-    ) {
-      const { page, limit } = paginationDto;
+    const rawAndEntityPayments =
+      paginationDto?.page !== undefined && paginationDto?.limit !== undefined
+        ? await baseQueryBuilder
+            .skip(paginationDto.page * paginationDto.limit)
+            .take(paginationDto.limit)
+            .getRawAndEntities()
+        : await baseQueryBuilder.getRawAndEntities();
 
-      const [payments, total] = await queryBuilder
-        .skip(page * limit)
-        .take(limit)
-        .getManyAndCount();
-
-      return { payments, total };
-    } else {
-      const payments = await queryBuilder.getMany();
-      return payments;
-    }
+    return {
+      payments: (rawAndEntityPayments.raw as PaymentWithName[]).map(
+        (payment) => ({
+          id: payment.payment_id,
+          transaction: { id: payment.transaction_id },
+          amount: payment.amount,
+          method: payment.method,
+          note: payment.note,
+          createdAt: payment.createdAt,
+          creator: {
+            fullName: payment.creatorFullName,
+          },
+          payer: {
+            fullName: payment.payerFullName,
+          },
+        }),
+      ),
+      total: await baseQueryBuilder.getCount(),
+    };
   }
 
   async findOne(id: number) {
@@ -155,7 +181,6 @@ export class PaymentService {
     const queryBuilder = this.paymentRepo
       .createQueryBuilder('payment')
       .leftJoinAndSelect('payment.creator', 'creator')
-      .leftJoinAndSelect('payment.partner', 'partner')
       .leftJoinAndSelect('payment.transaction', 'transaction')
       .where('transaction.id = :transactionId', { transactionId })
       .select([
@@ -166,7 +191,6 @@ export class PaymentService {
         'payment.method',
         'payment.note',
         'creator.fullName',
-        'partner.fullName',
       ])
       .orderBy('payment.createdAt', 'DESC');
 

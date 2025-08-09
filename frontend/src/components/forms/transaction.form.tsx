@@ -71,11 +71,13 @@ const TransactionForm = ({ onSubmit }: TransactionProps) => {
                 <FormControl>
                   <Input
                     type="number"
-                    min={0}
-                    {...form.register(`totalAmount`, {
-                      valueAsNumber: true,
-                    })}
-                    className="w-full inline-block"
+                    step={"any"}
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      field.onChange(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      );
+                    }}
                   />
                 </FormControl>
                 <FormMessage />

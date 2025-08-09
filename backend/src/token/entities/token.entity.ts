@@ -1,7 +1,10 @@
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -16,6 +19,9 @@ export class Token {
   @CreateDateColumn()
   createdAt: Date;
 
-  // @Column()
-  // expiresDate: Date;
+  @ManyToOne(() => User, (user) => user.payments, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

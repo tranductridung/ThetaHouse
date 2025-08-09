@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PaymentMethod } from "../constants/constants";
 
 export const basePaymentSchema = z.object({
-  amount: z.number().gt(0),
+  amount: z.number(),
   method: z.enum(PaymentMethod),
   note: z.string(),
 });
@@ -15,27 +15,16 @@ export const paymentSchema = basePaymentSchema.extend({
   creator: z.object({
     fullName: z.string(),
   }),
-  partner: z.object({
+  payer: z.object({
     fullName: z.string(),
   }),
 });
 
 export const createPaymentSchema = basePaymentSchema.extend({
   transactionId: z.number(),
-  partnerId: z.number().optional(),
 });
 
-export const paymentDraftSchema = basePaymentSchema.extend({
-  transactionId: z.number().nullable().optional(),
-  // partner: z
-  //     id: z.number(),
-  //     type: z.enum(TypeOfPartner),
-  //     fullName: z.string(),
-  //     email: z.string(),
-  //     phoneNumber: z.string(),
-  //   })
-  //   .optional(),
-});
+export const paymentDraftSchema = basePaymentSchema.extend({});
 
 export type PaymentType = z.infer<typeof paymentSchema>;
 export type CreatePaymentType = z.infer<typeof createPaymentSchema>;

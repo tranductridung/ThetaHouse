@@ -10,11 +10,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { CreateTherapyAppointmentDto } from './dto/create-appointment.dto';
+import { CreateConsultationAppointmentDto } from './dto/create-consultation-appointment.dto';
+import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
 
 @UseGuards(AuthJwtGuard, RolesGuard)
 @Controller('appointments')
@@ -25,19 +27,30 @@ export class AppointmentController {
     return this.appointmentService.toggle();
   }
 
-  @Post()
-  async create(@Body() createAppointmentDto: CreateAppointmentDto) {
-    const appointment =
-      await this.appointmentService.create(createAppointmentDto);
-    return { appointment };
+  @Post('therapy')
+  async createTherapyApt(
+    @Body() createTherapyAppointmentDto: CreateTherapyAppointmentDto,
+  ) {
+    return await this.appointmentService.createTherapyApt(
+      createTherapyAppointmentDto,
+    );
   }
 
-  @Get('/all')
+  @Post('consultation')
+  async createConsultationApt(
+    @Body() createConsultationAppointmentDto: CreateConsultationAppointmentDto,
+  ) {
+    return await this.appointmentService.createConsultationApt(
+      createConsultationAppointmentDto,
+    );
+  }
+
+  @Get('all')
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.appointmentService.findAll(paginationDto);
   }
 
-  @Get()
+  @Get('active')
   async findAllActive(@Query() paginationDto: PaginationDto) {
     return await this.appointmentService.findAllActive(paginationDto);
   }
@@ -48,14 +61,26 @@ export class AppointmentController {
     return { appointment };
   }
 
-  @Patch(':id')
-  async update(
+  @Patch('therapy/:id')
+  async updateTherapyApt(
     @Param('id') id: string,
     @Body() updateAppointmentDto: UpdateAppointmentDto,
   ) {
-    const appointment = await this.appointmentService.update(
+    const appointment = await this.appointmentService.updateTherapyApt(
       +id,
       updateAppointmentDto,
+    );
+    return { appointment };
+  }
+
+  @Patch('consultation/:id')
+  async updateConsultationApt(
+    @Param('id') id: string,
+    @Body() updateConsultationAppointmentDto: UpdateConsultationAppointmentDto,
+  ) {
+    const appointment = await this.appointmentService.updateConsultationApt(
+      +id,
+      updateConsultationAppointmentDto,
     );
     return { appointment };
   }

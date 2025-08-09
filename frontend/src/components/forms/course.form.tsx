@@ -29,6 +29,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "../ui/calendar";
+import { useEffect } from "react";
 
 type CourseProps = {
   type: "add" | "edit";
@@ -42,6 +43,8 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
     defaultValues: {
       name: courseData?.name,
       description: courseData?.description,
+      meetingLink: courseData?.meetingLink,
+      meetingPassword: courseData?.meetingPassword,
       offlineSession: courseData?.offlineSession,
       onlineSession: courseData?.onlineSession,
       price: courseData?.price,
@@ -57,7 +60,11 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
     control: form.control,
     name: "mode",
   });
-  console.log("form", courseData);
+
+  useEffect(() => {
+    if (watchedMode === "Offline") form.setValue("onlineSession", null);
+    if (watchedMode === "Online") form.setValue("offlineSession", null);
+  }, [watchedMode]);
 
   return (
     <>
@@ -111,6 +118,46 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
               </FormItem>
             )}
           />
+
+          <div className="flex flex-col space-y-5 md:flex-row md:space-y-0 md:space-x-5">
+            {/* Meeting Link */}
+            <FormField
+              control={form.control}
+              name="meetingLink"
+              render={({ field }) => (
+                <FormItem className="w-full md:flex-1">
+                  <FormLabel>Meeting Link</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Meeting link of course"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Meeting Password */}
+            <FormField
+              control={form.control}
+              name="meetingPassword"
+              render={({ field }) => (
+                <FormItem className="w-full md:flex-1">
+                  <FormLabel>Meeting Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Meeting password of course"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           {/* Mode */}
           <FormField
             control={form.control}
@@ -149,12 +196,11 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
                     <FormControl>
                       <Input
                         type="number"
+                        step={"any"}
                         value={field.value ?? ""}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                       />
@@ -164,6 +210,7 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
                 )}
               ></FormField>
             )}
+
             {/* Online Session */}
             {watchedMode !== "Offline" && (
               <FormField
@@ -175,12 +222,11 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
                     <FormControl>
                       <Input
                         type="number"
+                        step={"any"}
                         value={field.value ?? ""}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                       />
@@ -203,12 +249,11 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
                   <FormControl>
                     <Input
                       type="number"
+                      step={"any"}
                       value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />
@@ -227,12 +272,11 @@ const CourseForm = ({ onSubmit, type, courseData }: CourseProps) => {
                   <FormControl>
                     <Input
                       type="number"
+                      step={"any"}
                       value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />

@@ -1,4 +1,3 @@
-import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   BadRequestException,
   Injectable,
@@ -7,12 +6,14 @@ import {
 import {
   AdjustmentType,
   AppointmentStatus,
+  AppointmentType,
   CommonStatus,
   EnrollmentStatus,
   InventoryAction,
   ItemableType,
   ItemStatus,
   PartnerType,
+  PayerType,
   SourceStatus,
   SourceType,
   TransactionType,
@@ -23,20 +24,21 @@ import { ItemService } from 'src/item/item.service';
 import { User } from 'src/user/entities/user.entity';
 import { Item } from 'src/item/entities/item.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { CreateItemDto } from './../item/dto/create-item.dto';
+import { ChangeCourseDto } from './dto/change-course.dto';
+import { CreateItemDto } from 'src/item/dto/create-item.dto';
 import { Product } from 'src/product/entities/product.entity';
 import { Partner } from 'src/partner/entities/partner.entity';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import { Discount } from 'src/discount/entities/discount.entity';
 import { InventoryService } from 'src/inventory/inventory.service';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
-import { DataSource, EntityManager, Not, Repository } from 'typeorm';
+import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
+import { DataSource, EntityManager, In, Not, Repository } from 'typeorm';
 import { TransactionService } from 'src/transaction/transaction.service';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { CreateTransactionDto } from 'src/transaction/dto/create-transaction.dto';
 import { CreateTransactionNoSourceDto } from 'src/transaction/dto/create-transaction-no-source.dto';
-import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
-import { EnrollmentService } from 'src/enrollment/enrollment.service';
 
 @Injectable()
 export class OrderService {
@@ -45,7 +47,6 @@ export class OrderService {
     private itemService: ItemService,
     private inventoryService: InventoryService,
     private transactionService: TransactionService,
-    private enrollmentService: EnrollmentService,
     private dataSource: DataSource,
   ) {}
 
@@ -54,12 +55,16 @@ export class OrderService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    if (createOrderDto.items.length === 0)
+      throw new BadRequestException('Item is required!');
+
     const order = queryRunner.manager.create(Order, {
       ...createOrderDto,
       quantity: 0,
       totalAmount: 0,
       finalAmount: 0,
     });
+
     order.creator = await queryRunner.manager.findOneByOrFail(User, {
       id: creatorId,
     });
@@ -80,20 +85,27 @@ export class OrderService {
     await queryRunner.manager.save(order);
 
     // Calculate amount
-    let totalAmount = 0;
-    let orderQuantity = 0;
+    const items: Item[] = [];
     try {
       for (const itemDto of createOrderDto.items) {
-        const itemResult = await this.itemService.add(
+        // Add item to order
+        const item = await this.itemService.add(
           itemDto,
+          creatorId,
           order.id,
           SourceType.ORDER,
           queryRunner.manager,
-          undefined,
+          order.customer.id,
         );
-        totalAmount += itemResult.finalAmount;
-        orderQuantity += itemResult.quantity;
+        items.push(item);
       }
+
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          order.id,
+          SourceType.ORDER,
+          queryRunner.manager,
+        );
 
       // Update quantity and reversed of product
       const itemResults = await queryRunner.manager.find(Item, {
@@ -101,27 +113,26 @@ export class OrderService {
           sourceId: order.id,
           sourceType: SourceType.ORDER,
           isActive: true,
+          itemableType: ItemableType.PRODUCT,
         },
       });
 
       for (const itemResult of itemResults) {
-        if (itemResult.itemableType === ItemableType.PRODUCT) {
-          const product = await queryRunner.manager.findOneByOrFail(Product, {
-            id: itemResult.itemableId,
-          });
+        const product = await queryRunner.manager.findOneByOrFail(Product, {
+          id: itemResult.itemableId,
+        });
 
-          // Quantity of product is not enough
-          if (product.quantity < itemResult.quantity) {
-            throw new BadRequestException(
-              'Not enough stock for product number ' + product.id,
-            );
-          }
-
-          // Update quantity and reversed of product
-          product.quantity -= itemResult.quantity;
-          product.reserved += itemResult.quantity;
-          await queryRunner.manager.save(product);
+        // Quantity of product is not enough
+        if (product.quantity < itemResult.quantity) {
+          throw new BadRequestException(
+            'Not enough stock for product number ' + product.id,
+          );
         }
+
+        // Update quantity and reversed of product
+        product.quantity -= itemResult.quantity;
+        product.reserved += itemResult.quantity;
+        await queryRunner.manager.save(product);
       }
 
       const finalAmount = await this.itemService.calculateDiscountAmount(
@@ -130,7 +141,7 @@ export class OrderService {
       );
 
       queryRunner.manager.merge(Order, order, {
-        quantity: orderQuantity,
+        quantity,
         totalAmount,
         finalAmount,
       });
@@ -143,6 +154,8 @@ export class OrderService {
         sourceId: order.id,
         totalAmount: finalAmount,
         note: `Transaction of order ${order.id}!`,
+        payerType: PayerType.PARTNER,
+        payerId: createOrderDto.customerId,
       };
 
       await this.transactionService.create(
@@ -383,11 +396,10 @@ export class OrderService {
     }
   }
 
-  async cancelOrder(orderId: number, creatorId: number) {
+  async cancelOrder(orderId: number, creatorId: number, payerId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     // Load order
     // const order = await this.findOne(orderId, true, queryRunner.manager);
     const order = await this.findOneFull(orderId, true, queryRunner.manager);
@@ -419,6 +431,8 @@ export class OrderService {
         type: TransactionType.EXPENSE,
         totalAmount: oldTransaction.paidAmount,
         note: `Refund for order #${order.id}`,
+        payerId,
+        payerType: PayerType.USER,
       };
 
       await this.transactionService.createNoSource(
@@ -496,70 +510,88 @@ export class OrderService {
     }
   }
 
-  async addItem(orderId: number, createItemDto: CreateItemDto) {
+  async addItem(
+    orderId: number,
+    createItemDtos: CreateItemDto[],
+    creatorId: number,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const order = await this.findOne(orderId, true, queryRunner.manager);
-
-    const isItemExist = await queryRunner.manager.exists(Item, {
-      where: {
-        itemableId: createItemDto.itemableId,
-        itemableType: createItemDto.itemableType,
-        sourceId: order.id,
-        sourceType: SourceType.ORDER,
-        isActive: true,
-      },
-    });
-
-    if (isItemExist) throw new BadRequestException('Item is existed!');
-
+    const order = await this.findOneFull(orderId, true, queryRunner.manager);
+    const items: Item[] = [];
     try {
-      const item = await this.itemService.add(
-        createItemDto,
-        orderId,
-        SourceType.ORDER,
-        queryRunner.manager,
-        AdjustmentType.ADD,
-      );
+      for (const createItemDto of createItemDtos) {
+        const item = await this.itemService.add(
+          createItemDto,
+          creatorId,
+          orderId,
+          SourceType.ORDER,
+          queryRunner.manager,
+          order.customer.id,
+        );
+
+        if (item.itemableType === ItemableType.PRODUCT) {
+          const product = await queryRunner.manager.findOneByOrFail(Product, {
+            id: item.itemableId,
+          });
+
+          // Quantity of product is not enough
+          if (product.quantity < item.quantity) {
+            throw new BadRequestException(
+              'Not enough stock for product ' + product.id,
+            );
+          }
+
+          // // Update quantity and reversed of product
+          product.quantity -= item.quantity;
+          product.reserved += item.quantity;
+          await queryRunner.manager.save(product);
+        }
+
+        items.push(item);
+      }
 
       // Update order information
-      order.totalAmount += Number(item.finalAmount);
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          orderId,
+          SourceType.ORDER,
+          queryRunner.manager,
+        );
+
+      order.totalAmount = totalAmount;
+      order.quantity = quantity;
 
       order.finalAmount = await this.itemService.calculateDiscountAmount(
         Number(order.totalAmount),
-        order?.discount?.id ?? undefined,
+        order?.discount?.id,
       );
-      order.quantity += item.quantity;
 
-      if (item.itemableType === ItemableType.PRODUCT) {
-        const product = await queryRunner.manager.findOneByOrFail(Product, {
-          id: item.itemableId,
-        });
+      // Update transaction
+      const transaction = await queryRunner.manager.findOne(Transaction, {
+        where: { sourceId: orderId, sourceType: SourceType.ORDER },
+      });
+      if (!transaction) throw new NotFoundException('Transaction not found!');
 
-        // Quantity of product is not enough
-        if (product.quantity < item.quantity) {
-          throw new BadRequestException(
-            'Not enough stock for product ' + product.id,
-          );
-        }
-
-        // // Update quantity and reversed of product
-        product.quantity -= item.quantity;
-        product.reserved += item.quantity;
-        await queryRunner.manager.save(product);
-      }
+      transaction.totalAmount = order.finalAmount;
+      transaction.status = this.transactionService.getTransactionStatus(
+        transaction.paidAmount,
+        transaction.totalAmount,
+      );
+      await queryRunner.manager.save(transaction);
 
       // Update order status if it is completed
-      order.status =
-        order.status === SourceStatus.COMPLETED
-          ? SourceStatus.PROCESSING
-          : order.status;
+      order.status = await this.itemService.getSourceStatus(
+        orderId,
+        SourceType.ORDER,
+        queryRunner.manager,
+      );
 
       await queryRunner.manager.save(order);
       await queryRunner.commitTransaction();
-      return { item };
+      return { items };
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -579,7 +611,7 @@ export class OrderService {
         id: orderId,
         status: Not(SourceStatus.CANCELLED),
       },
-      relations: ['customer'],
+      relations: ['customer', 'discount'],
     });
 
     if (!order) throw new NotFoundException('Order not found!');
@@ -623,8 +655,16 @@ export class OrderService {
       await queryRunner.manager.save(item);
 
       // Update item order
-      order.quantity -= item.quantity;
-      order.totalAmount -= item.finalAmount;
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          orderId,
+          SourceType.ORDER,
+          queryRunner.manager,
+        );
+
+      order.quantity = quantity;
+      order.totalAmount = totalAmount;
+
       order.finalAmount = await this.itemService.calculateDiscountAmount(
         order.totalAmount,
         order.discount?.id ?? null,
@@ -664,96 +704,196 @@ export class OrderService {
     }
   }
 
-  // async transferCourseItem(
-  //   orderId: number,
-  //   itemId: number,
-  //   newCourseId: number,
-  // ) {
-  //   const queryRunner = this.dataSource.createQueryRunner();
-  //   await queryRunner.connect();
-  //   await queryRunner.startTransaction();
+  async transferServiceOwner(
+    orderId: number,
+    itemId: number,
+    newCustomerId: number,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-  //   const order = await queryRunner.manager.findOne(Order, {
-  //     where: {
-  //       id: orderId,
-  //       status: Not(SourceStatus.CANCELLED),
-  //     },
-  //     relations: ['customer'],
-  //   });
-  //   if (!order) throw new NotFoundException('Order not found!');
+    try {
+      // Check if order exist
+      const order = await queryRunner.manager.exists(Order, {
+        where: { id: orderId, status: Not(SourceStatus.CANCELLED) },
+      });
+      if (!order) throw new NotFoundException('Order not found!');
 
-  //   const item = await queryRunner.manager.findOne(Item, {
-  //     where: {
-  //       id: itemId,
-  //       sourceId: orderId,
-  //       sourceType: SourceType.ORDER,
-  //       isActive: true,
-  //     },
-  //   });
+      // Check if item exist and belong to order
+      await this.itemService.transferService(
+        itemId,
+        orderId,
+        newCustomerId,
+        queryRunner.manager,
+      );
 
-  //   if (!item) throw new NotFoundException('Item not found!');
+      // Remove all bonus appointment
+      await queryRunner.manager.delete(Appointment, {
+        status: Not(
+          In([AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED]),
+        ),
+        item: { id: itemId },
+        type: AppointmentType.BONUS,
+      });
 
-  //   if (item.itemableType !== ItemableType.COURSE)
-  //     throw new BadRequestException(
-  //       'Cannot transfer item that is not a course!',
-  //     );
+      // Update uncompleted appointment to new customer
+      const uncompletedAppointment = await queryRunner.manager.find(
+        Appointment,
+        {
+          where: {
+            status: Not(
+              In([AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED]),
+            ),
+            item: { id: itemId },
+            type: AppointmentType.MAIN,
+          },
+        },
+      );
+      const newCustomer = await queryRunner.manager.findOne(Partner, {
+        where: { id: newCustomerId },
+      });
+      if (!newCustomer) throw new NotFoundException('Customer not found!');
+      uncompletedAppointment.map((appointment) => {
+        appointment.customer = newCustomer;
+      });
+      await queryRunner.manager.save(uncompletedAppointment);
 
-  //   try {
-  //     // Update enrollment status
-  //     const enrollment = await this.enrollmentService.findOneByCourseAndStudent(
-  //       item.itemableId,
-  //       order.customer.id,
-  //     );
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
-  //     console.log('-----------', enrollment);
+  async changeCourse(
+    itemId: number,
+    orderId: number,
+    creatorId: number,
+    changeCourseDto: ChangeCourseDto,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-  //     await this.enrollmentService.transfer(enrollment.id, newCourseId);
+    // validate item exist and belong to order
+    const order = await this.findOneFull(orderId, true);
 
-  //     // Update item information
-  //     item.isActive = false;
-  //     item.adjustmentType = AdjustmentType.REPLACE;
+    const item = await queryRunner.manager.findOne(Item, {
+      where: {
+        id: itemId,
+        itemableType: ItemableType.COURSE,
+        isActive: true,
+        sourceId: orderId,
+        sourceType: SourceType.ORDER,
+      },
+    });
 
-  //     await queryRunner.manager.save(item);
+    if (!item) throw new NotFoundException('Item not found!');
 
-  //     // Update item order
-  //     order.quantity -= item.quantity;
-  //     order.totalAmount -= item.finalAmount;
-  //     order.finalAmount = await this.itemService.calculateDiscountAmount(
-  //       order.totalAmount,
-  //       order.discount?.id ?? null,
-  //     );
+    if (item.status === ItemStatus.CHANGED)
+      throw new BadRequestException('Item has been changed!');
 
-  //     // Update transaction
-  //     const transaction = await queryRunner.manager.findOne(Transaction, {
-  //       where: { sourceId: orderId, sourceType: SourceType.ORDER },
-  //       select: ['id', 'totalAmount', 'paidAmount', 'status'],
-  //     });
-  //     if (!transaction) throw new NotFoundException('Transaction not found!');
+    // check quantity want to change is valid(1 -> item.quantiity)
+    if (changeCourseDto.changeQuantity <= 0)
+      throw new BadRequestException('Change quantity must be greater than 0!');
 
-  //     transaction.totalAmount = order.finalAmount;
-  //     transaction.status = this.transactionService.getTransactionStatus(
-  //       transaction.paidAmount,
-  //       transaction.totalAmount,
-  //     );
-  //     await queryRunner.manager.save(transaction);
+    if (changeCourseDto.changeQuantity > item.quantity)
+      throw new BadRequestException(
+        `Change quantity cannot greater than item quantity: ${item.quantity}!`,
+      );
 
-  //     order.status = await this.itemService.getSourceStatus(
-  //       orderId,
-  //       SourceType.ORDER,
-  //       queryRunner.manager,
-  //       transaction.status,
-  //     );
+    // Create quantity item want change
+    const createItemDto: CreateItemDto = {
+      itemableId: changeCourseDto.courseId,
+      itemableType: ItemableType.COURSE,
+      quantity: changeCourseDto.changeQuantity,
+      discountId: item?.discount?.id,
+      unitPrice: item.unitPrice,
+    };
 
-  //     await queryRunner.manager.save(order);
-  //     await queryRunner.commitTransaction();
+    try {
+      // remove slot in course
+      if (changeCourseDto.changeQuantity === item.quantity) {
+        item.status = ItemStatus.CHANGED;
+        item.isActive = false;
+      } else {
+        const changedItem = await this.itemService.add(
+          createItemDto,
+          creatorId,
+          orderId,
+          SourceType.ORDER,
+          queryRunner.manager,
+          order.customer.id,
+          true,
+        );
 
-  //     return { message: 'Transfer course success!' };
-  //   } catch (error) {
-  //     console.log(error);
-  //     await queryRunner.rollbackTransaction();
-  //     throw error;
-  //   } finally {
-  //     await queryRunner.release();
-  //   }
-  // }
+        await queryRunner.manager.save(changedItem);
+
+        item.quantity = item.quantity - changeCourseDto.changeQuantity;
+        await this.itemService.recalculateItem(item, queryRunner.manager);
+      }
+
+      await queryRunner.manager.save(item);
+
+      // Update order information
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          orderId,
+          SourceType.ORDER,
+          queryRunner.manager,
+        );
+
+      order.totalAmount = totalAmount;
+      order.quantity = quantity;
+
+      order.finalAmount = await this.itemService.calculateDiscountAmount(
+        Number(order.totalAmount),
+        order?.discount?.id,
+      );
+
+      await queryRunner.manager.save(order);
+
+      // Update transaction
+      const transaction = await queryRunner.manager.findOne(Transaction, {
+        where: { sourceId: orderId, sourceType: SourceType.ORDER },
+      });
+      if (!transaction) throw new NotFoundException('Transaction not found!');
+
+      transaction.totalAmount = order.finalAmount;
+      transaction.status = this.transactionService.getTransactionStatus(
+        transaction.paidAmount,
+        transaction.totalAmount,
+      );
+      await queryRunner.manager.save(transaction);
+
+      // Update order status if it is completed
+      order.status = await this.itemService.getSourceStatus(
+        orderId,
+        SourceType.ORDER,
+        queryRunner.manager,
+      );
+
+      // Create new order
+      const createOrderDto: CreateOrderDto = {
+        items: [createItemDto],
+        note: `Change item from order #${order.id}`,
+        discountId: order?.discount?.id,
+        customerId: order.customer.id,
+      };
+
+      await this.create(createOrderDto, creatorId);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      console.log(error);
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
 }

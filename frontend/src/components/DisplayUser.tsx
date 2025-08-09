@@ -4,7 +4,7 @@ import { Mail, Phone, User } from "lucide-react";
 interface DisplayUserProps {
   fullName?: string;
   email?: string;
-  phoneNumber?: string;
+  phoneNumber?: string | null;
   title: string;
 }
 

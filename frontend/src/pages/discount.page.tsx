@@ -40,14 +40,11 @@ const Discount = ({ isUseTitle = true }: DiscountProps) => {
     formData: CreateDiscountFormType | EditDiscountFormType
   ) => {
     try {
-      if (formManager.type === "add") {
-        await api.post("/discounts", formData);
-        fetchData();
-      } else if (formManager.type === "edit" && formManager.data?.id) {
+      if (formManager.type === "add") await api.post("/discounts", formData);
+      else if (formManager.type === "edit" && formManager.data?.id)
         await api.patch(`/discounts/${formManager.data.id}`, formData);
 
-        fetchData();
-      }
+      fetchData();
       onClose();
       toast.success("Edit success!");
     } catch (error) {
@@ -69,7 +66,6 @@ const Discount = ({ isUseTitle = true }: DiscountProps) => {
     try {
       await api.patch(`/discounts/${id}/restore`);
       fetchData();
-
       toast.success("Discount is restored!");
     } catch (error) {
       handleAxiosError(error);

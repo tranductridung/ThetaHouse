@@ -54,6 +54,7 @@ const CreateItemRow = ({
           <TabsList>
             <TabsTrigger value="product">Product</TabsTrigger>
             <TabsTrigger value="service">Service</TabsTrigger>
+            <TabsTrigger value="course">Course</TabsTrigger>
           </TabsList>
           <TabsContent value="product">
             <DataTable

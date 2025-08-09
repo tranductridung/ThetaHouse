@@ -31,4 +31,9 @@ export class CreatePurchaseDto {
   @IsInt()
   @IsPositive()
   supplierId: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  payerId: number;
 }

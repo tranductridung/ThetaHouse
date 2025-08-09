@@ -1,15 +1,21 @@
 import type { CreateFormManagerType } from "@/types/form";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
-import type { ItemDraftType } from "../schemas/item.schema";
 import AddItemForm from "../forms/add-item.form";
+import type { ItemDraftListType } from "../schemas/item.schema";
 
 type ItemModalProps = {
   formManager: CreateFormManagerType;
-  handleSubmit: (data: ItemDraftType) => void;
+  handleSubmit: (itemDraftList: ItemDraftListType) => void;
   onClose: () => void;
+  source: "Order" | "Purchase" | "Consignment";
 };
 
-const ItemModal = ({ formManager, handleSubmit, onClose }: ItemModalProps) => {
+const ItemModal = ({
+  formManager,
+  handleSubmit,
+  onClose,
+  source,
+}: ItemModalProps) => {
   return (
     <>
       <Dialog
@@ -23,7 +29,7 @@ const ItemModal = ({ formManager, handleSubmit, onClose }: ItemModalProps) => {
       >
         <DialogContent>
           <DialogTitle></DialogTitle>
-          <AddItemForm onSubmit={handleSubmit} isService={true} />
+          <AddItemForm onSubmit={handleSubmit} source={source} />
         </DialogContent>
       </Dialog>
     </>

@@ -25,15 +25,14 @@ export const getSourceStatusIcon = (status: SourceStatusType) => {
   }
 };
 
-export const getConsignmentTypeIcon = (type: TypeOfConsignment) => {
-  console.log("hello", type);
+export const getConsignmentTypeIcon = (type: TypeOfConsignment | undefined) => {
+  if (!type) return;
+
   switch (type) {
     case "In":
-      console.log("in");
-      return "bg-blue-200 text-blue-600";
+      return "bg-green-200 text-green-600";
     case "Out":
-      console.log("out");
-      return "bg-red-200 text-red-600";
+      return "bg-blue-200 text-blue-600";
   }
 };
 

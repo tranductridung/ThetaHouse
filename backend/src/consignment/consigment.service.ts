@@ -1,6 +1,7 @@
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   AdjustmentType,
+  PayerType,
   SourceStatus,
   SourceType,
   TransactionType,
@@ -52,6 +53,9 @@ export class ConsignmentService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
+    if (createConsignmentDto.items.length === 0)
+      throw new BadRequestException('Item is required!');
+
     const consignment = queryRunner.manager.create(Consignment, {
       ...createConsignmentDto,
       quantity: 0,
@@ -75,24 +79,27 @@ export class ConsignmentService {
       },
     });
     await queryRunner.manager.save(consignment);
-
-    let totalAmount = 0;
-    let consignmentQuantity = 0;
     try {
       for (const item of createConsignmentDto.items) {
         if (item.itemableType !== ItemableType.PRODUCT)
           throw new BadRequestException('ItemableType is not valid!');
 
-        const itemResult = await this.itemService.add(
+        await this.itemService.add(
           item,
+          creatorId,
           consignment.id,
           SourceType.CONSIGNMENT,
           queryRunner.manager,
           undefined,
         );
-        totalAmount += itemResult.finalAmount;
-        consignmentQuantity += itemResult.quantity;
       }
+
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          consignment.id,
+          SourceType.CONSIGNMENT,
+          queryRunner.manager,
+        );
 
       // Update quantity and reversed of product
       if (consignment.type === ConsignmentType.OUT) {
@@ -133,11 +140,23 @@ export class ConsignmentService {
       }
 
       queryRunner.manager.merge(Consignment, consignment, {
-        quantity: consignmentQuantity,
+        quantity,
         totalAmount,
         finalAmount,
       });
       await queryRunner.manager.save(consignment);
+
+      if (
+        consignment.type === ConsignmentType.IN &&
+        !createConsignmentDto.payerId
+      )
+        throw new BadRequestException('Payer ID required!');
+
+      if (
+        consignment.type === ConsignmentType.OUT &&
+        createConsignmentDto.payerId
+      )
+        throw new BadRequestException('Payer ID should not exist!');
 
       // Create transaction
       const createTransactionDto: CreateTransactionDto = {
@@ -149,6 +168,14 @@ export class ConsignmentService {
         sourceId: consignment.id,
         totalAmount: finalAmount,
         note: `Transaction of consignment ${consignment.id}`,
+        payerType:
+          consignment.type === ConsignmentType.IN
+            ? PayerType.USER
+            : PayerType.PARTNER,
+        payerId:
+          consignment.type === ConsignmentType.IN
+            ? createConsignmentDto.payerId!
+            : createConsignmentDto.partnerId,
       };
 
       await this.transactionService.create(
@@ -242,8 +269,12 @@ export class ConsignmentService {
     }
   }
 
-  async findOneFull(id: number, isActive?: boolean) {
-    const consignment = await this.consignmentRepo.findOne({
+  async findOneFull(id: number, isActive?: boolean, manager?: EntityManager) {
+    const repo = manager
+      ? manager.getRepository(Consignment)
+      : this.consignmentRepo;
+
+    const consignment = await repo.findOne({
       where: { id },
       relations: ['creator', 'partner'],
     });
@@ -387,13 +418,17 @@ export class ConsignmentService {
     }
   }
 
-  async cancelConsignment(consignmentId: number, creatorId: number) {
+  async cancelConsignment(
+    consignmentId: number,
+    creatorId: number,
+    payerId?: number,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     // Load consignment
-    const consignment = await this.findOne(
+    const consignment = await this.findOneFull(
       consignmentId,
       true,
       queryRunner.manager,
@@ -416,6 +451,12 @@ export class ConsignmentService {
         },
       );
 
+      // type: in => nhap hang => payer: user => huy => payer: partner = customer id=> khong can payerId
+      // type: out => xuat hang => payer: partner => huy => payer: user => CAN payerId
+
+      if (consignment.type === ConsignmentType.OUT && !payerId)
+        throw new BadRequestException('Payer ID required!');
+
       // Type of refund transaction belongs to consignment type
       const createTransactionNoSourceDto: CreateTransactionNoSourceDto = {
         type:
@@ -424,6 +465,16 @@ export class ConsignmentService {
             : TransactionType.EXPENSE,
         totalAmount: oldTransaction.paidAmount,
         note: `Refund for consignment #${consignment.id}`,
+
+        payerType:
+          consignment.type === ConsignmentType.IN
+            ? PayerType.PARTNER
+            : PayerType.USER,
+
+        payerId:
+          consignment.type === ConsignmentType.IN
+            ? consignment.partner.id
+            : payerId!,
       };
 
       await this.transactionService.createNoSource(
@@ -453,12 +504,11 @@ export class ConsignmentService {
     }
   }
 
-  async addItem(consignmentId: number, createItemDto: CreateItemDto) {
-    if (createItemDto.itemableType === ItemableType.SERVICE)
-      throw new BadRequestException(
-        'Cannot create item service in consignment!',
-      );
-
+  async addItem(
+    consignmentId: number,
+    createItemDtos: CreateItemDto[],
+    creatorId: number,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -469,33 +519,43 @@ export class ConsignmentService {
       queryRunner.manager,
     );
 
-    const isItemExist = await queryRunner.manager.exists(Item, {
-      where: {
-        itemableId: createItemDto.itemableId,
-        itemableType: createItemDto.itemableType,
-        sourceId: consignment.id,
-        sourceType: SourceType.CONSIGNMENT,
-        isActive: true,
-      },
-    });
-
-    if (isItemExist) throw new BadRequestException('Item is existed!');
+    const items: Item[] = [];
 
     try {
-      const item = await this.itemService.add(
-        createItemDto,
-        consignmentId,
-        SourceType.CONSIGNMENT,
-        queryRunner.manager,
-        AdjustmentType.ADD,
-      );
+      for (const createItemDto of createItemDtos) {
+        if (createItemDto.discountId)
+          throw new BadRequestException('Discount should not exist!');
+
+        if (createItemDto.itemableType !== ItemableType.PRODUCT)
+          throw new BadRequestException(
+            'Cannot create item which is not product in purchase!',
+          );
+
+        const item = await this.itemService.add(
+          createItemDto,
+          creatorId,
+          consignmentId,
+          SourceType.CONSIGNMENT,
+          queryRunner.manager,
+          undefined,
+        );
+        items.push(item);
+      }
 
       // Update consignment information
-      consignment.totalAmount += item.finalAmount;
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          consignmentId,
+          SourceType.CONSIGNMENT,
+          queryRunner.manager,
+        );
+
+      consignment.totalAmount = totalAmount;
+      consignment.quantity = quantity;
       consignment.finalAmount =
         consignment.totalAmount * (1 - consignment.commissionRate / 100);
-      consignment.quantity += item.quantity;
 
+      // Update transaction
       const transaction = await queryRunner.manager.findOne(Transaction, {
         where: { sourceId: consignmentId, sourceType: SourceType.CONSIGNMENT },
       });
@@ -507,16 +567,17 @@ export class ConsignmentService {
         transaction.totalAmount,
       );
 
-      // Update consignment status if it is completed
-      consignment.status =
-        consignment.status === SourceStatus.COMPLETED
-          ? SourceStatus.PROCESSING
-          : consignment.status;
+      // Update consignment status
+      consignment.status = await this.itemService.getSourceStatus(
+        consignmentId,
+        SourceType.CONSIGNMENT,
+        queryRunner.manager,
+      );
 
       await queryRunner.manager.save(transaction);
       await queryRunner.manager.save(consignment);
       await queryRunner.commitTransaction();
-      return { item };
+      return { items };
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -559,8 +620,15 @@ export class ConsignmentService {
       await queryRunner.manager.save(item);
 
       // Update item consignment
-      consignment.quantity -= item.quantity;
-      consignment.totalAmount -= item.finalAmount;
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          consignmentId,
+          SourceType.CONSIGNMENT,
+          queryRunner.manager,
+        );
+
+      consignment.quantity = quantity;
+      consignment.totalAmount = totalAmount;
       consignment.finalAmount =
         consignment.totalAmount * (1 - consignment.commissionRate / 100);
 
@@ -579,7 +647,6 @@ export class ConsignmentService {
       );
       await queryRunner.manager.save(transaction);
 
-      console.log('transaction status', transaction.status);
       consignment.status = await this.itemService.getSourceStatus(
         consignmentId,
         SourceType.CONSIGNMENT,

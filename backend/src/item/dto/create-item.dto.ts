@@ -8,7 +8,6 @@ import {
   Min,
 } from 'class-validator';
 import { ItemableType } from 'src/common/enums/enum';
-
 export class CreateItemDto {
   @Type(() => Number)
   @IsInt()
@@ -27,7 +26,7 @@ export class CreateItemDto {
   @IsInt()
   @IsPositive()
   @IsOptional()
-  discountId: number;
+  discountId?: number;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })

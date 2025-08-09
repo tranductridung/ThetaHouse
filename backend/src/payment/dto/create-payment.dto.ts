@@ -27,10 +27,4 @@ export class CreatePaymentDto {
   @IsInt()
   @IsPositive()
   transactionId: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
-  @IsOptional()
-  partnerId?: number;
 }

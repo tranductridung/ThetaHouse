@@ -38,14 +38,13 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
     try {
       if (formManager.type === "add") {
         await api.post("/rooms", formData);
-        fetchData();
         toast.success("Add room success!");
       } else if (formManager.type === "edit" && formManager.data?.id) {
         await api.patch(`/rooms/${formManager.data.id}`, formData);
-        fetchData();
         toast.success("Edit room success!");
       }
 
+      fetchData();
       setFormManager({
         isShow: false,
         type: "add",

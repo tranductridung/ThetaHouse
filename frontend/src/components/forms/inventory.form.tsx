@@ -99,12 +99,14 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
                 <FormLabel>Quantity</FormLabel>
                 <FormControl>
                   <Input
+                    step={"any"}
                     type="number"
-                    min={0}
-                    {...form.register(`quantity`, {
-                      valueAsNumber: true,
-                    })}
-                    className="w-full inline-block"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
                   />
                 </FormControl>
                 <FormMessage />

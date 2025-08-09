@@ -38,14 +38,11 @@ export default function CreatePurchasePage({
       note: data.note,
       discountAmount: data.discountAmount,
       supplierId: data.supplier.id,
+      payerId: data.payer.id,
       items: newItems,
     };
-
-    console.log("payloaddddddddddddd", payload);
     try {
       const response = await api.post("/purchases", payload);
-      console.log("Create purchase:", response);
-
       toast.success("Create purchase success!");
       navigate(`/sources/purchases/${response.data.purchase.id}/`);
     } catch (error) {
@@ -54,7 +51,7 @@ export default function CreatePurchasePage({
   };
 
   return (
-    <div className="max-w-[85%] mx-auto py-10 flex flex-col">
+    <div className="max-w-[95%] mx-auto pb-10 flex flex-col">
       {isUseTitle && <PageTitle title="Create Purchase"></PageTitle>}
 
       <CreatePurchaseForm onSubmit={handleCreatePurchase} />

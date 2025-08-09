@@ -1,5 +1,6 @@
 import api from "@/api/api";
 import ConsignmentHistory from "@/components/partner-components/ConsignmentHistory";
+import ConsultationAppointment from "@/components/partner-components/ConsultationAppointment";
 import EnrollmentHistory from "@/components/partner-components/EnrollmentHistory";
 import OrderHistory from "@/components/partner-components/OrderHistory";
 import PersonalInfor from "@/components/partner-components/PersonalInfor";
@@ -21,8 +22,6 @@ const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
     try {
       const response = await api.get(`partners/${id}`);
       const tmp = partnerType === "customers" ? "Customer" : "Supplier";
-
-      console.log(response.data.partner.type);
 
       if (response.data.partner.type !== tmp) setNotFound(true);
     } catch (error) {
@@ -53,12 +52,19 @@ const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
           <TabsTrigger value="Personal Information">
             Personal Information
           </TabsTrigger>
-          <TabsTrigger value="Consultation Appointment">
-            Consultation Appointment
-          </TabsTrigger>
-          <TabsTrigger value="Therapy Appointment">
-            Therapy Appointment
-          </TabsTrigger>
+
+          {partnerType === "customers" && (
+            <>
+              <TabsTrigger value="Therapy Appointment">
+                Therapy Appointment
+              </TabsTrigger>
+
+              <TabsTrigger value="Consultation Appointment">
+                Consultation Appointment
+              </TabsTrigger>
+            </>
+          )}
+
           {partnerType === "customers" ? (
             <>
               <TabsTrigger value="Order History">Order History</TabsTrigger>
@@ -75,10 +81,6 @@ const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
 
         <TabsContent value="Personal Information">
           <PersonalInfor partnerId={Number(id)}></PersonalInfor>
-        </TabsContent>
-
-        <TabsContent value="Consultation Appointment">
-          <div>Consultation Appointment</div>
         </TabsContent>
 
         <TabsContent value="Consignment History">
@@ -100,9 +102,20 @@ const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
           <PurchaseHistory supplierId={Number(id)}></PurchaseHistory>
         </TabsContent>
 
-        <TabsContent value="Therapy Appointment">
-          <TherapyAppointment customerId={Number(id)}></TherapyAppointment>
-        </TabsContent>
+        {partnerType === "customers" && (
+          <>
+            <TabsContent value="Therapy Appointment">
+              <TherapyAppointment customerId={Number(id)}></TherapyAppointment>
+            </TabsContent>
+
+            <TabsContent value="Consultation Appointment">
+              <ConsultationAppointment
+                customerId={Number(id)}
+              ></ConsultationAppointment>
+            </TabsContent>
+          </>
+        )}
+
         <TabsContent value="Debt">
           <div>Debt</div>
         </TabsContent>

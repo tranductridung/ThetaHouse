@@ -38,4 +38,10 @@ export class CreateConsignmentDto {
   @IsPositive()
   @IsInt()
   partnerId: number;
+
+  @Type(() => Number)
+  @IsPositive()
+  @IsInt()
+  @IsOptional()
+  payerId?: number;
 }

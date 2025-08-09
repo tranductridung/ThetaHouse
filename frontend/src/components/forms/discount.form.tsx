@@ -123,13 +123,12 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
                     <FormLabel>Value</FormLabel>
                     <FormControl>
                       <Input
+                        step={"any"}
                         type="number"
                         value={field.value ?? ""}
                         onChange={(e) =>
                           field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value)
+                            e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
                       />
@@ -155,12 +154,13 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
                       <FormLabel>Max Discount Amount</FormLabel>
                       <FormControl>
                         <Input
+                          step={"any"}
                           type="number"
                           value={field.value ?? ""}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value === ""
-                                ? undefined
+                                ? ""
                                 : Number(e.target.value)
                             )
                           }
@@ -180,12 +180,13 @@ const DiscountForm = ({ onSubmit, type, discountData }: DiscountProps) => {
                       <FormLabel>Min Total Value</FormLabel>
                       <FormControl>
                         <Input
+                          step={"any"}
                           type="number"
                           value={field.value ?? ""}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value === ""
-                                ? undefined
+                                ? ""
                                 : Number(e.target.value)
                             )
                           }

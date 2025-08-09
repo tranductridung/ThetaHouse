@@ -45,4 +45,12 @@ export class CreateCourseDto {
   @IsNumber()
   @Min(0)
   maxStudent: number;
+
+  @IsString()
+  @IsOptional()
+  meetingLink: string;
+
+  @IsString()
+  @IsOptional()
+  meetingPassword: string;
 }

@@ -4,8 +4,14 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { CardContent } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const quantitySchema = z.object({
   quantity: z
@@ -35,16 +41,28 @@ const ExportImportForm = ({ onSubmit }: ExportImportFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <CardContent className="flex items-center justify-between">
-          <label htmlFor="quantity">Quantity:</label>
-          <Input
-            id="quantity"
-            type="number"
-            min={1}
-            className="w-24"
-            {...form.register("quantity", { valueAsNumber: true })}
-          />
-        </CardContent>
+        <FormField
+          control={form.control}
+          name="quantity"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quantity</FormLabel>
+              <FormControl>
+                <Input
+                  step={"any"}
+                  type="number"
+                  value={field.value ?? ""}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full">
           Submit

@@ -9,6 +9,7 @@ import {
   ItemableType,
   ItemStatus,
   PartnerType,
+  PayerType,
   SourceStatus,
   SourceType,
   TransactionType,
@@ -44,7 +45,8 @@ export class PurchaseService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
+    if (createPurchaseDto.items.length === 0)
+      throw new BadRequestException('Item is required!');
     // Create purchase
     const purchase = queryRunner.manager.create(Purchase, {
       ...createPurchaseDto,
@@ -65,24 +67,27 @@ export class PurchaseService {
     await queryRunner.manager.save(purchase);
 
     // Calculate amount
-    let totalAmount = 0;
-    let purchaseQuantity = 0;
     try {
       for (const item of createPurchaseDto.items) {
         if (item.itemableType !== ItemableType.PRODUCT)
           throw new BadRequestException('ItemableType is not valid!');
 
-        const itemResult = await this.itemService.add(
+        await this.itemService.add(
           item,
+          creatorId,
           purchase.id,
           SourceType.PURCHASE,
           queryRunner.manager,
           undefined,
         );
-
-        totalAmount += itemResult.finalAmount;
-        purchaseQuantity += itemResult.quantity;
       }
+
+      const { totalAmount, quantity } =
+        await this.itemService.calculateSourceAmountAndQty(
+          purchase.id,
+          SourceType.PURCHASE,
+          queryRunner.manager,
+        );
 
       const finalAmount = createPurchaseDto.discountAmount
         ? totalAmount - createPurchaseDto.discountAmount > 0
@@ -91,7 +96,7 @@ export class PurchaseService {
         : totalAmount;
 
       queryRunner.manager.merge(Purchase, purchase, {
-        quantity: purchaseQuantity,
+        quantity,
         totalAmount,
         finalAmount,
         discountAmount: createPurchaseDto.discountAmount,
@@ -106,6 +111,8 @@ export class PurchaseService {
         sourceId: purchase.id,
         totalAmount: finalAmount,
         note: `Transaction of purchase ${purchase.id}!`,
+        payerId: createPurchaseDto.payerId,
+        payerType: PayerType.USER,
       };
 
       await this.transactionService.create(
@@ -216,8 +223,10 @@ export class PurchaseService {
 
   // The isActive parameter is used to check whether the purchase is cancelled or not.
   // If isActive is not used, the function will retrieve the purchase without checking its active status.
-  async findOneFull(id: number, isActive?: boolean) {
-    const purchase = await this.purchaseRepo.findOne({
+  async findOneFull(id: number, isActive?: boolean, manager?: EntityManager) {
+    const repo = manager ? manager.getRepository(Purchase) : this.purchaseRepo;
+
+    const purchase = await repo.findOne({
       where: { id },
       relations: ['supplier', 'creator'],
     });
@@ -347,7 +356,11 @@ export class PurchaseService {
     await queryRunner.startTransaction();
 
     // Load purchase
-    const purchase = await this.findOne(purchaseId, true, queryRunner.manager);
+    const purchase = await this.findOneFull(
+      purchaseId,
+      true,
+      queryRunner.manager,
+    );
 
     try {
       // Note all inventory, transaction
@@ -367,6 +380,8 @@ export class PurchaseService {
         type: TransactionType.INCOME,
         totalAmount: oldTransaction.paidAmount,
         note: `Refund for purchase #${purchase.id}`,
+        payerType: PayerType.PARTNER,
+        payerId: purchase.supplier.id,
       };
 
       await this.transactionService.createNoSource(
@@ -396,41 +411,52 @@ export class PurchaseService {
     }
   }
 
-  async addItem(purchaseId: number, createItemDto: CreateItemDto) {
-    if (createItemDto.itemableType === ItemableType.SERVICE)
-      throw new BadRequestException('Cannot create item service in purchase!');
-
+  async addItem(
+    purchaseId: number,
+    createItemDtos: CreateItemDto[],
+    creatorId: number,
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     const purchase = await this.findOne(purchaseId, true, queryRunner.manager);
-
-    const isItemExist = await queryRunner.manager.exists(Item, {
-      where: {
-        itemableId: createItemDto.itemableId,
-        itemableType: createItemDto.itemableType,
-        sourceId: purchase.id,
-        sourceType: SourceType.PURCHASE,
-        isActive: true,
-      },
-    });
-
-    if (isItemExist) throw new BadRequestException('Item is existed!');
+    const items: Item[] = [];
 
     try {
-      const item = await this.itemService.add(
-        createItemDto,
-        purchaseId,
-        SourceType.PURCHASE,
-        queryRunner.manager,
-        AdjustmentType.ADD,
-      );
+      // Create item
+      for (const createItemDto of createItemDtos) {
+        if (createItemDto.discountId)
+          throw new BadRequestException('Discount should not exist!');
+
+        if (createItemDto.itemableType !== ItemableType.PRODUCT)
+          throw new BadRequestException(
+            'Cannot create item which is not product in purchase!',
+          );
+
+        const item = await this.itemService.add(
+          createItemDto,
+          creatorId,
+          purchaseId,
+          SourceType.PURCHASE,
+          queryRunner.manager,
+          undefined,
+        );
+
+        items.push(item);
+      }
 
       // Update purchase information
-      purchase.totalAmount += item.finalAmount;
-      purchase.finalAmount = purchase.totalAmount - purchase.discountAmount;
-      purchase.quantity += item.quantity;
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          purchaseId,
+          SourceType.PURCHASE,
+          queryRunner.manager,
+        );
+
+      purchase.totalAmount = totalAmount;
+      purchase.quantity = quantity;
+      purchase.finalAmount = totalAmount - purchase.discountAmount;
 
       const transaction = await queryRunner.manager.findOne(Transaction, {
         where: { sourceId: purchaseId, sourceType: SourceType.PURCHASE },
@@ -443,16 +469,16 @@ export class PurchaseService {
         transaction.totalAmount,
       );
 
-      // Update purchase status if it is completed
-      purchase.status =
-        purchase.status === SourceStatus.COMPLETED
-          ? SourceStatus.PROCESSING
-          : purchase.status;
-
+      // Update purchase status
+      purchase.status = await this.itemService.getSourceStatus(
+        purchaseId,
+        SourceType.PURCHASE,
+        queryRunner.manager,
+      );
       await queryRunner.manager.save(transaction);
       await queryRunner.manager.save(purchase);
       await queryRunner.commitTransaction();
-      return { item };
+      return { items };
     } catch (error) {
       console.log(error);
       await queryRunner.rollbackTransaction();
@@ -495,8 +521,15 @@ export class PurchaseService {
       await queryRunner.manager.save(item);
 
       // Update item purchase
-      purchase.quantity -= item.quantity;
-      purchase.totalAmount -= item.finalAmount;
+      const { quantity, totalAmount } =
+        await this.itemService.calculateSourceAmountAndQty(
+          purchaseId,
+          SourceType.PURCHASE,
+          queryRunner.manager,
+        );
+
+      purchase.quantity = quantity;
+      purchase.totalAmount = totalAmount;
       purchase.finalAmount = purchase.totalAmount - purchase.discountAmount;
 
       // Update transaction

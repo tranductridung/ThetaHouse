@@ -120,6 +120,10 @@ export const appointmentColumns = ({
     header: "Type",
   },
   {
+    accessorKey: "category",
+    header: "Category",
+  },
+  {
     accessorKey: "note",
     header: "Note",
     cell: ({ getValue }) => {

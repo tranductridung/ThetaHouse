@@ -39,21 +39,22 @@ export default function CreateConsignmentPage({
       note: data.note,
       commissionRate: data.commissionRate,
       type: data.type,
-      partnerId: data.partner?.id,
+      partnerId: data?.partner?.id,
       items: newItems,
+      payerId: data?.payer?.id,
     };
 
     try {
       const response = await api.post("/consignments", payload);
       toast.success("Create consignment success!");
-      navigate(`/sources/consignments/${response.data.consignment.id}/`);
+      navigate(`/sources/consignments/${response.data.consignment.id}`);
     } catch (error) {
       handleAxiosError(error);
     }
   };
 
   return (
-    <div className="md:max-w-[100%] max-w-[85%] mx-auto py-10 flex flex-col">
+    <div className="max-w-[95%] mx-auto pb-10 flex flex-col">
       {isUseTitle && <PageTitle title="Create Consignment"></PageTitle>}
 
       <CreateConsignmentForm onSubmit={handleCreateConsignment} />

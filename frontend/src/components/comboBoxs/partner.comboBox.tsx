@@ -27,7 +27,7 @@ export function PartnerComboBox({
 }: {
   value: PartnerOption | null | undefined;
   onChange: (partner: PartnerOption | null) => void;
-  type: "Customer" | "Supplier";
+  type: "Customer" | "Supplier" | "Partner";
 }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -37,7 +37,6 @@ export function PartnerComboBox({
   const isFetching = useRef(false);
   const pageSize = 10;
 
-  // Reset page khi input hoặc open thay đổi
   useEffect(() => {
     if (!open) return;
     setPage(0);
@@ -50,7 +49,12 @@ export function PartnerComboBox({
     const fetchPartners = async () => {
       isFetching.current = true;
       try {
-        const url = `/partners/${
+        let url;
+
+        if (type === "Partner")
+          url = `/partners?page=${page}&limit=${pageSize}&search=${input}`;
+
+        url = `/partners/${
           type === "Customer" ? "customer" : "supplier"
         }?page=${page}&limit=${pageSize}&search=${input}`;
 

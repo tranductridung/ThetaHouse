@@ -45,7 +45,6 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
       await api.post("/inventories", payload);
       toast.success("Add new inventory success!");
       fetchData();
-
       onClose();
     } catch (error) {
       handleAxiosError(error);

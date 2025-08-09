@@ -16,6 +16,8 @@ import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Payment } from 'src/payment/entities/payment.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { CourseStaff } from '../../course/entities/course-staff.entity';
+import { Item } from 'src/item/entities/item.entity';
+import { Token } from 'src/token/entities/token.entity';
 
 @Entity()
 export class User {
@@ -25,8 +27,8 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
-  fullName?: string;
+  @Column()
+  fullName: string;
 
   @Column({ nullable: true })
   phoneNumber?: string;
@@ -40,6 +42,12 @@ export class User {
 
   @Column({ select: false })
   password: string;
+
+  @Column({ type: 'text', nullable: true })
+  calendarAccessToken?: string;
+
+  @Column({ type: 'text', nullable: true })
+  calendarRefreshToken?: string;
 
   @Column({ type: 'enum', enum: UserRole, default: [UserRole.EMPLOYEE] })
   @IsEnum(UserRole)
@@ -72,12 +80,21 @@ export class User {
   @OneToMany(() => Appointment, (appointments) => appointments.healer)
   appointments: Appointment[];
 
-  @OneToMany(() => Transaction, (transactions) => transactions.creator)
-  transactions: Transaction[];
+  @OneToMany(() => Transaction, (transaction) => transaction.creator)
+  createdTransactions: Transaction[];
+
+  @OneToMany(() => Transaction, (transaction) => transaction.healer)
+  healerSalaryTransactions: Transaction[];
 
   @OneToMany(() => Payment, (payments) => payments.creator)
   payments: Payment[];
 
   @OneToMany(() => CourseStaff, (cs) => cs.staff)
   courseStaffs: CourseStaff[];
+
+  @OneToMany(() => Token, (tokens) => tokens.user)
+  tokens: Token[];
+
+  @OneToMany(() => Item, (items) => items.creator)
+  items: Item[];
 }

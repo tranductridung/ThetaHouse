@@ -1,4 +1,8 @@
-import { AppointmentStatus, AppointmentType } from 'src/common/enums/enum';
+import {
+  AppointmentCategory,
+  AppointmentStatus,
+  AppointmentType,
+} from 'src/common/enums/enum';
 import { Item } from 'src/item/entities/item.entity';
 import { Modules } from 'src/modules/entities/module.entity';
 import { Partner } from 'src/partner/entities/partner.entity';
@@ -37,11 +41,17 @@ export class Appointment {
   })
   status: AppointmentStatus;
 
-  @Column({ type: 'enum', enum: AppointmentType })
-  type: AppointmentType;
+  @Column({ type: 'enum', enum: AppointmentType, nullable: true })
+  type?: AppointmentType;
 
   @Column()
   duration: number;
+
+  @Column({
+    type: 'enum',
+    enum: AppointmentCategory,
+  })
+  category: AppointmentCategory;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -53,11 +63,17 @@ export class Appointment {
   @JoinColumn({ name: 'healerId' })
   healer: User;
 
-  @ManyToOne(() => Item, (item) => item.appointments, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Item, (item) => item.appointments, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
   @JoinColumn({ name: 'itemId' })
   item: Item;
 
-  @ManyToOne(() => Room, (room) => room.appointments, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Room, (room) => room.appointments, {
+    onDelete: 'RESTRICT',
+    nullable: true,
+  })
   @JoinColumn({ name: 'roomId' })
   room: Room;
 
@@ -67,7 +83,9 @@ export class Appointment {
   @JoinColumn({ name: 'customerId' })
   customer: Partner;
 
-  @ManyToMany(() => Modules, (module) => module.appointments)
+  @ManyToMany(() => Modules, (module) => module.appointments, {
+    nullable: true,
+  })
   @JoinTable({
     name: 'appointment_module',
     joinColumn: {

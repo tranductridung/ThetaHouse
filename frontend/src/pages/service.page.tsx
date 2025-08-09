@@ -1,17 +1,17 @@
-import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
 import type {
   CreateServiceFormType,
   EditServiceFormType,
   ServiceType,
 } from "@/components/schemas/service.schema";
-import { serviceColumns } from "@/components/columns/service.column";
-import { handleAxiosError } from "@/lib/utils";
+import api from "@/api/api";
 import { toast } from "sonner";
 import PageTitle from "@/components/Title";
-import { useCombineFormManager } from "@/hooks/use-custom-manager";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
 import ServiceModal from "@/components/modals/service.modal";
+import { useCombineFormManager } from "@/hooks/use-custom-manager";
+import { serviceColumns } from "@/components/columns/service.column";
 
 type ServiceProps = {
   isUseTitle?: boolean;
@@ -58,7 +58,6 @@ const Service = ({ isUseTitle }: ServiceProps) => {
     try {
       await api.delete(`/services/${id}`);
       fetchData();
-
       toast.success("Service is deleted!");
     } catch (error) {
       handleAxiosError(error);
@@ -69,7 +68,6 @@ const Service = ({ isUseTitle }: ServiceProps) => {
     try {
       await api.patch(`/services/${id}/restore`);
       fetchData();
-
       toast.success("Service is restored!");
     } catch (error) {
       handleAxiosError(error);
@@ -80,7 +78,6 @@ const Service = ({ isUseTitle }: ServiceProps) => {
     try {
       await api.patch(`/services/${id}/toggle-status`);
       fetchData();
-
       toast.success(`Service status is toggle!`);
     } catch (error) {
       handleAxiosError(error);

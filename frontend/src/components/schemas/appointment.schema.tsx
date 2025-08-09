@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { AppointmentStatus, TypeOfAppointment } from "../constants/constants";
+import {
+  AppointmentCategoryConst,
+  AppointmentStatus,
+  TypeOfAppointment,
+} from "../constants/constants";
 import { moduleSchema } from "./module.schema";
 
 export const baseAppointmentSchema = z.object({});
@@ -11,6 +15,7 @@ export const appointmentSchema = baseAppointmentSchema.extend({
   }),
   item: z.object({ id: z.number() }),
   type: z.enum(TypeOfAppointment),
+  category: z.enum(AppointmentCategoryConst),
   startAt: z.date(),
   room: z.object({
     id: z.number(),
@@ -56,22 +61,62 @@ export const appointmentDraftSchema = z
     startAt: z.date().optional(),
     modules: z.array(moduleSchema).optional(),
     type: z.enum(TypeOfAppointment),
+    category: z.enum(AppointmentCategoryConst),
     duration: z.number().optional(),
   })
   .superRefine((data, ctx) => {
-    if (
-      data.type === "Free" &&
-      (data.duration === undefined || isNaN(data.duration))
-    ) {
-      ctx.addIssue({
-        path: ["duration"],
-        code: z.ZodIssueCode.custom,
-        message: "Duration is required!",
-      });
+    if (data.category === "Consultation") {
+      if (data.duration === undefined || isNaN(data.duration)) {
+        ctx.addIssue({
+          path: ["duration"],
+          code: z.ZodIssueCode.custom,
+          message: "Required!",
+        });
+      }
+
+      if (data.healer === undefined) {
+        ctx.addIssue({
+          path: ["healer"],
+          code: z.ZodIssueCode.custom,
+          message: "Required!",
+        });
+      }
+
+      if (data.startAt === undefined) {
+        ctx.addIssue({
+          path: ["startAt"],
+          code: z.ZodIssueCode.custom,
+          message: "Required!",
+        });
+      }
+    } else {
+      if (
+        data.type === "Free" &&
+        (data.duration === undefined || isNaN(data.duration))
+      ) {
+        ctx.addIssue({
+          path: ["duration"],
+          code: z.ZodIssueCode.custom,
+          message: "Required!",
+        });
+      }
     }
   });
+
+export const consultationAppointmentDraftSchema = z.object({
+  note: z.string().optional(),
+  healer: z.object({
+    id: z.number(),
+    fullName: z.string(),
+  }),
+  startAt: z.date().optional(),
+  duration: z.number().optional(),
+});
 
 export type AppointmentType = z.infer<typeof appointmentSchema>;
 export type CreateAppointmentType = z.infer<typeof createAppointmentSchema>;
 export type EditAppointmentType = z.infer<typeof editAppointmentSchema>;
 export type AppointmentDraftType = z.infer<typeof appointmentDraftSchema>;
+export type ConsultationAppointmentDraftType = z.infer<
+  typeof consultationAppointmentDraftSchema
+>;

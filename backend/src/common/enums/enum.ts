@@ -58,6 +58,7 @@ export enum AppointmentStatus {
   COMPLETED = 'Completed',
   CANCELLED = 'Cancelled',
 }
+
 export enum AppointmentType {
   BONUS = 'Bonus',
   FREE = 'Free',
@@ -105,13 +106,13 @@ export enum ItemStatus {
   IMPORTED = 'Imported',
   EXPORTED = 'Exported',
   TRANSFERED = 'Transfered',
+  CHANGED = 'Changed',
 }
 
 export enum AdjustmentType {
   INIT = 'Init', // Init when create source
-  ADD = 'Add', // Add new item to source
+  ADD = 'Add', // Add new item to source after source created
   REMOVE = 'Remove', // Remove item of source
-  REPLACE = 'Replace', // Replace item of source
   CANCELLED = 'Cancelled', // Cancelled source
 }
 
@@ -143,4 +144,20 @@ export enum EnrollmentStatus {
 export enum CourseRole {
   COACH = 'Coach',
   TRAINER = 'Trainer',
+}
+
+export enum PayerType {
+  USER = 'User',
+  PARTNER = 'Partner',
+}
+
+export enum AppointmentCategory {
+  THERAPY = 'Therapy',
+  CONSULTATION = 'Consultation',
+}
+
+export enum ResponseCalendarStatus {
+  SUCCESS = 'success',
+  FAILED = 'failed',
+  NOT_CONNECTED = 'not_connected',
 }

@@ -42,7 +42,6 @@ export default function CreateOrderPage({
       items: newItems,
     };
 
-    console.log("payload", payload);
     try {
       const response = await api.post("/orders", payload);
       console.log("Create order:", response);
@@ -54,7 +53,7 @@ export default function CreateOrderPage({
   };
 
   return (
-    <div className="max-w-[85%] mx-auto py-10 flex flex-col">
+    <div className="max-w-[95%] mx-auto pb-10 flex flex-col">
       {isUseTitle && <PageTitle title="Create Order"></PageTitle>}
 
       <CreateOrderForm onSubmit={handleCreateOrder} />

@@ -118,7 +118,8 @@ export const enrollmentColumns = ({
   {
     id: "actions",
     cell: ({ row }) => {
-      if (row.original.status === "Withdrawn") return;
+      if (row.original.status === "Withdrawn")
+        return <div className="h-8 w-8"></div>;
 
       return (
         <DropdownMenu>

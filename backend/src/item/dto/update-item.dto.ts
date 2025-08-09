@@ -6,11 +6,11 @@ export class UpdateItemDto {
   @IsInt()
   @IsPositive()
   @IsOptional()
-  quantity: number;
+  quantity?: number;
 
   @Type(() => Number)
   @IsInt()
   @IsPositive()
   @IsOptional()
-  discountId: number;
+  discountId?: number;
 }

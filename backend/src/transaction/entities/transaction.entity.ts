@@ -1,4 +1,5 @@
 import {
+  PayerType,
   SourceType,
   TransactionStatus,
   TransactionType,
@@ -31,6 +32,12 @@ export class Transaction {
   @Column({ nullable: true })
   sourceId: number;
 
+  @Column({ type: 'enum', enum: PayerType, nullable: true })
+  payerType: PayerType;
+
+  @Column({ nullable: true })
+  payerId: number;
+
   @Column('decimal', {
     precision: 12,
     scale: 2,
@@ -44,6 +51,12 @@ export class Transaction {
     transformer: new ColumnNumericTransformer(),
   })
   paidAmount: number;
+
+  @Column({ nullable: true })
+  month?: number;
+
+  @Column({ nullable: true })
+  year?: number;
 
   @Column({
     type: 'enum',
@@ -61,9 +74,17 @@ export class Transaction {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => User, (user) => user.transactions, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => User, (user) => user.createdTransactions, {
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'creatorId' })
   creator: User;
+
+  @ManyToOne(() => User, (user) => user.healerSalaryTransactions, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'healerId' })
+  healer: User;
 
   @OneToMany(() => Payment, (payments) => payments.transaction)
   payments: Payment[];

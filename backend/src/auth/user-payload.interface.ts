@@ -6,3 +6,8 @@ export interface UserPayload {
   fullName: string;
   role: UserRole;
 }
+
+export interface UserOAuthData extends UserPayload {
+  accessToken: string;
+  refreshToken: string | undefined;
+}

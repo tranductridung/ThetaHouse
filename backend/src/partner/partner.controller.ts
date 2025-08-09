@@ -11,7 +11,7 @@ import {
 import { PartnerService } from './partner.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
-import { PartnerType } from 'src/common/enums/enum';
+import { AppointmentCategory, PartnerType } from 'src/common/enums/enum';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 @Controller('partners')
@@ -101,7 +101,6 @@ export class PartnerController {
       paginationDto,
     );
   }
-
   @Get('/customers/:customerId/appointments')
   async findAppointmentByCustomer(
     @Param('customerId') customerId: number,
@@ -109,6 +108,20 @@ export class PartnerController {
   ) {
     return await this.partnerService.findAppointmentByCustomer(
       customerId,
+      undefined,
+      paginationDto,
+    );
+  }
+
+  @Get('/customers/:customerId/appointments/:category')
+  async findConsultationAppointmentByCustomer(
+    @Param('customerId') customerId: number,
+    @Param('category') category: AppointmentCategory,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return await this.partnerService.findAppointmentByCustomer(
+      customerId,
+      category,
       paginationDto,
     );
   }

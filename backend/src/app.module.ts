@@ -27,6 +27,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { ReportsModule } from './reports/reports.module';
 import { CourseModule } from './course/course.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
+import { EncryptionModule } from './encryption/encryption.module';
+import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
 
 config();
 @Module({
@@ -68,6 +70,8 @@ config();
     ReportsModule,
     CourseModule,
     EnrollmentModule,
+    EncryptionModule,
+    GoogleCalendarModule,
   ],
   controllers: [AppController],
   providers: [AppService],

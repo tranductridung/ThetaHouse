@@ -25,7 +25,7 @@ export const CommonStatus = ["Active", "Inactive", "Deleted"] as const;
 export const ConsignmentType = ["In", "Out"] as const;
 export const DiscountType = ["Fixed", "Percentage"] as const;
 export const TypeOfSource = ["Order", "Purchase", "Consignment"] as const;
-export const ItemableType = ["Service", "Product"] as const;
+export const ItemableType = ["Service", "Product", "Course"] as const;
 export const ItemStatus = [
   "None",
   "Imported",
@@ -33,7 +33,7 @@ export const ItemStatus = [
   "Transfered",
   "Partial",
 ] as const;
-export const TypeOfTransaction = ["Income", "Expense"] as const;
+export const TransactionTypeConst = ["Income", "Expense"] as const;
 export const TransactionStatus = [
   "Unpaid",
   "Paid",
@@ -50,6 +50,7 @@ export const TypeOfAppointment = ["Main", "Free", "Bonus"] as const;
 export const CourseMode = ["Online", "Offline", "Combine"] as const;
 export const CourseRole = ["Trainer", "Coach"] as const;
 export const EnrollmentStatus = ["Pending", "Enrolled", "Withdrawn"] as const;
+export const AppointmentCategoryConst = ["Consultation", "Therapy"] as const;
 
 // Type
 export type SourceType = (typeof TypeOfSource)[number];
@@ -59,6 +60,8 @@ export type ItemStatusType = (typeof ItemStatus)[number];
 export type TransactionStatusType = (typeof TransactionStatus)[number];
 export type TypeOfConsignment = (typeof ConsignmentType)[number];
 export type TypeOfPartner = (typeof PartnerTypeConst)[number];
+export type TypeOfTransaction = (typeof TransactionTypeConst)[number];
+export type AppointmentCategory = (typeof AppointmentCategoryConst)[number];
 
 // Enum
 export enum UserRoleEnum {

@@ -10,7 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreateTransactionNoSourceDto } from './dto/create-transaction-no-source.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
@@ -19,6 +19,24 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 @Controller('transactions')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
+
+  @Get('healer-salary/:month/:year')
+  async createHealerSalaryTransaction(
+    @Param('month') month: string,
+    @Param('year') year: string,
+    @Req() req: Request,
+  ) {
+    const creatorId = Number(req.user?.id);
+
+    const transaction =
+      await this.transactionService.createSalaryTransactionsForAllHealers(
+        +month,
+        +year,
+        creatorId,
+      );
+
+    return { transaction };
+  }
 
   @Get()
   async find(@Query() paginationDto?: PaginationDto) {
@@ -38,6 +56,16 @@ export class TransactionController {
     return { transaction };
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.transactionService.findOne(+id);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.transactionService.remove(+id);
+  }
+
   @Get('/:sources/:id')
   async findOneBySourceId(
     @Param('id') id: string,
@@ -49,15 +77,5 @@ export class TransactionController {
     );
 
     return { transaction };
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.transactionService.findOne(+id);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionService.remove(+id);
   }
 }

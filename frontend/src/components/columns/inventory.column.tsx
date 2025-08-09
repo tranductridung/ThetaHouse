@@ -97,4 +97,10 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
       );
     },
   },
+  {
+    id: "actions",
+    cell: () => {
+      return <div className="h-8 w-8"></div>;
+    },
+  },
 ];

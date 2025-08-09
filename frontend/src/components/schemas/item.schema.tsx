@@ -41,6 +41,13 @@ export const createItemSchema = baseItemSchema.extend({
   itemableId: z.number(),
 });
 
+export const itemDraftListSchema = z.object({
+  total: z.number(),
+  quantity: z.number(),
+  items: z.array(itemDraftSchema),
+});
+
 export type ItemType = z.infer<typeof itemSchema>;
 export type CreateItemType = z.infer<typeof createItemSchema>;
+export type ItemDraftListType = z.infer<typeof itemDraftListSchema>;
 export type ItemDraftType = z.infer<typeof itemDraftSchema>;

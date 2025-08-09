@@ -21,27 +21,22 @@ import {
   type PurchaseDraftType,
 } from "@/components/schemas/source.schema";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ProductType } from "../schemas/product.schema";
-import type { PartnerType } from "../schemas/partner.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import CreateItemRow from "@/pages/CreateItemRow";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Plus, X } from "lucide-react";
+import { X } from "lucide-react";
 import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
+import { UserComboBox } from "../comboBoxs/user.comboBox";
+import AddItemRow from "../commands/items.command";
 
 type PurchaseProps = {
   onSubmit: (formData: PurchaseDraftType) => void;
 };
 
 export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
-  const [isShowAddItem, setIsShowAddItem] = useState(false);
-  const [openSupplierDialog, setOpenSupplierDialog] = useState<boolean>(false);
-  useState<boolean>(false);
-
   const form = useForm<PurchaseDraftType>({
     resolver: zodResolver(purchaseDraftSchema),
     defaultValues: {
@@ -114,13 +109,13 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
       itemableType: "Product",
       name: product.name,
       description: product.description,
-      unitPrice: product.defaultPurchasePrice,
-      subtotal: product.defaultPurchasePrice,
+      unitPrice: product.defaultPurchasePrice!,
+      subtotal: product.defaultPurchasePrice!,
       discountAmount: 0,
     });
 
     setValue("quantity", watchedQuantity + 1);
-    setValue("subtotal", watchedSubtotal + product.defaultPurchasePrice);
+    setValue("subtotal", watchedSubtotal + product.defaultPurchasePrice!);
 
     toast.success(`Add product "${product.name}" success!`);
   };
@@ -133,12 +128,6 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
 
     remove(index);
     toast.success(`Remove item success!`);
-  };
-
-  const handleChooseSupplier = (supplier: PartnerType) => {
-    form.setValue("supplier", supplier);
-    setOpenSupplierDialog(false);
-    toast.success("Choose supplier success!");
   };
 
   const calculatePurchase = () => {
@@ -198,40 +187,129 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
         className="space-y-4 text-xl h-full w-full"
       >
         <div className="flex md:flex-row flex-col text-sm md:text-xl">
-          {/* Item Lists */}
-          <div className=" flex flex-1/2 space-y-5">
-            {watchedItems.length === 0 ? (
-              <div className="mb-5 px-5 w-full">
-                <Card className=" justify-center items-center w-full h-full">
-                  <CardContent>
-                    <Button
-                      type="button"
-                      variant="link"
-                      onClick={() => {
-                        setIsShowAddItem(true);
-                      }}
-                      className="text-xl m-auto"
-                    >
-                      Add New Item
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-col flex-2/3 p-4 space-y-5 justify-start items-end">
-                  {/* Add new item button */}
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setIsShowAddItem(true);
-                    }}
-                    className="w-fit rounded-full p-6 text-right"
-                  >
-                    <Plus />
-                    {/* Add New Item */}
-                  </Button>
+          {/* General Information */}
+          <div className="flex flex-1/2 flex-col space-y-5 px-5">
+            {/* Note */}
+            <FormField
+              control={form.control}
+              name="note"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Note</FormLabel>
+                  <FormControl>
+                    <Input type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            {/* Discount Amount */}
+            <FormField
+              control={form.control}
+              name="discountAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Discount Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      step={"any"}
+                      type="number"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Supplier */}
+            <FormField
+              control={form.control}
+              name="supplier"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplier</FormLabel>
+                  <FormControl>
+                    <PartnerComboBox
+                      value={field.value}
+                      onChange={(partner) => field.onChange(partner)}
+                      type="Supplier"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Payer */}
+            <FormField
+              control={form.control}
+              name="payer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payer</FormLabel>
+                  <FormControl>
+                    <UserComboBox
+                      value={field.value}
+                      onChange={(payer) => field.onChange(payer)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Purchase Discount */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Purchase Summary</CardTitle>
+              </CardHeader>
+
+              <CardContent className="flex justify-between">
+                <span>Quantity: </span>
+                <span>{watchedQuantity}</span>
+              </CardContent>
+              <CardContent className="flex justify-between">
+                <span>Subtotal: </span>
+                <span>{watchedSubtotal}</span>
+              </CardContent>
+              <CardContent className="flex justify-between">
+                <span>Discount amount:</span>
+                <span> {watchedDiscountAmount}</span>
+              </CardContent>
+
+              <CardContent className="flex justify-between bpurchase-t-2 pt-2">
+                <span className="font-bold">Total: </span>
+                <span>
+                  {watchedDiscountAmount
+                    ? watchedSubtotal - watchedDiscountAmount > 0
+                      ? watchedSubtotal - watchedDiscountAmount
+                      : 0
+                    : watchedSubtotal}
+                </span>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Item List */}
+          <div className="flex flex-1/3 space-y-5 h-full">
+            <AddItemRow
+              handleAddProduct={handleAddProduct}
+              source={"Purchase"}
+            ></AddItemRow>
+          </div>
+
+          {/* Selected Item Lists */}
+          <div className=" flex flex-1/3 space-y-5  w-full max-h-[550px] overflow-auto">
+            {watchedItems.length !== 0 && (
+              <>
+                <div className="flex flex-col flex-1/3 p-4 space-y-5 justify-start items-end">
                   {fields.map((item, index) => (
                     <Card key={item.id} className="w-full">
                       <CardHeader>
@@ -306,117 +384,7 @@ export default function CreatePurchaseForm({ onSubmit }: PurchaseProps) {
               </>
             )}
           </div>
-
-          {/* General Information */}
-          <div className="flex flex-1/2 flex-col space-y-5 px-5">
-            {/* Note */}
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Note</FormLabel>
-                  <FormControl>
-                    <Input type="text" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Discount Amount */}
-            <FormField
-              control={form.control}
-              name="discountAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Discount Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={0}
-                      {...form.register(`discountAmount`, {
-                        valueAsNumber: true,
-                      })}
-                      className="w-full inline-block"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Supplier */}
-            <FormField
-              control={form.control}
-              name="supplier"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Supplier</FormLabel>
-                  <FormControl>
-                    <PartnerComboBox
-                      value={field.value}
-                      onChange={(partner) => field.onChange(partner)}
-                      type="Supplier"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Purchase Discount */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Purchase Summary</CardTitle>
-              </CardHeader>
-
-              <CardContent className="flex justify-between">
-                <span>Quantity: </span>
-                <span>{watchedQuantity}</span>
-              </CardContent>
-              <CardContent className="flex justify-between">
-                <span>Subtotal: </span>
-                <span>{watchedSubtotal}</span>
-              </CardContent>
-              <CardContent className="flex justify-between">
-                <span>Discount amount:</span>
-                <span> {watchedDiscountAmount}</span>
-              </CardContent>
-
-              <CardContent className="flex justify-between bpurchase-t-2 pt-2">
-                <span className="font-bold">Total: </span>
-                <span>
-                  {watchedDiscountAmount
-                    ? watchedSubtotal - watchedDiscountAmount > 0
-                      ? watchedSubtotal - watchedDiscountAmount
-                      : 0
-                    : watchedSubtotal}
-                </span>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-
-        <Dialog
-          open={isShowAddItem}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setIsShowAddItem(false);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogTitle>Add Item</DialogTitle>
-            <div className="max-w-[90vw] max-h-[80vh] overflow-y-auto overflow-x-auto">
-              <CreateItemRow
-                isService={false}
-                handleAddProduct={handleAddProduct}
-                handleAddService={() => {}}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Button type="submit" className="w-full">
           Create Purchase

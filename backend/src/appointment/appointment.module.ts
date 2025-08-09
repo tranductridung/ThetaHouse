@@ -8,6 +8,7 @@ import { AppointmentController } from './appointment.controller';
 import { UserModule } from 'src/user/user.module';
 import { RoomModule } from 'src/room/room.module';
 import { ModulesModule } from 'src/modules/modules.module';
+import { GoogleCalendarModule } from 'src/google-calendar/google-calendar.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ModulesModule } from 'src/modules/modules.module';
     UserModule,
     RoomModule,
     ModulesModule,
+    GoogleCalendarModule,
     forwardRef(() => PartnerModule),
     forwardRef(() => ItemModule),
   ],

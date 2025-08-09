@@ -23,7 +23,7 @@ import Transaction from "@/pages/transaction.page";
 import Payment from "@/pages/payment.page";
 import Item from "@/pages/item.page";
 import { Toaster } from "./components/ui/sonner";
-import SourcePage from "./pages/SourcePage";
+import SourcePage from "./pages/source.page";
 import Discount from "./pages/discount.page";
 import OrderDetails from "./pages/order-detail.page";
 import PurchaseDetails from "./pages/purchase-detail.page";
@@ -37,6 +37,7 @@ import Course from "./pages/course.page";
 import Enrollment from "./pages/enrollment.page";
 import CourseDetail from "./pages/course-detail.page";
 import CourseStaff from "./pages/course-staff.page";
+import Test from "./pages/test.page";
 
 const App = () => {
   return (
@@ -45,6 +46,8 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="test" element={<Test />} />
+
             <Route path="services" element={<Service />} />
             <Route path="products" element={<Product />} />
             <Route path="courses" element={<Course />} />
@@ -58,7 +61,6 @@ const App = () => {
             <Route path="items" element={<Item />} />
 
             <Route path="appointments" element={<Appointment />} />
-            {/* <Route path="appointments/create" element={<CreateAppointment />} /> */}
 
             <Route path="/finance/payments" element={<Payment />} />
             <Route path="/finance/transactions" element={<Transaction />} />

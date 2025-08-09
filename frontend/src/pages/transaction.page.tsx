@@ -10,7 +10,13 @@ import { DataTable } from "@/components/data-table";
 import { transactionColumns } from "@/components/columns/transaction.column";
 import PageTitle from "@/components/Title";
 import TransactionModal from "@/components/modals/transaction.modal";
-import { useCreateFormManager } from "@/hooks/use-custom-manager";
+import {
+  useCreateFormManager,
+  useSelectedItemFormManager,
+} from "@/hooks/use-custom-manager";
+import PaymentModal from "@/components/modals/payment.modal";
+import type { PaymentDraftType } from "@/components/schemas/payment.schema";
+import { useSourceActions } from "@/hooks/useSourceAction";
 
 type TransactionProps = {
   isUseTitle?: boolean;
@@ -36,34 +42,46 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
 
   const handleSubmit = async (formData: CreateTransactionType) => {
     try {
-      await api.post("/transactions", {
-        ...formData,
-        // paidAmount: 0,
-      });
+      await api.post("/transactions", formData);
       fetchData();
       toast.success("Add transaction success!");
-
-      setFormManager({
-        isShow: false,
-        data: null,
-      });
+      onClose();
     } catch (error) {
       handleAxiosError(error);
     }
   };
 
-  const { formManager, setFormManager, onAdd, onClose } =
-    useCreateFormManager();
+  const { formManager, onAdd, onClose } = useCreateFormManager();
 
   useEffect(() => {
     fetchData();
   }, [pageIndex, pageSize]);
 
+  const {
+    formManager: paymentFormManager,
+    onAdd: onAddPayment,
+    onClose: onClosePayment,
+  } = useSelectedItemFormManager();
+
+  const { handleAddPayment } = useSourceActions(fetchData);
+
+  const onAddSubmitPayment = async (paymentDraftType: PaymentDraftType) => {
+    if (!paymentFormManager.selectedItemId) return;
+
+    const isSuccess = await handleAddPayment(
+      paymentDraftType,
+      paymentFormManager.selectedItemId
+    );
+    if (isSuccess) onClosePayment();
+  };
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Transaction"></PageTitle>}
       <DataTable
-        columns={transactionColumns}
+        columns={transactionColumns({
+          onAddPayment,
+        })}
         data={data}
         onAdd={onAdd}
         total={total}
@@ -73,11 +91,19 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
         setPageSize={setPageSize}
       />
 
+      {/* Transaction modal */}
       <TransactionModal
         formManager={formManager}
         onClose={onClose}
         handleSubmit={handleSubmit}
       ></TransactionModal>
+
+      {/* Add payment modal */}
+      <PaymentModal
+        formManager={paymentFormManager}
+        handleSubmit={onAddSubmitPayment}
+        onClose={onClosePayment}
+      ></PaymentModal>
     </div>
   );
 };

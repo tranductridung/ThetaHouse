@@ -13,25 +13,22 @@ import { toast } from "sonner";
 export const useSourceActions = (refetch: () => void) => {
   const handleAddPayment = async (
     paymentDraftType: PaymentDraftType,
-    transactionId: number,
-    partnerId?: number | undefined
+    transactionId: number
   ) => {
     const payload: CreatePaymentType = {
       note: paymentDraftType.note,
       amount: paymentDraftType.amount,
       method: paymentDraftType.method,
-      partnerId: partnerId,
       transactionId: transactionId,
     };
-
-    // payload.partnerId = partnerId;
-
     try {
       await api.post(`payments`, payload);
       toast.success("Add payment success!");
       refetch();
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
   };
 
@@ -62,11 +59,12 @@ export const useSourceActions = (refetch: () => void) => {
     }
 
     try {
-      const response = await api.post(url);
-      console.log(response);
+      await api.post(url);
       toast.success(`${action} ${sourceType} success!`);
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
   };
 

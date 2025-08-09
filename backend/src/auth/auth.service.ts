@@ -11,7 +11,8 @@ import { UserRole, UserStatus } from 'src/common/enums/enum';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { TokenService } from 'src/token/token.service';
 import { MailService } from 'src/mail/mail.service';
-import { UserPayload } from './user-payload.interface';
+import { UserOAuthData, UserPayload } from './user-payload.interface';
+import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -36,17 +37,21 @@ export class AuthService {
       expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRES'),
     });
 
-    await this.tokenService.create(refreshToken);
+    await this.tokenService.create(refreshToken, payload.id);
 
     return { accessToken, refreshToken, user: payload };
   }
 
   async logout(refreshToken: string) {
-    return await this.tokenService.removeToken(refreshToken);
+    const userPayload: UserPayload = this.jwtService.verify(refreshToken, {
+      secret: this.configService.get('REFRESH_TOKEN'),
+    });
+
+    return await this.tokenService.removeToken(refreshToken, userPayload.id);
   }
 
   async validate(email: string, password: string) {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email, true);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid Credentials!');
@@ -69,6 +74,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(createUserDTO.password, 10);
 
+    // The first account will be admin account
     const userData =
       userCount === 0
         ? {
@@ -122,10 +128,7 @@ export class AuthService {
 
   async refresh(refreshToken?: string) {
     if (!refreshToken)
-      throw new UnauthorizedException('Refresh token not found!');
-
-    // Check if token is exist in database
-    await this.tokenService.isTokenExist(refreshToken);
+      throw new UnauthorizedException('Refresh token required!');
 
     let userPayload: UserPayload;
 
@@ -133,19 +136,30 @@ export class AuthService {
       userPayload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get('REFRESH_TOKEN'),
       });
+
+      // Check if token exist
+      const isTokenExist = await this.tokenService.isTokenExist(
+        refreshToken,
+        userPayload.id,
+      );
+      if (!isTokenExist)
+        throw new UnauthorizedException('Expired refresh token. Login again!');
     } catch (error) {
       console.log(error);
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException('Invalid or expired refresh token!');
     }
 
-    const userExisting = await this.userService.findOne(userPayload.id);
+    const user = await this.userService.findOne(userPayload.id);
+
+    // Check if token is exist in database
+    await this.tokenService.isTokenExist(refreshToken, user.id);
 
     const accessToken = this.jwtService.sign(
       {
-        id: userExisting.id,
-        email: userExisting.email,
-        fullName: userExisting.fullName,
-        role: userExisting.role,
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
       },
       {
         secret: this.configService.get('ACCESS_TOKEN'),

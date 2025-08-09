@@ -6,7 +6,7 @@ import type {
 import type { AppointmentDraftType } from "@/components/schemas/appointment.schema";
 import type {
   CreateItemType,
-  ItemDraftType,
+  ItemDraftListType,
 } from "@/components/schemas/item.schema";
 import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
@@ -41,15 +41,14 @@ export const useItemActions = (refetch: () => void) => {
     }
 
     try {
-      const response = await api.post(url, { quantity });
-      console.log(response);
+      await api.post(url, { quantity });
       refetch();
       toast.success(`${action} item success!`);
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
-
-    console.log("Handle Export Import", itemId, sourceType);
   };
 
   const handleRemove = async (
@@ -58,30 +57,24 @@ export const useItemActions = (refetch: () => void) => {
     sourceType: SourceType
   ) => {
     try {
-      const response = await api.delete(
-        `${sourceType}s/${sourceId}/items/${itemId}`
-      );
+      await api.delete(`${sourceType}s/${sourceId}/items/${itemId}`);
       refetch();
-
-      console.log(response);
       toast.success("Remove item success!");
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
   };
 
   const handleCreateAppointmnet = async (
     formData: AppointmentDraftType,
-    customerId: number,
     selectedItemId?: number
   ) => {
-    console.log("form data", formData);
-
     const newModules: number[] = formData.modules?.map((m) => m.id) ?? [];
 
     const payload = {
       note: formData.note,
-      customerId: customerId,
       type: formData.type,
       startAt: formData.startAt,
       roomId: formData.room?.id || undefined,
@@ -90,43 +83,65 @@ export const useItemActions = (refetch: () => void) => {
       itemId: selectedItemId,
     };
 
-    console.log("payload", payload);
-
     try {
-      const response = await api.post(`/appointments`, payload);
+      const response = await api.post(`/appointments/therapy`, payload);
       toast.success("Create appointment success!");
-      return response;
+
+      const calendar = response.data.calendar;
+
+      if (!calendar) {
+        toast.error("No response received from Google Calendar!");
+      } else if (calendar.status === "success") {
+        toast.success(
+          "Appointment has been added to the healer's Google Calendar!"
+        );
+      } else if (calendar.status === "not_connected") {
+        toast.warning(
+          "Google Calendar is not connected. Please connect it in your profile settings!"
+        );
+      } else {
+        toast.error(
+          "Failed to create Google Calendar event. Please try again later!"
+        );
+      }
+
+      console.log("---------------------", response);
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
   };
 
-  const handleAddItem = async (
-    itemDraftType: ItemDraftType,
+  const handleAddItemList = async (
+    itemDraftList: ItemDraftListType,
     sourceId: number,
     sourceType: SourceType
   ) => {
-    const payload: CreateItemType = {
-      itemableId: itemDraftType.itemableId,
-      itemableType: itemDraftType.itemableType,
-      quantity: itemDraftType.quantity,
-      discountId: itemDraftType.discount?.id,
-    };
+    const payload: CreateItemType[] = [];
+    for (const item of itemDraftList.items) {
+      payload.push({
+        itemableId: item.itemableId,
+        itemableType: item.itemableType,
+        quantity: item.quantity,
+        discountId: item.discount?.id,
+        unitPrice: item.unitPrice,
+      });
+    }
 
     try {
-      const response = await api.post(
-        `${sourceType}s/${sourceId}/items`,
-        payload
-      );
-      console.log(response);
+      await api.post(`${sourceType}s/${sourceId}/items`, payload);
+      toast.success("Add item success!");
       refetch();
+      return true;
     } catch (error) {
       handleAxiosError(error);
+      return false;
     }
   };
 
   return {
-    handleAddItem,
+    handleAddItemList,
     handleRemove,
     handleCreateAppointmnet,
     handleExportImportItem,

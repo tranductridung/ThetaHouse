@@ -27,8 +27,9 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN)
+  // @Roles(UserRole.ADMIN)
   async findAll(@Query() paginationDto: PaginationDto) {
+    console.log('asdflkasd;flk');
     return await this.userService.findAll(paginationDto);
   }
 

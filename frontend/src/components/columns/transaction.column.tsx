@@ -12,8 +12,19 @@ import { Button } from "../ui/button";
 import type { TransactionType } from "../schemas/transaction.schema";
 import { Badge } from "../ui/badge";
 import { getTransactionStatusIcon } from "../styles/TransactionStatus";
+import type { SourceType, TypeOfTransaction } from "../constants/constants";
 
-export const transactionColumns: ColumnDef<TransactionType>[] = [
+type TransactionProps = {
+  onAddPayment: (
+    transactionId: number,
+    transactionType: TypeOfTransaction,
+    sourceType?: SourceType
+  ) => void;
+};
+
+export const transactionColumns = ({
+  onAddPayment,
+}: TransactionProps): ColumnDef<TransactionType>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -25,6 +36,10 @@ export const transactionColumns: ColumnDef<TransactionType>[] = [
   {
     accessorKey: "sourceType",
     header: "Source Type",
+  },
+  {
+    accessorFn: (row) => row.payer?.fullName ?? "",
+    header: "Payer",
   },
   {
     accessorFn: (row) =>
@@ -81,26 +96,33 @@ export const transactionColumns: ColumnDef<TransactionType>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+      if (["Unpaid", "Partial"].includes(row.original.status))
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                console.log(row.original);
-              }}
-            >
-              Not action
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() =>
+                  onAddPayment(
+                    row.original.id,
+                    row.original.type,
+                    row.original.sourceType
+                  )
+                }
+              >
+                Add Payment
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+
+      return <div className="h-8 w-8" />;
     },
   },
 ];

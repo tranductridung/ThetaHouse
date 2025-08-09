@@ -109,9 +109,7 @@ const ServiceForm = ({ onSubmit, type, serviceData }: ServiceProps) => {
                       value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />
@@ -133,13 +131,10 @@ const ServiceForm = ({ onSubmit, type, serviceData }: ServiceProps) => {
                       {...field}
                       type="number"
                       min={1}
-                      placeholder="Price of service"
                       className="w-full"
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />
@@ -164,9 +159,7 @@ const ServiceForm = ({ onSubmit, type, serviceData }: ServiceProps) => {
                       value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />
@@ -186,12 +179,11 @@ const ServiceForm = ({ onSubmit, type, serviceData }: ServiceProps) => {
                   <FormControl>
                     <Input
                       type="number"
+                      step={"any"}
                       value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : Number(e.target.value)
+                          e.target.value === "" ? "" : Number(e.target.value)
                         )
                       }
                     />

@@ -1,5 +1,4 @@
-import { UpdateItemDto } from './dto/update-item.dto';
-import { Controller, Get, Body, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ItemService } from './item.service';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
@@ -20,12 +19,6 @@ export class ItemController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const item = await this.itemService.findOne(+id);
-    return { item };
-  }
-
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
-    const item = await this.itemService.update(+id, updateItemDto);
     return { item };
   }
 }

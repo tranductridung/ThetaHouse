@@ -42,7 +42,6 @@ export async function loadSource(
   return source;
 }
 
-// Sửa kiểu trả về: typeof Order | typeof Purchase | typeof Consignment
 export function loadEntitySource(
   sourceType: SourceType,
 ): typeof Order | typeof Purchase | typeof Consignment {

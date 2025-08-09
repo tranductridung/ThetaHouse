@@ -1,4 +1,3 @@
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -23,13 +22,17 @@ import type { TransactionType } from "@/components/schemas/transaction.schema";
 import DisplayUser from "@/components/DisplayUser";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import { useItemActions } from "@/hooks/useItemAction";
-import type { ItemDraftType } from "@/components/schemas/item.schema";
+import type { ItemDraftListType } from "@/components/schemas/item.schema";
 import { toast } from "sonner";
 import type { PaymentDraftType } from "@/components/schemas/payment.schema";
-import AddItemForm from "@/components/forms/add-item.form";
-import AddPaymentForm from "@/components/forms/add-payment.form";
-import ExportImportForm from "@/components/forms/export-import.form";
 import PageTitle from "@/components/Title";
+import ItemModal from "@/components/modals/item.modal";
+import {
+  useCreateFormManager,
+  useSelectedItemFormManager,
+} from "@/hooks/use-custom-manager";
+import ExportImportModal from "@/components/modals/export-import.modal";
+import PaymentModal from "@/components/modals/payment.modal";
 type ConsignmentDetailsProps = { isUseTitle?: boolean };
 
 const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
@@ -38,13 +41,24 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
     null
   );
   const [transaction, setTransaction] = useState<TransactionType | null>(null);
-  const [isShowAddItem, setIsShowAddItem] = useState(false);
-  const [isShowAddPayment, setIsShowAddPayment] = useState(false);
 
-  const [exportImportForm, setExportImportForm] = useState<{
-    selectedItemId: number | null;
-    isShow: boolean;
-  }>({ selectedItemId: null, isShow: false });
+  const {
+    formManager: exportImportFormManager,
+    onAdd: onAddExportImport,
+    onClose: onCloseExportImport,
+  } = useSelectedItemFormManager();
+
+  const {
+    formManager: itemFormManager,
+    onAdd: onAddItem,
+    onClose: onCloseItem,
+  } = useCreateFormManager();
+
+  const {
+    formManager: paymentFormManager,
+    onAdd: onAddPayment,
+    onClose: onClosePayment,
+  } = useCreateFormManager();
 
   const fetchData = async () => {
     try {
@@ -64,36 +78,31 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
     fetchData();
   }, []);
 
-  const { handleAddItem, handleRemove, handleExportImportItem } =
+  const { handleAddItemList, handleRemove, handleExportImportItem } =
     useItemActions(fetchData);
   const { handleAddPayment } = useSourceActions(fetchData);
 
-  const onAddItem = (itemDraftType: ItemDraftType) => {
-    console.log("add item", itemDraftType);
+  const onSubmitAddItem = async (itemDraftList: ItemDraftListType) => {
     if (!consignment) {
       toast.error("Consignment ID is required!");
       return;
     }
-    handleAddItem(itemDraftType, consignment?.id, "Consignment");
-    setIsShowAddItem(false);
+    const isSuccess = await handleAddItemList(
+      itemDraftList,
+      consignment?.id,
+      "Consignment"
+    );
+    if (isSuccess) onCloseItem();
   };
 
-  const onAddPayment = async (paymentDraftType: PaymentDraftType) => {
-    const partnerId =
-      consignment?.type === "In" ? undefined : consignment?.partner.id;
+  const onSubmitAddPayment = async (paymentDraftType: PaymentDraftType) => {
+    if (!transaction?.id) return;
 
-    console.log("--------", consignment, partnerId);
-
-    await handleAddPayment(
-      paymentDraftType,
-      transaction.id,
-      partnerId ? partnerId : undefined
-    );
-    setIsShowAddPayment(false);
+    const isSuccess = await handleAddPayment(paymentDraftType, transaction?.id);
+    if (isSuccess) onClosePayment();
   };
 
   const onRemove = (itemId: number) => {
-    console.log("on remove");
     if (!consignment) {
       toast.error("Consignment ID is required!");
       return;
@@ -101,31 +110,19 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
     handleRemove(itemId, consignment.id, "Consignment");
   };
 
-  const openPayment = () => {
-    setIsShowAddPayment(true);
-  };
-
-  const openAddItem = () => {
-    setIsShowAddItem(true);
-  };
-
-  const onExportImport = (quantity: number) => {
-    if (!exportImportForm.selectedItemId) {
+  const onSubmitExportImport = async (quantity: number) => {
+    if (!exportImportFormManager.selectedItemId) {
       toast.error("Item ID is required to export/import product!");
       return;
     }
 
-    handleExportImportItem(
-      exportImportForm.selectedItemId,
+    const isSuccess = await handleExportImportItem(
+      exportImportFormManager.selectedItemId,
       "Consignment",
       quantity,
       consignment?.type
     );
-    setExportImportForm({ isShow: false, selectedItemId: null });
-  };
-
-  const onOpenExportImport = (itemId: number) => {
-    setExportImportForm({ isShow: true, selectedItemId: itemId });
+    if (isSuccess) onCloseExportImport();
   };
 
   return (
@@ -156,20 +153,19 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
               consignment?.type
             )}`}
           >
-            {consignment?.type}
+            {consignment?.type} Consignment
           </h1>
         </div>
 
         <div className="flex flex-col space-y-5">
           <DataTable
             columns={itemColumns({
+              hasAction: true,
               onRemove,
-              onOpenExportImport,
+              onAddExportImport,
               consignmentType: consignment?.type,
             })}
-            onAdd={
-              consignment?.status !== "Cancelled" ? openAddItem : undefined
-            }
+            onAdd={consignment?.status !== "Cancelled" ? onAddItem : undefined}
             data={consignment?.items ?? []}
             pageIndex={0}
             pageSize={consignment?.items?.length ?? 10}
@@ -183,7 +179,7 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
 
           <DataTable
             onAdd={
-              consignment?.status !== "Cancelled" ? openPayment : undefined
+              consignment?.status !== "Cancelled" ? onAddPayment : undefined
             }
             columns={paymentColumns}
             data={transaction?.payments ?? []}
@@ -210,7 +206,7 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
             <DisplayUser
               fullName={consignment?.creator.fullName}
               email={consignment?.creator.email}
-              phoneNumber={consignment?.creator.phoneNumber}
+              phoneNumber={consignment?.creator?.phoneNumber ?? undefined}
               title={"Creator"}
             ></DisplayUser>
           </div>
@@ -264,76 +260,49 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
 
               <CardContent className="flex justify-between ">
                 <h1>Paid: </h1>
-                <p>{formatCurrency(transaction?.paidAmount)}</p>
+                <p>{formatCurrency(transaction?.paidAmount ?? 0)}</p>
               </CardContent>
 
               <CardContent className="flex justify-between">
                 <h1>Remain: </h1>
                 <p>
                   {formatCurrency(
-                    consignment?.finalAmount - transaction?.paidAmount
+                    (consignment?.finalAmount ?? 0) -
+                      (transaction?.paidAmount ?? 0)
                   )}
                 </p>
               </CardContent>
 
               <CardFooter className="flex justify-between border-t-2 pt-2">
                 <h1 className="font-bold">Total: </h1>
-                <p>{formatCurrency(consignment?.finalAmount)}</p>
+                <p>{formatCurrency(consignment?.finalAmount ?? 0)}</p>
               </CardFooter>
             </Card>
           </div>
         </div>
 
-        {/* Add item dialog */}
-        <Dialog
-          open={isShowAddItem}
-          modal={false}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setIsShowAddItem(false);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogTitle></DialogTitle>
-            <AddItemForm onSubmit={onAddItem} isService={false} />
-          </DialogContent>
-        </Dialog>
+        {/* ============================================MODAL============================================ */}
+        {/* Add item modal */}
+        <ItemModal
+          formManager={itemFormManager}
+          handleSubmit={onSubmitAddItem}
+          onClose={onCloseItem}
+          source={"Consignment"}
+        ></ItemModal>
 
-        {/* Add payment dialog */}
-        <Dialog
-          open={isShowAddPayment}
-          modal={false}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setIsShowAddPayment(false);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogTitle></DialogTitle>
-            <AddPaymentForm onSubmit={onAddPayment} />
-          </DialogContent>
-        </Dialog>
+        {/* Add payment modal */}
+        <PaymentModal
+          formManager={paymentFormManager}
+          handleSubmit={onSubmitAddPayment}
+          onClose={onClosePayment}
+        ></PaymentModal>
 
-        {/* Export or Import item */}
-        <Dialog
-          open={exportImportForm.isShow}
-          modal={false}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setExportImportForm({
-                isShow: false,
-                selectedItemId: null,
-              });
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogTitle></DialogTitle>
-            <ExportImportForm onSubmit={onExportImport} />
-          </DialogContent>
-        </Dialog>
+        {/* Export or Import item modal */}
+        <ExportImportModal
+          formManager={exportImportFormManager}
+          handleSubmit={onSubmitExportImport}
+          onClose={onCloseExportImport}
+        ></ExportImportModal>
       </div>
     </>
   );

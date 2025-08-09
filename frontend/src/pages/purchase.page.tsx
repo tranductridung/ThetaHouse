@@ -7,9 +7,16 @@ import { purchaseColumns } from "@/components/columns/purchase.column";
 import { handleAxiosError } from "@/lib/utils";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import PageTitle from "@/components/Title";
+import { toast } from "sonner";
+import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
 
 type PurchaseProps = { supplierId?: number; isUseTitle?: boolean };
 const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<number | null>(
+    null
+  );
+
   const [data, setData] = useState<PurchaseType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -45,6 +52,21 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
     navigate(`/sources/purchases/${id}`);
   };
 
+  const handleCancel = async (id: number) => {
+    try {
+      await api.post(`purchases/${id}/cancel`);
+      fetchData();
+      toast.success("Purchase is cancelled!");
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
+  const onCancel = (id: number) => {
+    setShowConfirmDialog(true);
+    setSelectedPurchaseId(id);
+  };
+
   useEffect(() => {
     fetchData();
   }, [pageIndex, pageSize]);
@@ -58,6 +80,7 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
         columns={purchaseColumns({
           onDetail,
           onImport,
+          onCancel,
         })}
         data={data}
         total={total}
@@ -66,6 +89,14 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
         setPageIndex={setPageIndex}
         setPageSize={setPageSize}
       />
+
+      <ConfirmDialog
+        type="purchase"
+        showConfirmDialog={showConfirmDialog}
+        setShowConfirmDialog={setShowConfirmDialog}
+        handleCancel={handleCancel}
+        selectedId={selectedPurchaseId}
+      ></ConfirmDialog>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { CommonStatus, ItemableType } from 'src/common/enums/enum';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Service } from 'src/service/entities/service.entity';
@@ -14,7 +14,7 @@ export const ItemableEntityMap = {
 export async function loadItemable(
   itemableId: number,
   itemableType: ItemableType,
-  dataSource: DataSource,
+  managerOrDataSource: DataSource | EntityManager,
 ): Promise<Service | Product | Course> {
   const entityClass = ItemableEntityMap[itemableType];
 
@@ -22,7 +22,7 @@ export async function loadItemable(
     throw new BadRequestException(`Unknown itemableType: ${itemableType}`);
   }
 
-  const repo = dataSource.getRepository(entityClass);
+  const repo = managerOrDataSource.getRepository(entityClass);
 
   const itemable = await repo.findOneBy({
     id: itemableId,

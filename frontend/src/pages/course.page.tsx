@@ -68,7 +68,6 @@ const Course = ({ isUseTitle = true }: CourseProps) => {
     try {
       await api.patch(`/courses/${id}/restore`);
       fetchData();
-
       toast.success("Course is restored!");
     } catch (error) {
       handleAxiosError(error);

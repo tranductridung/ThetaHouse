@@ -1,22 +1,7 @@
-import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { TransactionType } from 'src/common/enums/enum';
+import { CreateTransactionDto } from './create-transaction.dto';
+import { OmitType } from '@nestjs/mapped-types';
 
-export class CreateTransactionNoSourceDto {
-  @IsEnum(TransactionType)
-  type: TransactionType;
-
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  totalAmount: number;
-
-  // @Type(() => Number)
-  // @IsNumber({ maxDecimalPlaces: 2 })
-  // @Min(0)
-  // paidAmount: number;
-
-  @IsString()
-  @IsOptional()
-  note: string;
-}
+export class CreateTransactionNoSourceDto extends OmitType(
+  CreateTransactionDto,
+  ['sourceId', 'sourceType'] as const,
+) {}

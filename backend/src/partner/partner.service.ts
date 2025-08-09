@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Partner } from './entities/partner.entity';
 import { Repository, DataSource } from 'typeorm';
 import {
+  AppointmentCategory,
   EnrollmentStatus,
   PartnerType,
   SourceStatus,
@@ -354,6 +355,7 @@ export class PartnerService {
 
   async findAppointmentByCustomer(
     customerId: number,
+    category?: AppointmentCategory,
     paginationDto?: PaginationDto,
   ) {
     await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
@@ -369,6 +371,7 @@ export class PartnerService {
         'appointment.note',
         'appointment.startAt',
         'appointment.endAt',
+        'appointment.category',
         'appointment.createdAt',
         'appointment.duration',
         'appointment.status',
@@ -383,6 +386,9 @@ export class PartnerService {
       ])
       .where('customer.id = :customerId', { customerId })
       .orderBy('appointment.createdAt', 'DESC');
+
+    if (category)
+      queryBuilder.andWhere('appointment.category = :category', { category });
 
     if (
       paginationDto?.page !== undefined &&

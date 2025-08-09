@@ -1,6 +1,7 @@
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import { ConfigService } from '@nestjs/config';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -15,6 +16,7 @@ import { ChangePasswordDTO } from './dto/change-pass.dto';
 import * as bcrypt from 'bcrypt';
 import { UserRole, UserStatus } from 'src/common/enums/enum';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { EncryptionService } from 'src/encryption/encryption.service';
 
 @Injectable()
 export class UserService {
@@ -23,6 +25,7 @@ export class UserService {
     private readonly userRepo: Repository<User>,
     private dataSource: DataSource,
     private readonly configService: ConfigService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   async findAll(paginationDto?: PaginationDto) {
@@ -54,20 +57,35 @@ export class UserService {
     }
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string, isActive?: boolean) {
     const user = await this.userRepo.findOne({
       where: { email },
-      select: ['id', 'email', 'fullName', 'password', 'role', 'status'],
+      select: [
+        'id',
+        'email',
+        'fullName',
+        'password',
+        'role',
+        'status',
+        'calendarRefreshToken',
+      ],
     });
 
     if (!user) throw new NotFoundException('User not found!');
+
+    if (isActive && user.status !== UserStatus.ACTIVE)
+      throw new BadRequestException(`User status is ${user.status}!`);
+
     return user;
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, isActive?: boolean) {
     const user = await this.userRepo.findOneBy({ id });
 
     if (!user) throw new NotFoundException('User not found');
+
+    if (isActive && user.status !== UserStatus.ACTIVE)
+      throw new BadRequestException('User is not active!');
     return user;
   }
 
@@ -120,6 +138,18 @@ export class UserService {
     const user = await this.findOne(id);
 
     this.userRepo.merge(user, updateData);
+    if (updateData.accessToken) {
+      user.calendarAccessToken = this.encryptionService.encrypt(
+        updateData.accessToken,
+      );
+    }
+
+    if (updateData.refreshToken) {
+      user.calendarRefreshToken = this.encryptionService.encrypt(
+        updateData.refreshToken,
+      );
+    }
+
     await this.userRepo.save(user);
 
     const { password, ...result } = user;
@@ -159,7 +189,7 @@ export class UserService {
       where: { id: healerId },
     });
 
-    if (!isHealerExist) throw new NotFoundException(`Headler not exist!`);
+    if (!isHealerExist) throw new NotFoundException(`Healer not found!`);
 
     const queryBuilder = this.dataSource
       .createQueryBuilder(Appointment, 'appointment')
@@ -173,6 +203,7 @@ export class UserService {
         'appointment.startAt',
         'appointment.endAt',
         'appointment.createdAt',
+        'appointment.category',
         'appointment.duration',
         'appointment.status',
         'appointment.type',

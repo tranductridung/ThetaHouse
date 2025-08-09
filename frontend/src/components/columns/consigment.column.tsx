@@ -12,15 +12,18 @@ import { MoreHorizontal } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ConsignmentType } from "../schemas/source.schema";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
+import type { TypeOfConsignment } from "../constants/constants";
 
 type ConsignmentProps = {
   onDetail: (id: number) => void;
   onHandle: (id: number) => void;
+  onCancel: (id: number, type: TypeOfConsignment) => void;
 };
 
 export const consignmentColumns = ({
   onDetail,
   onHandle,
+  onCancel,
 }: ConsignmentProps): ColumnDef<ConsignmentType>[] => [
   { accessorKey: "id", header: "ID" },
   {
@@ -134,14 +137,25 @@ export const consignmentColumns = ({
             >
               View Consignment
             </DropdownMenuItem>
+            {row.original.status !== "Cancelled" && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onHandle(row.original.id);
+                  }}
+                >
+                  {row.original.type === "In" ? "Import" : "Export"}
+                </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => {
-                onHandle(row.original.id);
-              }}
-            >
-              {row.original.type === "In" ? "Import" : "Export"}
-            </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onCancel(row.original.id, row.original.type);
+                  }}
+                >
+                  Cancel
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

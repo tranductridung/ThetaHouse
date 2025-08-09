@@ -63,7 +63,6 @@ const Enrollment = ({
     try {
       await api.patch(`/enrollments/${formManager?.data?.id}`, payload);
       toast.success("Edit enrollment success!");
-
       fetchData();
       onClose();
     } catch (error) {

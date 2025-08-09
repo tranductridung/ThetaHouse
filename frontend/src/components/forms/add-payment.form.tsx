@@ -69,11 +69,13 @@ const AddPaymentForm = ({ onSubmit }: AddPaymentProps) => {
                   <FormControl>
                     <Input
                       type="number"
-                      min={0}
-                      className="w-full inline-block"
-                      {...form.register(`amount`, {
-                        valueAsNumber: true,
-                      })}
+                      step={"any"}
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        field.onChange(
+                          e.target.value === "" ? "" : Number(e.target.value)
+                        );
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

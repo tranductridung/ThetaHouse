@@ -23,11 +23,11 @@ import {
   SourceStatus,
   SourceType,
   TransactionStatus,
+  UserStatus,
 } from 'src/common/enums/enum';
 import { Item } from './entities/item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateItemDto } from './dto/create-item.dto';
-import { UpdateItemDto } from './dto/update-item.dto';
 import { loadItemable } from './helpers/itemable.helper';
 import { SnapshotType } from 'src/common/types/item.types';
 import { Service } from 'src/service/entities/service.entity';
@@ -37,6 +37,7 @@ import { AppointmentService } from 'src/appointment/appointment.service';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { EnrollmentService } from 'src/enrollment/enrollment.service';
+import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class ItemService {
   constructor(
@@ -50,12 +51,13 @@ export class ItemService {
 
   async add(
     createItemDto: CreateItemDto,
+    creatorId: number,
     sourceId: number,
     sourceType: SourceType,
     manager: EntityManager,
-    adjustmentType?: AdjustmentType,
+    currentCustomerId?: number,
+    changeCourse?: boolean,
   ) {
-    // const repo = manager ? manager.getRepository(Item) : this.itemRepo;
     const repo = manager.getRepository(Item);
 
     if (sourceType !== SourceType.ORDER && createItemDto.discountId)
@@ -63,18 +65,18 @@ export class ItemService {
         `Cannot use discount for item of ${sourceType} which is not order!`,
       );
 
-    // Load itemable
+    // Load itemable to verify itemable exist or not
     const itemable = await loadItemable(
       createItemDto.itemableId,
       createItemDto.itemableType,
-      this.dataSource,
+      manager,
     );
 
-    // Check source by loadSource func
-    await loadSource(sourceId, sourceType, manager ?? this.dataSource);
+    // Load source to verify source exist or not
+    await loadSource(sourceId, sourceType, manager);
 
-    // Check if item is exist
-    const existItem = await repo.findOne({
+    // Check if item exist or not
+    const existingItem = await repo.findOne({
       where: {
         itemableId: createItemDto.itemableId,
         itemableType: createItemDto.itemableType,
@@ -84,59 +86,62 @@ export class ItemService {
       },
     });
 
-    // Update quantity
-    const updatedQuantity = existItem
-      ? createItemDto.quantity + existItem.quantity
-      : createItemDto.quantity;
+    const adjustmentType = existingItem
+      ? AdjustmentType.ADD
+      : AdjustmentType.INIT;
 
-    // Calculate totalAmount and finalAmount
-    const totalAmount = createItemDto.unitPrice * updatedQuantity;
+    const changedQuantity = createItemDto.quantity;
+    const totalAmount = createItemDto.unitPrice * changedQuantity;
 
     const finalAmount = await this.calculateDiscountAmount(
       totalAmount,
       createItemDto.discountId,
     );
 
-    // Create snapshot
+    // Snapshot cho service
     let snapshotData: SnapshotType | undefined = undefined;
-
     if (createItemDto.itemableType === ItemableType.SERVICE) {
+      const svc = itemable as Service;
       snapshotData = {
-        duration: (itemable as Service).duration,
-        session: (itemable as Service).session,
-        bonusSession: (itemable as Service).bonusSession,
+        duration: svc.duration,
+        session: svc.session,
+        bonusSession: svc.bonusSession,
       };
     }
 
-    // If item is exist => update
-    // else => create
-    if (existItem) {
-      repo.merge(existItem, {
-        quantity: updatedQuantity,
-        totalAmount,
-        finalAmount,
-      });
-      return await repo.save(existItem);
-    } else {
-      const item = repo.create({
-        ...createItemDto,
-        adjustmentType,
-        sourceId,
-        sourceType,
-        quantity: updatedQuantity,
-        snapshotData,
-        totalAmount,
-        finalAmount,
-      });
+    const item = repo.create({
+      ...createItemDto,
+      quantity: changedQuantity,
+      sourceId,
+      sourceType,
+      snapshotData,
+      currentCustomerId,
+      totalAmount,
+      finalAmount,
+      adjustmentType,
+    });
 
-      const savedItem = await repo.save(item);
-      if (savedItem.itemableType === ItemableType.COURSE) {
-        console.log('savedItemmmmmmmmmmmmm', savedItem);
-        await this.enrollmentService.createForItem(savedItem.id, manager);
-      }
+    const creator = await manager.findOne(User, {
+      where: {
+        id: creatorId,
+        status: UserStatus.ACTIVE,
+      },
+    });
+    if (!creator) throw new NotFoundException('User not found!');
 
-      return savedItem;
+    item.creator = creator;
+
+    if (changeCourse) {
+      item.isActive = false;
+      item.status = ItemStatus.CHANGED;
     }
+
+    await repo.save(item);
+
+    if (!changeCourse && createItemDto.itemableType === ItemableType.COURSE)
+      await this.enrollmentService.createForItem(item.id, manager);
+
+    return item;
   }
 
   async findAll(paginationDto?: PaginationDto) {
@@ -187,8 +192,10 @@ export class ItemService {
   }
 
   // Get item without itemable and source.
-  async findOne(id: number, checkActive?: boolean) {
-    const item = await this.itemRepo.findOneBy({ id });
+  async findOne(id: number, checkActive?: boolean, manager?: EntityManager) {
+    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+
+    const item = await repo.findOneBy({ id });
 
     if (!item) throw new NotFoundException('Item not found!');
 
@@ -265,53 +272,109 @@ export class ItemService {
       where,
     });
   }
+  // Chua check AdjustmentType
+  // async update(
+  //   id: number,
+  //   creatorId: number,
+  //   sourceId: number,
+  //   sourceType: SourceType,
+  //   updateItemDto: UpdateItemDto,
+  //   manager: EntityManager,
+  // ) {
+  //   if (!updateItemDto.discountId && !updateItemDto.quantity)
+  //     throw new BadRequestException('Disount ID or quantity is required!');
 
-  // CHUA CHECKKKKKKKKKKKKKKKKKKKKK
-  async update(
-    id: number,
-    updateItemDto: UpdateItemDto,
-    manager?: EntityManager,
+  //   // Check if source exist
+  //   await loadSource(sourceId, sourceType, manager);
+  //   const repo = manager.getRepository(Item);
+
+  //   // Check if item exist
+  //   const item = await repo.findOne({
+  //     where: {
+  //       id,
+  //       sourceId,
+  //       sourceType,
+  //       isActive: true,
+  //     },
+  //   });
+
+  //   if (!item) throw new NotFoundException('Item not found!');
+
+  //   const oldFinalAmount = item.finalAmount;
+
+  //   if (updateItemDto.quantity) {
+  //     item.quantity = item.quantity + updateItemDto.quantity;
+
+  //     if (item.itemableType === ItemableType.PRODUCT) {
+  //       item.status = ItemStatus.PARTIAL;
+  //     } else if (item.itemableType === ItemableType.COURSE) {
+  //       await this.enrollmentService.createForItem(item.id, manager);
+  //     }
+  //   }
+
+  //   if (updateItemDto.discountId) {
+  //     item.discount = await this.discountService.findOne(
+  //       updateItemDto.discountId,
+  //     );
+  //   }
+
+  //   // Calculate totalAmount and finalAmount
+  //   const totalAmount = item.unitPrice * item.quantity;
+
+  //   const finalAmount = await this.calculateDiscountAmount(
+  //     totalAmount,
+  //     item.discount.id,
+  //   );
+
+  //   item.totalAmount = totalAmount;
+  //   item.finalAmount = finalAmount;
+
+  //   await repo.save(item);
+  //   return { item, oldFinalAmount };
+  // }
+
+  async transferService(
+    itemId: number,
+    orderId: number,
+    newCustomerId: number,
+    manager: EntityManager,
   ) {
-    const repo = manager ? manager.getRepository(Item) : this.itemRepo;
+    const repo = manager.getRepository(Item);
 
     const item = await repo.findOne({
       where: {
-        id,
+        id: itemId,
+        sourceId: orderId,
+        sourceType: SourceType.ORDER,
         isActive: true,
       },
     });
 
     if (!item) throw new NotFoundException('Item not found!');
 
-    if (item.itemableType === ItemableType.PRODUCT) {
-      if (updateItemDto.quantity !== item.quantity)
-        item.status = ItemStatus.PARTIAL;
-    }
-
-    repo.merge(item, updateItemDto);
-    await repo.save(item);
-    return { item };
-  }
-
-  async transferService(id: number) {
-    const item = await this.findOne(id, true);
-
     if (item.itemableType !== ItemableType.SERVICE)
       throw new BadRequestException(
         'Cannot transfer item which is not service!',
       );
 
-    if (item.status === ItemStatus.TRANSFERED)
-      return { message: 'Item service is transfered!' };
+    if (newCustomerId === item.currentCustomerId) {
+      throw new BadRequestException('Cannot transfer for current customer!');
+    }
 
     item.status = ItemStatus.TRANSFERED;
+    item.currentCustomerId = newCustomerId;
 
-    await this.itemRepo.save(item);
+    await repo.save(item);
 
     return { message: 'Service is transfered!' };
   }
 
   async calculateDiscountAmount(totalAmount: number, discountId?: number) {
+    console.log(
+      '-------total amount in calculate discount amounttt',
+      totalAmount,
+    );
+
     let finalAmount = totalAmount;
 
     // Calculate finalAmount by totalAmount and discount (if item has discount)
@@ -319,6 +382,9 @@ export class ItemService {
       // Get discount
       const discount =
         await this.discountService.getActiveDiscountValue(discountId);
+      console.log('discounttttt', discount);
+      console.log(discount.minTotalValue, totalAmount, discount.minTotalValue);
+
       // Calculate discount amount
       if (!discount.minTotalValue || totalAmount >= discount.minTotalValue) {
         let discountAmount =
@@ -523,5 +589,47 @@ export class ItemService {
     );
 
     await repo.update(sourceId, { status: sourceStatus });
+  }
+
+  async calculateSourceAmountAndQty(
+    sourceId: number,
+    sourceType: SourceType,
+    manager: EntityManager,
+  ) {
+    const totalAmount = await manager.sum(Item, 'finalAmount', {
+      sourceId,
+      sourceType,
+      isActive: true,
+      adjustmentType: Not(
+        In([AdjustmentType.CANCELLED, AdjustmentType.REMOVE]),
+      ),
+    });
+
+    const quantity = await manager.sum(Item, 'quantity', {
+      sourceId,
+      sourceType,
+      isActive: true,
+      adjustmentType: Not(
+        In([AdjustmentType.CANCELLED, AdjustmentType.REMOVE]),
+      ),
+    });
+
+    console.log('hellooooooo', Number(totalAmount ?? 0), Number(quantity ?? 0));
+    return {
+      totalAmount: Number(totalAmount ?? 0),
+      quantity: Number(quantity ?? 0),
+    };
+  }
+
+  async recalculateItem(item: Item, manager: EntityManager) {
+    const { quantity, unitPrice } = item;
+    item.totalAmount = quantity * unitPrice;
+    item.finalAmount = await this.calculateDiscountAmount(
+      item.totalAmount,
+      item?.discount?.id,
+    );
+
+    await manager.save(item);
+    return item;
   }
 }

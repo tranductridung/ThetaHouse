@@ -8,7 +8,6 @@ import {
 } from 'typeorm';
 import { PartnerType, SexType } from 'src/common/enums/enum';
 import { Order } from 'src/order/entities/order.entity';
-import { Payment } from 'src/payment/entities/payment.entity';
 import { Purchase } from 'src/purchase/entities/purchase.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
@@ -60,9 +59,6 @@ export class Partner {
 
   @OneToMany(() => Appointment, (appointment) => appointment.customer)
   appointments: Appointment[];
-
-  @OneToMany(() => Payment, (payments) => payments.partner)
-  payments: Payment[];
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollments: Enrollment[];

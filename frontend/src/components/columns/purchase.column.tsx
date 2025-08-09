@@ -16,11 +16,13 @@ import { getSourceStatusIcon } from "../styles/SourceStatus";
 type PurchaseProps = {
   onDetail: (id: number) => void;
   onImport: (id: number) => void;
+  onCancel: (id: number) => void;
 };
 
 export const purchaseColumns = ({
   onDetail,
   onImport,
+  onCancel,
 }: PurchaseProps): ColumnDef<PurchaseType>[] => [
   {
     accessorKey: "id",
@@ -117,13 +119,25 @@ export const purchaseColumns = ({
               View Purchase
             </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => {
-                onImport(row.original.id);
-              }}
-            >
-              Import Purchase
-            </DropdownMenuItem>
+            {row.original.status !== "Cancelled" && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    onImport(row.original.id);
+                  }}
+                >
+                  Import Purchase
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    onCancel(row.original.id);
+                  }}
+                >
+                  Cancel
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

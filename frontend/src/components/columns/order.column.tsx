@@ -127,16 +127,8 @@ export const orderColumns = ({
               View Order
             </DropdownMenuItem>
 
-            {row.original.status !== "Cancelled" ? (
+            {row.original.status !== "Cancelled" && (
               <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    onCancel(row.original.id);
-                  }}
-                >
-                  Cancel
-                </DropdownMenuItem>
-
                 <DropdownMenuItem
                   onClick={() => {
                     handleExport(row.original.id);
@@ -144,9 +136,15 @@ export const orderColumns = ({
                 >
                   Export order
                 </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    onCancel(row.original.id);
+                  }}
+                >
+                  Cancel
+                </DropdownMenuItem>
               </>
-            ) : (
-              ""
             )}
           </DropdownMenuContent>
         </DropdownMenu>

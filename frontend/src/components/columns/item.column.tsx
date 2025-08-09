@@ -15,13 +15,17 @@ import type { ItemType } from "../schemas/item.schema";
 import type { SourceType } from "../constants/constants";
 
 type ItemColumnsProps = {
-  onRemove: (itemId: number, sourceId: number, sourceType: SourceType) => void;
-  onAddExportImport: (itemId: number) => void;
+  hasAction: boolean;
+  onRemove?: (itemId: number, sourceId: number, sourceType: SourceType) => void;
+  onTransfer?: (itemId: number) => void;
+  onAddExportImport?: (itemId: number) => void;
   consignmentType?: "In" | "Out" | undefined;
   onCreateAppointment?: (id: number) => void;
 };
 
 export const itemColumns = ({
+  hasAction,
+  onTransfer,
   onCreateAppointment,
   onRemove,
   onAddExportImport,
@@ -115,7 +119,8 @@ export const itemColumns = ({
     {
       id: "actions",
       cell: ({ row }) => {
-        if (!row.original.isActive) return;
+        if (!row.original.isActive || !hasAction)
+          return <div className="h-8 w-8"></div>;
 
         return (
           <DropdownMenu>
@@ -140,11 +145,16 @@ export const itemColumns = ({
               </DropdownMenuItem>
 
               {row.original.itemableType === "Service" && (
-                <DropdownMenuItem
-                  onClick={() => onCreateAppointment(row.original.id)}
-                >
-                  Create Appointment
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => onTransfer(row.original.id)}>
+                    Transfer service
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onCreateAppointment(row.original.id)}
+                  >
+                    Create Appointment
+                  </DropdownMenuItem>
+                </>
               )}
 
               {row.original.itemableType === "Product" &&

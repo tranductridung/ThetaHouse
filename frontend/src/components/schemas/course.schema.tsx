@@ -3,7 +3,9 @@ import { CommonStatus, CourseMode, CourseRole } from "../constants/constants";
 
 export const baseCourseSchema = z.object({
   name: z.string(),
-  description: z.string().nullable().optional(),
+  description: z.string().optional(),
+  meetingLink: z.string().optional(),
+  meetingPassword: z.string().optional(),
   offlineSession: z.number().nullable().optional(),
   onlineSession: z.number().nullable().optional(),
   price: z.number(),
@@ -21,7 +23,6 @@ export const courseFormSchema = baseCourseSchema
   .extend({})
   .superRefine((data, ctx) => {
     if (data.mode !== "Online") {
-      data.onlineSession = undefined;
       const value = data.offlineSession;
       if (typeof value !== "number") {
         ctx.addIssue({
@@ -41,7 +42,6 @@ export const courseFormSchema = baseCourseSchema
     }
 
     if (data.mode !== "Offline") {
-      data.offlineSession = undefined;
       const value = data.onlineSession;
       if (typeof value !== "number") {
         ctx.addIssue({

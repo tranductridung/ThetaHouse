@@ -8,7 +8,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { SourceType, TransactionType } from 'src/common/enums/enum';
+import { PayerType, SourceType, TransactionType } from 'src/common/enums/enum';
 
 export class CreateTransactionDto {
   @IsEnum(TransactionType)
@@ -22,6 +22,14 @@ export class CreateTransactionDto {
   @IsEnum(SourceType)
   sourceType: SourceType;
 
+  @IsEnum(PayerType)
+  payerType: PayerType;
+
+  @Type(() => Number)
+  @IsInt()
+  @IsPositive()
+  payerId: number;
+
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
@@ -29,5 +37,5 @@ export class CreateTransactionDto {
 
   @IsString()
   @IsOptional()
-  note: string;
+  note?: string;
 }

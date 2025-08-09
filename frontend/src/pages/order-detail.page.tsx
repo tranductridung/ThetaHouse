@@ -20,7 +20,7 @@ import DisplayUser from "@/components/DisplayUser";
 import { type AppointmentDraftType } from "@/components/schemas/appointment.schema";
 import { useItemActions } from "@/hooks/useItemAction";
 import { toast } from "sonner";
-import type { ItemDraftType } from "@/components/schemas/item.schema";
+import type { ItemDraftListType } from "@/components/schemas/item.schema";
 import type { PaymentDraftType } from "@/components/schemas/payment.schema";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import PageTitle from "@/components/Title";
@@ -32,6 +32,8 @@ import AppointmentModal from "@/components/modals/appointment.modal";
 import PaymentModal from "@/components/modals/payment.modal";
 import ExportImportModal from "@/components/modals/export-import.modal";
 import ItemModal from "@/components/modals/item.modal";
+import AddPartnerModal from "@/components/modals/add-partner.modal";
+import type { AddPartnerType } from "@/components/schemas/add-partner.schema";
 
 type OrderDetailProps = { isUseTitle?: boolean };
 
@@ -76,7 +78,7 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
   };
 
   const {
-    handleAddItem,
+    handleAddItemList,
     handleRemove,
     handleCreateAppointmnet,
     handleExportImportItem,
@@ -90,39 +92,35 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
       return;
     }
 
-    if (!order?.customer?.id) return;
-
-    await handleCreateAppointmnet(
+    const isSuccess = await handleCreateAppointmnet(
       formData,
-      order?.customer?.id,
       appointmentFormManager.selectedItemId
     );
-    onCloseAppointment();
+    if (isSuccess) onCloseAppointment();
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const onSubmitAddItem = (itemDraftType: ItemDraftType) => {
-    console.log("add item", itemDraftType);
+  const onSubmitAddItem = async (itemDraftList: ItemDraftListType) => {
     if (!order) {
       toast.error("Order ID is required!");
       return;
     }
-    handleAddItem(itemDraftType, order?.id, "Order");
-    onCloseItem();
+    const isSuccess = await handleAddItemList(
+      itemDraftList,
+      order?.id,
+      "Order"
+    );
+    if (isSuccess) onCloseItem();
   };
 
   const onAddSubmitPayment = async (paymentDraftType: PaymentDraftType) => {
-    if (!transaction?.id || !order?.customer?.id) return;
+    if (!transaction?.id) return;
+    const isSuccess = await handleAddPayment(paymentDraftType, transaction?.id);
 
-    await handleAddPayment(
-      paymentDraftType,
-      transaction?.id,
-      order?.customer?.id
-    );
-    onClosePayment();
+    if (isSuccess) onClosePayment();
   };
 
   const onRemove = (itemId: number) => {
@@ -133,21 +131,40 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
     handleRemove(itemId, order.id, "Order");
   };
 
-  const onSubmitExportImport = (quantity: number) => {
+  const onSubmitExportImport = async (quantity: number) => {
     if (!exportImportFormManager.selectedItemId) {
       toast.error("Item ID is required to export/import product!");
       return;
     }
 
-    handleExportImportItem(
+    const isSuccess = await handleExportImportItem(
       exportImportFormManager.selectedItemId,
       "Order",
       quantity
     );
-    onCloseExportImport();
+    if (isSuccess) onCloseExportImport();
   };
 
-  console.log("payment", transaction?.payments);
+  const [showPartnerDialog, setShowPartnerDialog] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+
+  const onSubmitTransfer = async (formData: AddPartnerType) => {
+    const url = `/orders/${order?.id}/items/${selectedItemId}/transfer`;
+    try {
+      await api.post(url, { newCustomerId: formData.partner.id });
+      setShowPartnerDialog(false);
+      fetchData();
+      toast.success("Transfer service success!");
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
+  const onTransfer = (itemId: number) => {
+    setShowPartnerDialog(true);
+    setSelectedItemId(itemId);
+  };
+
   return (
     <>
       <div className="p-4">
@@ -173,9 +190,11 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
         <div className="flex flex-col space-y-5">
           <DataTable
             columns={itemColumns({
+              hasAction: true,
               onCreateAppointment,
               onRemove,
               onAddExportImport,
+              onTransfer,
             })}
             onAdd={order?.status !== "Cancelled" ? onAddItem : undefined}
             data={order?.items ?? []}
@@ -285,7 +304,6 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
             </Card>
           </div>
         </div>
-
         {/* ==========================================MODAL========================================== */}
         {/* Create appointment modal */}
         <AppointmentModal
@@ -293,27 +311,31 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
           onClose={onCloseAppointment}
           onSubmitAddAppointment={onSubmitAddAppointment}
         ></AppointmentModal>
-
         {/* Add item modal */}
         <ItemModal
           formManager={itemFormManager}
           handleSubmit={onSubmitAddItem}
           onClose={onCloseItem}
+          source={"Order"}
         ></ItemModal>
-
         {/* Add payment modal */}
         <PaymentModal
           formManager={paymentFormManager}
           handleSubmit={onAddSubmitPayment}
           onClose={onClosePayment}
         ></PaymentModal>
-
         {/* Export or Import item modal */}
         <ExportImportModal
           formManager={exportImportFormManager}
           handleSubmit={onSubmitExportImport}
           onClose={onCloseExportImport}
         ></ExportImportModal>
+        {/* Add partner modal */}
+        <AddPartnerModal
+          onSubmitAddPartner={onSubmitTransfer}
+          showPartnerDialog={showPartnerDialog}
+          setShowPartnerDialog={setShowPartnerDialog}
+        ></AddPartnerModal>
       </div>
     </>
   );

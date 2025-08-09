@@ -41,15 +41,13 @@ const Module = ({ isUseTitle = true }: ModuleProps) => {
     try {
       if (formManager.type === "add") {
         await api.post("/modules", formData);
-        fetchData();
         toast.success(`Create module success!`);
       } else if (formManager.type === "edit" && formManager.data?.id) {
         await api.patch(`/modules/${formManager.data.id}`, formData);
-        fetchData();
-
         toast.success(`Edit module success!`);
       }
 
+      fetchData();
       onClose();
     } catch (error) {
       handleAxiosError(error);
@@ -70,7 +68,6 @@ const Module = ({ isUseTitle = true }: ModuleProps) => {
     try {
       await api.patch(`/modules/${id}/restore`);
       fetchData();
-
       toast.success("Module is restored!");
     } catch (error) {
       handleAxiosError(error);

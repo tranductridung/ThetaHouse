@@ -75,12 +75,17 @@ export class ConsignmentController {
   }
 
   @Post(':id/cancel')
-  async cancelConsignment(@Param('id') id: string, @Req() req: Request) {
+  async cancelConsignment(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body('payerId') payerId?: number,
+  ) {
     const creatorId = Number(req.user?.id);
 
     const result = await this.consignmentService.cancelConsignment(
       +id,
       creatorId,
+      payerId ? +payerId : payerId,
     );
     return result;
   }
@@ -88,11 +93,15 @@ export class ConsignmentController {
   @Post(':id/items')
   async addItem(
     @Param('id') consignmentId: string,
-    @Body() createItemDto: CreateItemDto,
+    @Body() createItemDtos: CreateItemDto[],
+    @Req() req: Request,
   ) {
+    const creatorId = Number(req.user?.id);
+
     const result = await this.consignmentService.addItem(
       +consignmentId,
-      createItemDto,
+      createItemDtos,
+      creatorId,
     );
     return result;
   }

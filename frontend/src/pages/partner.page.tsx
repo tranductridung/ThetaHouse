@@ -44,15 +44,13 @@ const Partner = ({ isUseTitle = true }: PartnerProps) => {
     try {
       if (formManager.type === "add") {
         await api.post("/partners", formData);
-        fetchData();
         toast.success(`Create partner success!`);
       } else if (formManager.type === "edit" && formManager.data?.id) {
         await api.patch(`/partners/${formManager.data.id}`, formData);
-
-        fetchData();
         toast.success(`Edit partner success!`);
       }
 
+      fetchData();
       onClose();
     } catch (error) {
       handleAxiosError(error);

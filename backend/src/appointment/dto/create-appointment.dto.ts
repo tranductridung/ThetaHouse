@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { AppointmentType } from 'src/common/enums/enum';
 
-export class CreateAppointmentDto {
+export class CreateTherapyAppointmentDto {
   @IsString()
   @IsOptional()
   note?: string;
@@ -24,8 +24,8 @@ export class CreateAppointmentDto {
 
   @Type(() => Number)
   @IsInt()
-  @IsOptional()
   @IsPositive()
+  @IsOptional()
   customerId?: number;
 
   @IsEnum(AppointmentType)

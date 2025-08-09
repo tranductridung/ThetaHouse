@@ -19,6 +19,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
 @Entity()
 export class Item {
   @PrimaryGeneratedColumn()
@@ -38,6 +39,9 @@ export class Item {
 
   @Column()
   quantity: number;
+
+  @Column({ nullable: true })
+  currentCustomerId: number;
 
   @Column('decimal', {
     precision: 10,
@@ -63,7 +67,7 @@ export class Item {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'enum', enum: AdjustmentType, default: AdjustmentType.INIT })
+  @Column({ type: 'enum', enum: AdjustmentType })
   adjustmentType: AdjustmentType;
 
   @Column({ type: 'json', nullable: true })
@@ -92,4 +96,10 @@ export class Item {
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollments: Enrollment[];
+
+  @ManyToOne(() => User, (creator) => creator.items, { onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: 'creatorId',
+  })
+  creator: User;
 }

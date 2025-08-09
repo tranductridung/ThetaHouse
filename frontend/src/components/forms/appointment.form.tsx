@@ -34,7 +34,7 @@ import { UserComboBox } from "../comboBoxs/user.comboBox";
 import { MultiModuleComboBox } from "../comboBoxs/module.comboBox";
 
 type AppointmentProps = {
-  type: "add" | "edit" | "addFree";
+  type: "add" | "edit" | "addFree" | "consultation" | "editConsultation";
   onSubmit: (formData: AppointmentDraftType) => void;
   appointmentData: AppointmentType | null;
   setIsSelectOpen: (isOpen: boolean) => void;
@@ -46,19 +46,24 @@ const AppointmentForm = ({
   type,
   setIsSelectOpen,
 }: AppointmentProps) => {
-  console.log(appointmentData);
   const form = useForm<AppointmentDraftType>({
     resolver: zodResolver(appointmentDraftSchema),
     defaultValues: {
+      category:
+        appointmentData?.category ??
+        (type === "consultation" || type === "editConsultation"
+          ? "Consultation"
+          : "Therapy"),
       note: appointmentData?.note ?? "",
       healer: appointmentData?.healer ?? undefined,
-      room: appointmentData?.room ?? undefined,
-      type: appointmentData?.type ?? "Free",
-      modules: appointmentData?.modules ?? [],
       duration: appointmentData?.duration,
       startAt: appointmentData?.startAt
         ? new Date(appointmentData.startAt)
         : undefined,
+
+      room: appointmentData?.room ?? undefined,
+      type: appointmentData?.type ?? (type === "addFree" ? "Free" : "Main"),
+      modules: appointmentData?.modules ?? [],
     },
   });
 
@@ -66,7 +71,9 @@ const AppointmentForm = ({
     <>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={form.handleSubmit(onSubmit, (error) => {
+            console.log("error neeeeeeeeeee", error);
+          })}
           className="space-y-6 overflow-y-auto "
         >
           <div className="flex flex-col items-center gap-2 text-center">
@@ -74,7 +81,6 @@ const AppointmentForm = ({
               {type === "edit" ? "Edit Appointment" : "Create Appointment"}
             </h1>
           </div>
-
           {/* Note */}
           <FormField
             control={form.control}
@@ -83,18 +89,12 @@ const AppointmentForm = ({
               <FormItem>
                 <FormLabel>Note</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="text"
-                    placeholder="Note"
-                    // className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                  />
+                  <Input {...field} type="text" placeholder="Note" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
           {/* Start At */}
           <FormField
             control={form.control}
@@ -161,9 +161,8 @@ const AppointmentForm = ({
               );
             }}
           />
-
           {/* Type */}
-          {type === "add" && (
+          {type !== "consultation" && (
             <FormField
               control={form.control}
               name="type"
@@ -173,6 +172,8 @@ const AppointmentForm = ({
                   <Select
                     onValueChange={field.onChange}
                     onOpenChange={setIsSelectOpen}
+                    value={field.value}
+                    disabled={type !== "add"}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a type of appointment" />
@@ -181,6 +182,9 @@ const AppointmentForm = ({
                       <SelectGroup className="w-full">
                         <SelectItem value="Main">Main</SelectItem>
                         <SelectItem value="Bonus">Bonus</SelectItem>
+                        <SelectItem disabled={true} value="Free">
+                          Free
+                        </SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -190,7 +194,6 @@ const AppointmentForm = ({
               )}
             />
           )}
-
           {/* Duration */}
           {type !== "add" && (
             <FormField
@@ -200,26 +203,20 @@ const AppointmentForm = ({
                 <FormItem className="flex flex-1/2 flex-col w-full">
                   <FormLabel>Duration</FormLabel>
                   <Input
-                    disabled={type === "edit"}
-                    placeholder="0"
-                    min={0}
                     type="number"
+                    step={"any"}
                     value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value === ""
-                          ? undefined
-                          : Number(e.target.value)
+                        e.target.value === "" ? "" : Number(e.target.value)
                       )
                     }
                   />
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           )}
-
           {/* Healer */}
           <FormField
             control={form.control}
@@ -238,42 +235,45 @@ const AppointmentForm = ({
             )}
           />
 
-          {/* Room */}
-          <FormField
-            control={form.control}
-            name="room"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Room</FormLabel>
-                <FormControl className="font-normal">
-                  <RoomComboBox
-                    value={field.value}
-                    onChange={(room) => field.onChange(room)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {type !== "consultation" && (
+            <>
+              {/* Room */}
+              <FormField
+                control={form.control}
+                name="room"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Room</FormLabel>
+                    <FormControl className="font-normal">
+                      <RoomComboBox
+                        value={field.value}
+                        onChange={(room) => field.onChange(room)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          {/* Modules */}
-          <FormField
-            control={form.control}
-            name="modules"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Modules</FormLabel>
-                <FormControl>
-                  <MultiModuleComboBox
-                    selectedModules={field.value || []}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+              {/* Modules */}
+              <FormField
+                control={form.control}
+                name="modules"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Module</FormLabel>
+                    <FormControl>
+                      <MultiModuleComboBox
+                        selectedModules={field.value || []}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
           <Button type="submit" className="w-full">
             {type === "edit" ? "Save" : "Create"}
           </Button>

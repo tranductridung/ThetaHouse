@@ -91,7 +91,7 @@ const ModuleForm = ({ onSubmit, type, moduleData }: ModuleProps) => {
           />
 
           {/* Type */}
-          {type === "add" ? (
+          {type === "add" && (
             <FormField
               control={form.control}
               name="type"
@@ -109,7 +109,7 @@ const ModuleForm = ({ onSubmit, type, moduleData }: ModuleProps) => {
                       <SelectGroup className="w-full">
                         <SelectItem value="Single">Single</SelectItem>
                         <SelectItem value="Combo">Combo</SelectItem>
-                        <SelectItem value="Combo">Both</SelectItem>
+                        <SelectItem value="Both">Both</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -118,8 +118,6 @@ const ModuleForm = ({ onSubmit, type, moduleData }: ModuleProps) => {
                 </FormItem>
               )}
             />
-          ) : (
-            ""
           )}
 
           <Button type="submit" className="w-full">

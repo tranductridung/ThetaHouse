@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { ConfigService } from '@nestjs/config';
 import {
   Body,
@@ -15,7 +14,6 @@ import { LoginDTO } from './dto/login.dto';
 import { Request, Response } from 'express';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { VerifyEmailJwtGuard } from './guards/auth.guard';
-
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -42,6 +40,7 @@ export class AuthController {
       sameSite: 'strict',
       maxAge: Number(this.configService.get('MAX_AGE')) * 24 * 60 * 60 * 1000,
     });
+
     return { accessToken, user };
   }
 
@@ -70,7 +69,7 @@ export class AuthController {
 
   @Get('verify-email')
   @UseGuards(VerifyEmailJwtGuard)
-  async verifyEmail(@Query('token') token: string, @Req() req) {
+  async verifyEmail(@Query('token') token: string, @Req() req: Request) {
     await this.authService.verifyEmail(Number(req?.user?.id));
     return { message: 'Verify email success!' };
   }
