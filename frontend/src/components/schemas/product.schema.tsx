@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { PRODUCT_UNIT } from "../constants/constants";
 
 export const baseProductSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
-  unit: z.enum(["Piece", "Kg", "Box", "Liter", "Package"]),
+  unit: z.enum(PRODUCT_UNIT),
 
   defaultOrderPrice: z.number().optional().nullable(),
   defaultPurchasePrice: z.number().optional().nullable(),

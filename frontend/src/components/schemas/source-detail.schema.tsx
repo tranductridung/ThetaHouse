@@ -2,7 +2,7 @@ import { z } from "zod";
 import { discountSchema } from "./discount.schema";
 import { userSchema } from "./user.schema";
 import { partnerSchema } from "./partner.schema";
-import { ConsignmentType, SourceStatus } from "../constants/constants";
+import { CONSIGNMENT_TYPE, SOURCE_STATUS } from "../constants/constants";
 import { itemSchema } from "./item.schema";
 
 export const baseSourceDetailSchema = z.object({
@@ -17,7 +17,7 @@ export const baseSourceDetailSchema = z.object({
 //Order
 export const orderSchema = baseSourceDetailSchema.extend({
   id: z.number(),
-  status: z.enum(SourceStatus),
+  status: z.enum(SOURCE_STATUS),
   customer: partnerSchema,
   discount: discountSchema,
 });
@@ -30,7 +30,7 @@ export const editOrderFormSchema = baseSourceDetailSchema.extend({}); // Not com
 export const purchaseSchema = baseSourceDetailSchema.extend({
   supplier: partnerSchema,
   discountAmount: z.number().optional(),
-  status: z.enum(SourceStatus),
+  status: z.enum(SOURCE_STATUS),
   id: z.number(),
 });
 export const createPurchaseFormSchema = baseSourceDetailSchema.extend({
@@ -41,8 +41,8 @@ export const editPurchaseFormSchema = baseSourceDetailSchema.extend({}); // Not 
 //Consignment
 export const consignmentSchema = baseSourceDetailSchema.extend({
   id: z.number(),
-  status: z.enum(SourceStatus),
-  type: z.enum(ConsignmentType),
+  status: z.enum(SOURCE_STATUS),
+  type: z.enum(CONSIGNMENT_TYPE),
   commissionRate: z.number().lte(100).gte(0),
   partner: partnerSchema,
 });

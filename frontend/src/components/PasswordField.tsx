@@ -34,7 +34,7 @@ const PasswordField = <T extends FieldValues>({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <div className="relative ">
+            <div className="relative">
               <Input
                 type={isShow ? "text" : "password"}
                 placeholder={placeholder}

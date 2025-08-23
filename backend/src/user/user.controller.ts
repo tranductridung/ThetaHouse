@@ -27,7 +27,6 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  // @Roles(UserRole.ADMIN)
   async findAll(@Query() paginationDto: PaginationDto) {
     console.log('asdflkasd;flk');
     return await this.userService.findAll(paginationDto);
@@ -75,9 +74,22 @@ export class UserController {
   }
 
   @Get('me')
+  getUserInfor(@Req() req: Request) {
+    return {
+      user: {
+        id: req?.user?.id,
+        email: req?.user?.email,
+        fullName: req?.user?.fullName,
+        role: req?.user?.role,
+      },
+    };
+  }
+
+  @Get('me/profile')
   async getProfile(@Req() req: Request) {
     const userId = Number(req?.user?.id);
-    return await this.userService.findOne(userId);
+    const user = await this.userService.findOne(userId);
+    return { user };
   }
 
   @Put('me')

@@ -47,7 +47,7 @@ export function CourseList({
     <div
       ref={listRef}
       onScroll={handleScroll}
-      className="h-[500px] overflow-y-auto border rounded p-2 space-y-2"
+      className="h-[95%] overflow-y-auto border rounded p-2 space-y-2"
     >
       {courses.map((course) => (
         <div

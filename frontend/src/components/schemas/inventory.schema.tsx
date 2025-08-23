@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { InventoryAction } from "../constants/constants";
+import { INVENTORY_ACTION } from "../constants/constants";
 
 export const baseInventorySchema = z.object({
-  action: z.enum(InventoryAction),
+  action: z.enum(INVENTORY_ACTION),
   quantity: z.number(),
   note: z.string().optional(),
 });

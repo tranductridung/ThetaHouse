@@ -14,18 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import * as z from "zod";
 import PasswordField from "../PasswordField";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { handleAxiosError } from "@/lib/utils";
+import { useAuth } from "@/auth/useAuth";
 const loginSchema = z.object({
   email: z.string().email({ message: "Email invalid!" }),
-  password: z.string().min(8, { message: "Password at least 8 characters!" }),
+  password: z.string(),
 });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+export type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
-  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -35,23 +34,11 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await axios
-      .post(
-        "http://localhost:3000/api/v1/auth/login",
-        { ...data },
-        { withCredentials: true }
-      )
-      .then((response) => {
-        console.log(response);
-        const accessToken = response.data.accessToken;
-        localStorage.setItem("accessToken", accessToken);
-
-        navigate("/");
-      })
-      .catch((error) => {
-        handleAxiosError(error);
-        form.reset();
-      });
+    try {
+      await login(data.email, data.password);
+    } catch (error) {
+      form.reset();
+    }
   };
 
   return (

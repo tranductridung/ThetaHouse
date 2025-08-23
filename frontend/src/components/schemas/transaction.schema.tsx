@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
-  TypeOfSource,
-  TransactionStatus,
-  TransactionTypeConst,
+  SOURCE_TYPE,
+  TRANSACTION_STATUS,
+  TRANSACTION_TYPE,
 } from "../constants/constants";
 import { paymentSchema } from "./payment.schema";
 
@@ -13,11 +13,11 @@ export const baseTransactionSchema = z.object({
 
 export const transactionSchema = baseTransactionSchema.extend({
   id: z.number(),
-  type: z.enum(TransactionTypeConst),
+  type: z.enum(TRANSACTION_TYPE),
   sourceId: z.number().gte(0),
-  sourceType: z.enum(TypeOfSource),
+  sourceType: z.enum(SOURCE_TYPE),
   totalAmount: z.number().gte(0),
-  status: z.enum(TransactionStatus),
+  status: z.enum(TRANSACTION_STATUS),
   creator: z.object({
     fullName: z.string(),
   }),
@@ -27,9 +27,8 @@ export const transactionSchema = baseTransactionSchema.extend({
   payments: z.array(paymentSchema),
   customer: z.object({ id: z.number() }).nullable().optional(),
 });
-
 export const createTransactionSchema = z.object({
-  type: z.enum(TransactionTypeConst),
+  type: z.enum(TRANSACTION_TYPE),
   totalAmount: z.number().gte(0),
   note: z.string(),
 });

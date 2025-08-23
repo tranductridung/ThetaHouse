@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { CourseMode, EnrollmentStatus } from "../constants/constants";
+import { COURSE_MODE, ENROLLMENT_STATUS } from "../constants/constants";
 import { itemSchema } from "./item.schema";
 
 export const baseEnrollmentSchema = z.object({
   course: z.object({
     name: z.string(),
-    mode: z.enum(CourseMode),
+    mode: z.enum(COURSE_MODE),
     startDate: z.date(),
   }),
   student: z.object({
@@ -18,7 +18,7 @@ export const baseEnrollmentSchema = z.object({
 
 export const enrollmentSchema = baseEnrollmentSchema.extend({
   id: z.number(),
-  status: z.enum(EnrollmentStatus),
+  status: z.enum(ENROLLMENT_STATUS),
 });
 
 export const editEnrollmentFormSchema = z.object({

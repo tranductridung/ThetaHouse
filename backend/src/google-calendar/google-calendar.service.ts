@@ -1,5 +1,9 @@
 import { EncryptionService } from './../encryption/encryption.service';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
@@ -9,9 +13,11 @@ import { TokenService } from 'src/token/token.service';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { UserService } from 'src/user/user.service';
 import { CreateCalendarDto } from './dtos/create-calendar.dto';
+import axios from 'axios';
 
 @Injectable()
 export class GoogleCalendarService {
+  private readonly logger = new Logger(GoogleCalendarService.name);
   private oauth2Client: OAuth2Client;
 
   constructor(
@@ -101,7 +107,7 @@ export class GoogleCalendarService {
   }
 
   async getUserTokens(userId: number) {
-    const user = await this.userService.findOne(userId, true);
+    const user = await this.userService.findOne(userId, true, true);
 
     const decryptedAccessToken = user.calendarAccessToken
       ? this.encryptionService.decrypt(user.calendarAccessToken)
@@ -115,5 +121,58 @@ export class GoogleCalendarService {
       accessToken: decryptedAccessToken ?? undefined,
       refreshToken: decryptedRefreshToken ?? undefined,
     };
+  }
+
+  async checkCalendarConnection(userId: number) {
+    try {
+      const {
+        accessToken: calendarAccessToken,
+        refreshToken: calendarRefreshToken,
+      } = await this.getUserTokens(userId);
+
+      if (!calendarAccessToken || !calendarRefreshToken) {
+        return { connected: false };
+      }
+
+      this.oauth2Client.setCredentials({
+        access_token: calendarAccessToken,
+        refresh_token: calendarRefreshToken,
+      });
+
+      const calendar = google.calendar({
+        version: 'v3',
+        auth: this.oauth2Client,
+      });
+
+      // Call API to check if token valid
+      await calendar.calendarList.list();
+
+      return { connected: true };
+    } catch (error) {
+      if (error?.response?.status === 401) {
+        // Token expired
+        return { connected: false };
+      }
+
+      // Error of Google or system
+      throw new InternalServerErrorException('Connect Google Calendar failed!');
+    }
+  }
+
+  async disconnectCalendar(userId: number) {
+    const { refreshToken } = await this.getUserTokens(userId);
+
+    if (!refreshToken) {
+      return true;
+    }
+
+    await axios.post('https://oauth2.googleapis.com/revoke', null, {
+      params: { token: refreshToken },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    await this.userService.removeCalendarToken(userId);
+
+    return { success: true, message: 'Google calendar is disconnected!' };
   }
 }

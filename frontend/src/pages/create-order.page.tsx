@@ -37,14 +37,13 @@ export default function CreateOrderPage({
 
     const payload: CreateOrderType = {
       note: data.note,
-      discountId: data.discount?.id,
+      discountId: data?.discount?.id,
       customerId: data.customer.id,
       items: newItems,
     };
 
     try {
       const response = await api.post("/orders", payload);
-      console.log("Create order:", response);
       toast.success("Create order success!");
       navigate(`/sources/orders/${response.data.order.id}/`);
     } catch (error) {
@@ -53,7 +52,7 @@ export default function CreateOrderPage({
   };
 
   return (
-    <div className="max-w-[95%] mx-auto pb-10 flex flex-col">
+    <div className="w-[97%]  mx-auto pb-5 flex flex-col">
       {isUseTitle && <PageTitle title="Create Order"></PageTitle>}
 
       <CreateOrderForm onSubmit={handleCreateOrder} />

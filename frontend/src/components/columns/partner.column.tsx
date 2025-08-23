@@ -10,12 +10,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "../ui/button";
 import { format } from "date-fns";
-import type { TypeOfPartner } from "../constants/constants";
+import type { PartnerTypeConst } from "../constants/constants";
 import type { PartnerType } from "../schemas/partner.schema";
 
 type PartnerProps = {
   onEdit: (partner: PartnerType) => void;
-  onDetail: (partnerId: number, partnerType: TypeOfPartner) => void;
+  onDetail: (partnerId: number, partnerType: PartnerTypeConst) => void;
 };
 
 export const partnerColumns = ({

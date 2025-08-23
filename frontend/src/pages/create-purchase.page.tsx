@@ -51,7 +51,7 @@ export default function CreatePurchasePage({
   };
 
   return (
-    <div className="max-w-[95%] mx-auto pb-10 flex flex-col">
+    <div className="w-[97%]  mx-auto pb-5 flex flex-col">
       {isUseTitle && <PageTitle title="Create Purchase"></PageTitle>}
 
       <CreatePurchaseForm onSubmit={handleCreatePurchase} />

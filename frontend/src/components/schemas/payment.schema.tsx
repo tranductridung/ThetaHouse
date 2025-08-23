@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { PaymentMethod } from "../constants/constants";
+import { PAYMENT_METHOD } from "../constants/constants";
 
 export const basePaymentSchema = z.object({
   amount: z.number(),
-  method: z.enum(PaymentMethod),
+  method: z.enum(PAYMENT_METHOD),
   note: z.string(),
 });
 

@@ -100,6 +100,7 @@ export class InventoryService {
       note: `${action} ${finalQuantity} product for item ${item.id} of ${item.sourceType}!`,
       productId: item.itemableId,
       itemId: item.id,
+      unitPrice: item.unitPrice,
     };
 
     // Find product

@@ -34,6 +34,8 @@ import ExportImportModal from "@/components/modals/export-import.modal";
 import ItemModal from "@/components/modals/item.modal";
 import AddPartnerModal from "@/components/modals/add-partner.modal";
 import type { AddPartnerType } from "@/components/schemas/add-partner.schema";
+import ChangeCourseModal from "@/components/modals/change-course.modal";
+import type { ChangeCourseFormData } from "@/components/forms/change-course.form";
 
 type OrderDetailProps = { isUseTitle?: boolean };
 
@@ -57,6 +59,12 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
     formManager: exportImportFormManager,
     onAdd: onAddExportImport,
     onClose: onCloseExportImport,
+  } = useSelectedItemFormManager();
+
+  const {
+    formManager: changeCourseFormManager,
+    onAdd: onChangeCourse,
+    onClose: onCloseChangeCourse,
   } = useSelectedItemFormManager();
 
   const {
@@ -145,6 +153,27 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
     if (isSuccess) onCloseExportImport();
   };
 
+  const onSubmitChangeCourse = async (formData: ChangeCourseFormData) => {
+    if (!changeCourseFormManager.selectedItemId) {
+      toast.error("Item ID is required to export/import product!");
+      return;
+    }
+
+    try {
+      const url = `/orders/${order?.id}/items/${changeCourseFormManager.selectedItemId}/change-course`;
+      const payload = {
+        changeQuantity: formData.quantity,
+        courseId: formData.course.id,
+      };
+      await api.post(url, payload);
+      fetchData();
+      toast.success(`Change course success!`);
+      onCloseChangeCourse();
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
   const [showPartnerDialog, setShowPartnerDialog] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
 
@@ -195,6 +224,7 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
               onRemove,
               onAddExportImport,
               onTransfer,
+              onChangeCourse,
             })}
             onAdd={order?.status !== "Cancelled" ? onAddItem : undefined}
             data={order?.items ?? []}
@@ -336,6 +366,12 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
           showPartnerDialog={showPartnerDialog}
           setShowPartnerDialog={setShowPartnerDialog}
         ></AddPartnerModal>
+        {/* Change Course */}
+        <ChangeCourseModal
+          formManager={changeCourseFormManager}
+          handleSubmit={onSubmitChangeCourse}
+          onClose={onCloseChangeCourse}
+        ></ChangeCourseModal>
       </div>
     </>
   );

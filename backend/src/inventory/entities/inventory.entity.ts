@@ -1,3 +1,4 @@
+import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
 import { Product } from './../../product/entities/product.entity';
 import { InventoryAction } from 'src/common/enums/enum';
 import { Item } from 'src/item/entities/item.entity';
@@ -25,6 +26,14 @@ export class Inventory {
 
   @Column('text', { nullable: true })
   note?: string;
+
+  // Order and Purchase price for 1 base quantity
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
+  unitPrice: number;
 
   @CreateDateColumn({ select: false })
   createdAt: Date;

@@ -5,7 +5,7 @@ import { DataTable } from "@/components/data-table";
 import { useEffect, useState } from "react";
 import type { UserType } from "@/components/schemas/user.schema";
 import { userColumns } from "@/components/columns/user.column";
-import { UserRoleEnum } from "@/components/constants/constants";
+import type { UserRoleConst } from "@/components/constants/constants";
 import { toast } from "sonner";
 import { handleAxiosError } from "@/lib/utils";
 import PageTitle from "@/components/Title";
@@ -43,7 +43,7 @@ const User = ({ isUseTitle = true }: UserProps) => {
     }
   };
 
-  const handleChangeRole = async (id: number, role: UserRoleEnum) => {
+  const handleChangeRole = async (id: number, role: UserRoleConst) => {
     try {
       const response = await api.patch(`users/${id}/change-role`, { role });
       fetchData();

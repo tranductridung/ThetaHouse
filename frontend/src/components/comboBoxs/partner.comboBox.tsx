@@ -147,7 +147,7 @@ export function PartnerComboBox({
               {partners.map((partner) => (
                 <CommandItem
                   key={partner.id}
-                  value={partner.fullName}
+                  value={partner.id.toString()}
                   onSelect={() => {
                     onChange(partner);
                     setOpen(false);

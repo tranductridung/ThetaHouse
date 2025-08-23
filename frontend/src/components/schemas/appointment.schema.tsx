@@ -1,10 +1,11 @@
 import { z } from "zod";
-import {
-  AppointmentCategoryConst,
-  AppointmentStatus,
-  TypeOfAppointment,
-} from "../constants/constants";
+
 import { moduleSchema } from "./module.schema";
+import {
+  APPOINTMENT_CATEGORY,
+  APPOINTMENT_STATUS,
+  APPOINTMENT_TYPE,
+} from "../constants/constants";
 
 export const baseAppointmentSchema = z.object({});
 export const appointmentSchema = baseAppointmentSchema.extend({
@@ -14,8 +15,8 @@ export const appointmentSchema = baseAppointmentSchema.extend({
     fullName: z.string(),
   }),
   item: z.object({ id: z.number() }),
-  type: z.enum(TypeOfAppointment),
-  category: z.enum(AppointmentCategoryConst),
+  type: z.enum(APPOINTMENT_TYPE),
+  category: z.enum(APPOINTMENT_CATEGORY),
   startAt: z.date(),
   room: z.object({
     id: z.number(),
@@ -32,12 +33,12 @@ export const appointmentSchema = baseAppointmentSchema.extend({
     })
   ),
   note: z.string(),
-  status: z.enum(AppointmentStatus),
+  status: z.enum(APPOINTMENT_STATUS),
 });
 
 export const editAppointmentSchema = baseAppointmentSchema.extend({
   note: z.string().optional(),
-  type: z.enum(TypeOfAppointment),
+  type: z.enum(APPOINTMENT_TYPE),
   startAt: z.date().optional(),
   roomId: z.number().optional(),
   healerId: z.number().optional(),
@@ -60,8 +61,8 @@ export const appointmentDraftSchema = z
     room: z.object({ name: z.string(), id: z.number() }).optional(),
     startAt: z.date().optional(),
     modules: z.array(moduleSchema).optional(),
-    type: z.enum(TypeOfAppointment),
-    category: z.enum(AppointmentCategoryConst),
+    type: z.enum(APPOINTMENT_TYPE),
+    category: z.enum(APPOINTMENT_CATEGORY),
     duration: z.number().optional(),
   })
   .superRefine((data, ctx) => {

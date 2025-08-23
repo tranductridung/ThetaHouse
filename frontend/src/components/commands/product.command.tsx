@@ -24,6 +24,7 @@ export function ProductList({
     if (isFetching.current || !hasMore) return;
     isFetching.current = true;
     try {
+      console.log("hello");
       const res = await api.get(`/products?page=${page}&limit=${pageSize}`);
       const items: ProductType[] = res.data.products || [];
 
@@ -47,7 +48,7 @@ export function ProductList({
     <div
       ref={listRef}
       onScroll={handleScroll}
-      className="h-[500px] overflow-y-auto border rounded p-2 space-y-2"
+      className="h-[95%] overflow-y-auto border rounded p-2 space-y-2"
     >
       {products.map((product) => (
         <div

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CommonStatus, ModuleType } from "../constants/constants";
+import { COMMON_STATUS, MODULE_TYPE } from "../constants/constants";
 
 export const baseModuleSchema = z.object({
   name: z.string(),
@@ -7,13 +7,13 @@ export const baseModuleSchema = z.object({
 });
 
 export const createModuleFormSchema = baseModuleSchema.extend({
-  type: z.enum(ModuleType),
+  type: z.enum(MODULE_TYPE),
 });
 export const editModuleFormSchema = baseModuleSchema.extend({});
 export const moduleSchema = baseModuleSchema.extend({
   id: z.number(),
-  type: z.enum(ModuleType),
-  status: z.enum(CommonStatus),
+  type: z.enum(MODULE_TYPE),
+  status: z.enum(COMMON_STATUS),
 });
 
 export type ModuleType = z.infer<typeof moduleSchema>;

@@ -12,12 +12,12 @@ import { MoreHorizontal } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ConsignmentType } from "../schemas/source.schema";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
-import type { TypeOfConsignment } from "../constants/constants";
+import type { ConsignmentTypeConst } from "../constants/constants";
 
 type ConsignmentProps = {
   onDetail: (id: number) => void;
   onHandle: (id: number) => void;
-  onCancel: (id: number, type: TypeOfConsignment) => void;
+  onCancel: (id: number, type: ConsignmentTypeConst) => void;
 };
 
 export const consignmentColumns = ({

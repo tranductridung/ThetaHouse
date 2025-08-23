@@ -1,19 +1,18 @@
 import { z } from "zod";
-import { ItemableType, ItemStatus } from "../constants/constants";
+import { ITEMABLE_TYPE, ITEM_STATUS } from "../constants/constants";
 import { discountSchema } from "./discount.schema";
 
 export const baseItemSchema = z.object({
-  itemableType: z.enum(ItemableType),
+  itemableType: z.enum(ITEMABLE_TYPE),
   quantity: z.number(),
 });
 
 export const itemSchema = baseItemSchema.extend({
-  id: z.number(),
   sourceType: z.string(),
   sourceId: z.number(),
   totalAmount: z.number(),
   finalAmount: z.number(),
-  status: z.enum(ItemStatus),
+  status: z.enum(ITEM_STATUS),
   unitPrice: z.number(),
   snapshotData: z.object({
     session: z.number(),
@@ -33,8 +32,8 @@ export const itemDraftSchema = baseItemSchema.extend({
   unitPrice: z.number(),
   discountAmount: z.number().optional(),
   subtotal: z.number(),
+  availableQuantity: z.number().optional(),
 });
-
 export const createItemSchema = baseItemSchema.extend({
   discountId: z.number().optional(),
   unitPrice: z.number(),

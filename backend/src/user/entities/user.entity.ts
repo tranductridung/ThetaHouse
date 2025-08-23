@@ -43,11 +43,11 @@ export class User {
   @Column({ select: false })
   password: string;
 
-  @Column({ type: 'text', nullable: true })
-  calendarAccessToken?: string;
+  @Column({ type: 'text', nullable: true, select: false })
+  calendarAccessToken?: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  calendarRefreshToken?: string;
+  @Column({ type: 'text', nullable: true, select: false })
+  calendarRefreshToken?: string | null;
 
   @Column({ type: 'enum', enum: UserRole, default: [UserRole.EMPLOYEE] })
   @IsEnum(UserRole)

@@ -79,13 +79,28 @@ export class UserService {
     return user;
   }
 
-  async findOne(id: number, isActive?: boolean) {
-    const user = await this.userRepo.findOneBy({ id });
+  async findOne(id: number, isActive?: boolean, getCalendarToken?: boolean) {
+    const queryBuilder = this.userRepo
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id });
 
-    if (!user) throw new NotFoundException('User not found');
+    if (getCalendarToken) {
+      queryBuilder.addSelect([
+        'user.calendarAccessToken',
+        'user.calendarRefreshToken',
+      ]);
+    }
 
-    if (isActive && user.status !== UserStatus.ACTIVE)
+    const user = await queryBuilder.getOne();
+
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+
+    if (isActive && user.status !== UserStatus.ACTIVE) {
       throw new BadRequestException('User is not active!');
+    }
+
     return user;
   }
 
@@ -136,6 +151,7 @@ export class UserService {
 
   async updateUser(id: number, updateData: UpdateUserDto) {
     const user = await this.findOne(id);
+    console.log('userrrrr before editttttttttttt', user);
 
     this.userRepo.merge(user, updateData);
     if (updateData.accessToken) {
@@ -152,6 +168,7 @@ export class UserService {
 
     await this.userRepo.save(user);
 
+    console.log('userrrrr', user);
     const { password, ...result } = user;
     return result;
   }
@@ -234,5 +251,17 @@ export class UserService {
       const appointments = await queryBuilder.getMany();
       return appointments;
     }
+  }
+
+  async removeCalendarToken(userId: number) {
+    await this.userRepo.update(userId, {
+      calendarAccessToken: null,
+      calendarRefreshToken: null,
+    });
+
+    return {
+      success: true,
+      message: 'Removed calendar tokens successfully!',
+    };
   }
 }

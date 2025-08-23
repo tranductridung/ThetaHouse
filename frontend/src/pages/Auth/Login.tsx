@@ -1,5 +1,4 @@
 import LoginForm from "@/components/forms/login.form";
-import { Button } from "@/components/ui/button";
 export default function Login() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -8,7 +7,7 @@ export default function Login() {
           <div className="w-full max-w-xs">
             <LoginForm />
           </div>
-          <div>
+          {/* <div>
             <Button
               onClick={() => {
                 window.location.href =
@@ -17,12 +16,12 @@ export default function Login() {
             >
               Login with Google
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">
         <img
-          src=""
+          src={undefined}
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

@@ -1,5 +1,5 @@
 import { choosePartnerColumns } from "@/components/columns/choose-partner.column";
-import type { TypeOfConsignment } from "@/components/constants/constants";
+import type { ConsignmentTypeConst } from "@/components/constants/constants";
 import { DataTable } from "@/components/data-table";
 import type { PartnerType } from "@/components/schemas/partner.schema";
 import api from "@/api/api";
@@ -7,7 +7,7 @@ import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
 type ChoosePartnerProps = {
-  type: TypeOfConsignment;
+  type: ConsignmentTypeConst;
   handleChoosePartner: (partner: PartnerType) => void;
 };
 

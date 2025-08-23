@@ -97,6 +97,7 @@ export class OrderService {
           queryRunner.manager,
           order.customer.id,
         );
+
         items.push(item);
       }
 
@@ -805,6 +806,9 @@ export class OrderService {
       throw new BadRequestException(
         `Change quantity cannot greater than item quantity: ${item.quantity}!`,
       );
+
+    if (changeCourseDto.courseId === item.itemableId)
+      throw new BadRequestException('Course is not modified!');
 
     // Create quantity item want change
     const createItemDto: CreateItemDto = {

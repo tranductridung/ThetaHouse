@@ -11,7 +11,7 @@ import { useAptAction } from "@/hooks/useAptAction";
 import AppointmentForm from "@/components/forms/appointment.form";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { appointmentColumns } from "@/components/columns/appointment.column";
-import type { AppointmentCategory } from "@/components/constants/constants";
+import type { AppointmentCategoryConst } from "@/components/constants/constants";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -21,7 +21,7 @@ export type FormManagerType = {
 
 type AppointmentProps = {
   customerId?: number;
-  appointmentCategory?: AppointmentCategory;
+  appointmentCategory?: AppointmentCategoryConst;
   isUseTitle?: boolean;
 };
 

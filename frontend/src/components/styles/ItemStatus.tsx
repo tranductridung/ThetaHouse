@@ -1,12 +1,11 @@
-import type { ItemStatusType } from "@/components/constants/constants";
+import type { ItemStatusConst } from "@/components/constants/constants";
 import {
   CheckCircle2Icon,
-  CircleX,
-  CalendarCheck2,
-  Repeat,
+  ClockIcon,
+  MinusCircleIcon,
 } from "lucide-react";
 
-export const getItemStatusIcon = (status: ItemStatusType) => {
+export const getItemStatusIcon = (status: ItemStatusConst) => {
   switch (status) {
     case "None":
       return <CheckCircle2Icon className="text-blue-500 dark:text-blue-400" />;
@@ -16,13 +15,13 @@ export const getItemStatusIcon = (status: ItemStatusType) => {
         <CheckCircle2Icon className="text-green-500 dark:text-green-400" />
       );
     case "Partial":
-      return <CalendarCheck2 className="text-slate-500 dark:text-slate-400" />;
+      return <ClockIcon className="text-slate-500 dark:text-slate-400" />;
     case "Transfered":
-      return <Repeat className="text-amber-500 dark:text-amber-400" />;
+      return <MinusCircleIcon className="text-amber-500 dark:text-amber-400" />;
   }
 };
 
-export const getItemStatusStyle = (status?: ItemStatusType) => {
+export const getItemStatusStyle = (status?: ItemStatusConst) => {
   switch (status) {
     case "None":
       return "bg-blue-200 text-blue-600";

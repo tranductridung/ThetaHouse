@@ -27,26 +27,51 @@ const AddItemRow = ({
 
   return (
     <>
-      {source === "Order" ? (
-        <Tabs defaultValue="product" className="w-full">
+      <Tabs defaultValue="product" className="w-full h-[95%]">
+        <TabsList className="w-full">
+          <TabsTrigger value="product">Product</TabsTrigger>
+          {source === "Order" && (
+            <>
+              <TabsTrigger value="service">Service</TabsTrigger>
+              <TabsTrigger value="course">Course</TabsTrigger>
+            </>
+          )}
+        </TabsList>
+        <TabsContent value="product" className="h-full">
+          <ProductList onSelect={handleAddProduct} />
+        </TabsContent>
+        {source === "Order" && (
+          <>
+            <TabsContent value="service" className="h-full">
+              <ServiceList onSelect={handleAddService!} />
+            </TabsContent>
+            <TabsContent value="course" className="h-full">
+              <CourseList onSelect={handleAddCourse!} />
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
+
+      {/* {source === "Order" ? (
+        <Tabs defaultValue="product" className="w-full h-[95%]">
           <TabsList>
             <TabsTrigger value="product">Product</TabsTrigger>
             <TabsTrigger value="service">Service</TabsTrigger>
             <TabsTrigger value="course">Course</TabsTrigger>
           </TabsList>
-          <TabsContent value="product">
+          <TabsContent value="product" className="h-full">
             <ProductList onSelect={handleAddProduct} />
           </TabsContent>
-          <TabsContent value="service">
+          <TabsContent value="service" className="h-full">
             <ServiceList onSelect={handleAddService!} />
           </TabsContent>
-          <TabsContent value="course">
+          <TabsContent value="course" className="h-full">
             <CourseList onSelect={handleAddCourse!} />
           </TabsContent>
         </Tabs>
       ) : (
         <ProductList onSelect={handleAddProduct} />
-      )}
+      )} */}
     </>
   );
 };

@@ -126,7 +126,7 @@ export function MultiModuleComboBox({
                 return (
                   <CommandItem
                     key={module.id}
-                    value={module.name}
+                    value={module.id.toString()}
                     onSelect={() => toggleModule(module)}
                   >
                     <Check

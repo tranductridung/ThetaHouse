@@ -1,9 +1,4 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/pages/Layout";
 import Login from "@/pages/Auth/Login";
 import Signup from "@/pages/Auth/Signup";
@@ -38,13 +33,16 @@ import Enrollment from "./pages/enrollment.page";
 import CourseDetail from "./pages/course-detail.page";
 import CourseStaff from "./pages/course-staff.page";
 import Test from "./pages/test.page";
+import ProtectedRoute from "./auth/ProtectedRoute";
+import { AuthProvider } from "./auth/AuthContext";
+import PublicRoute from "./auth/PublicRoute";
 
 const App = () => {
   return (
-    <>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Layout />}>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route element={<ProtectedRoute />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="test" element={<Test />} />
 
@@ -62,8 +60,8 @@ const App = () => {
 
             <Route path="appointments" element={<Appointment />} />
 
-            <Route path="/finance/payments" element={<Payment />} />
-            <Route path="/finance/transactions" element={<Transaction />} />
+            <Route path="finance/payments" element={<Payment />} />
+            <Route path="finance/transactions" element={<Transaction />} />
 
             <Route path="resources/modules" element={<Module />} />
             <Route path="resources/rooms" element={<Room />} />
@@ -74,7 +72,7 @@ const App = () => {
               element={<PartnerDetail />}
             />
 
-            <Route path="/sources" element={<SourcePage />}>
+            <Route path="sources" element={<SourcePage />}>
               <Route path="purchases" element={<Purchase />} />
               <Route path="orders" element={<Order />} />
               <Route path="consignments" element={<Consignment />} />
@@ -91,20 +89,23 @@ const App = () => {
               />
             </Route>
           </Route>
+        </Route>
 
+        {/* Public routes */}
+        <Route element={<PublicRoute />}>
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/signup" element={<Signup />} />
+        </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
       <Toaster
         swipeDirections={["left", "top"]}
         richColors
         closeButton
       ></Toaster>
-    </>
+    </AuthProvider>
   );
 };
 

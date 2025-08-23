@@ -1,4 +1,4 @@
-import type { TransactionStatusType } from "@/components/constants/constants";
+import type { TransactionStatusConst } from "@/components/constants/constants";
 import {
   CheckCircle2Icon,
   CircleX,
@@ -6,7 +6,7 @@ import {
   ClockIcon,
 } from "lucide-react";
 
-export const getTransactionStatusIcon = (status: TransactionStatusType) => {
+export const getTransactionStatusIcon = (status: TransactionStatusConst) => {
   switch (status) {
     case "Paid":
       return (
@@ -21,7 +21,7 @@ export const getTransactionStatusIcon = (status: TransactionStatusType) => {
   }
 };
 
-export const getTransactionStatusStyle = (status?: TransactionStatusType) => {
+export const getTransactionStatusStyle = (status?: TransactionStatusConst) => {
   switch (status) {
     case "Paid":
       return "bg-green-200 text-green-600";

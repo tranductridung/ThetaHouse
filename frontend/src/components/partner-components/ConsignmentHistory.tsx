@@ -1,9 +1,8 @@
-import Consignment from "@/pages/consignment.page";
-import type { TypeOfPartner } from "../constants/constants";
+import type { PartnerTypeConst } from "../constants/constants";
 
 type ConsignmentHistoryProps = {
   partnerId: number;
-  partnerType: TypeOfPartner;
+  partnerType: PartnerTypeConst;
 };
 
 const ConsignmentHistory = ({

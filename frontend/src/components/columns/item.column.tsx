@@ -12,15 +12,16 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { getItemStatusIcon } from "../styles/ItemStatus";
 import type { ItemType } from "../schemas/item.schema";
-import type { SourceType } from "../constants/constants";
+import type { SourceTypeConst } from "../constants/constants";
 
 type ItemColumnsProps = {
   hasAction: boolean;
-  onRemove?: (itemId: number, sourceId: number, sourceType: SourceType) => void;
+  onRemove?: (itemId: number, sourceId: number, sourceType: SourceTypeConst) => void;
   onTransfer?: (itemId: number) => void;
   onAddExportImport?: (itemId: number) => void;
   consignmentType?: "In" | "Out" | undefined;
   onCreateAppointment?: (id: number) => void;
+  onChangeCourse?: (id: number) => void;
 };
 
 export const itemColumns = ({
@@ -30,8 +31,9 @@ export const itemColumns = ({
   onRemove,
   onAddExportImport,
   consignmentType,
+  onChangeCourse,
 }: ItemColumnsProps): ColumnDef<ItemType>[] => {
-  const getAction = (sourceType: SourceType) => {
+  const getAction = (sourceType: SourceTypeConst) => {
     if (sourceType === "Order") return "Export";
     if (sourceType === "Purchase") return "Import";
 
@@ -165,6 +167,16 @@ export const itemColumns = ({
                     {getAction(row.original.sourceType)}
                   </DropdownMenuItem>
                 )}
+
+              {row.original.itemableType === "Course" && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => onChangeCourse(row.original.id)}
+                  >
+                    Change course
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );

@@ -1,13 +1,35 @@
 "use client";
 
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
+import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -21,30 +43,24 @@ import {
   type ConsignmentDraftType,
 } from "@/components/schemas/source.schema";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { ProductType } from "../schemas/product.schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
-import { UserComboBox } from "../comboBoxs/user.comboBox";
+import { ChevronsUpDown, X } from "lucide-react";
 import AddItemRow from "../commands/items.command";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserComboBox } from "../comboBoxs/user.comboBox";
+import type { ProductType } from "../schemas/product.schema";
+import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 
 type ConsignmentProps = {
   onSubmit: (formData: ConsignmentDraftType) => void;
 };
 
 export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
+  const [isOpen, setIsOpen] = useState(true);
   const form = useForm<ConsignmentDraftType>({
     resolver: zodResolver(consignmentDraftSchema),
     defaultValues: {
@@ -116,6 +132,11 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
   };
 
   const handleAddProduct = (product: ProductType) => {
+    if (watchedType === "Out" && product.quantity <= 0) {
+      toast.error("Product not available!");
+      return;
+    }
+
     const selectedProducts = form.getValues("items");
 
     const alreadyExists = selectedProducts.some(
@@ -140,6 +161,7 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
       itemableType: "Product",
       name: product.name,
       description: product.description,
+      availableQuantity: product.quantity,
       unitPrice: priceTmp!,
       defaultOrderPrice: product.defaultOrderPrice!,
       defaultPurchasePrice: product.defaultPurchasePrice!,
@@ -240,15 +262,15 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
     const items = form.getValues("items");
 
     items.forEach((item, idx) => {
-      if (item.itemableType !== "Product") return;
+      if (item.itemableType === "Product") {
+        const newUnitPrice =
+          watchedType === "In"
+            ? item.defaultPurchasePrice
+            : item.defaultOrderPrice;
 
-      const newUnitPrice =
-        watchedType === "In"
-          ? item.defaultPurchasePrice
-          : item.defaultOrderPrice;
-
-      form.setValue(`items.${idx}.unitPrice`, newUnitPrice);
-      form.setValue(`items.${idx}.subtotal`, newUnitPrice * item.quantity);
+        form.setValue(`items.${idx}.unitPrice`, newUnitPrice);
+        form.setValue(`items.${idx}.subtotal`, newUnitPrice * item.quantity);
+      }
     });
 
     const { quantity, subtotal, discountAmount } = calculateConsignment();
@@ -261,118 +283,438 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onInternalSubmit)}
-        className="space-y-4 text-xl h-full w-full"
+        className="text-xl h-full w-full"
       >
         <div className="flex md:flex-row flex-col text-sm md:text-xl">
-          {/* General Information */}
-          <div className="flex flex-1/3 flex-col space-y-5 px-5">
-            {/* Note */}
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Note</FormLabel>
-                  <FormControl>
-                    <Input type="text" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex md:flex-row flex-col gap-5">
-              {/* Discount Amount */}
-              <FormField
-                control={form.control}
-                name="commissionRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Commission Rate</FormLabel>
-                    <FormControl>
-                      <Input
-                        min={0}
-                        max={100}
-                        step={"any"}
-                        type="number"
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === "" ? "" : Number(e.target.value)
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+          <div className="flex flex-col md:flex-3/4 space-y-5 px-3">
+            {/* General Information */}
+            <div className="flex md:flex-row justify-between gap-5 flex-col">
+              <div className="flex flex-row gap-3">
+                {/* Partner */}
+                <FormField
+                  control={form.control}
+                  name="partner"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>
+                        {watchedType === "In" ? "Supplier" : "Customer"}
+                      </FormLabel>
+                      <FormControl>
+                        <PartnerComboBox
+                          value={field.value}
+                          onChange={(partner) => field.onChange(partner)}
+                          type={watchedType === "In" ? "Supplier" : "Customer"}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Payer */}
+                {watchedType === "In" && (
+                  <FormField
+                    control={form.control}
+                    name="payer"
+                    render={({ field }) => (
+                      <FormItem className="flex-1/3">
+                        <FormLabel>Payer</FormLabel>
+                        <FormControl>
+                          <UserComboBox
+                            value={field.value}
+                            onChange={(payer) => field.onChange(payer)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
-
-              {/* Type */}
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col flex-1/2">
-                    <FormLabel>Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a type of consignment" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup className="w-full">
-                          <SelectItem value="In">In</SelectItem>
-                          <SelectItem value="Out">Out</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                {/* Note */}
+                <FormField
+                  control={form.control}
+                  name="note"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>Note</FormLabel>
+                      <FormControl>
+                        <Input type="text" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* </div>
+              <div className="flex flex-row gap-3 w-2/3"> */}
+                {/* Commission Rate */}
+                <FormField
+                  control={form.control}
+                  name="commissionRate"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>Commission Rate</FormLabel>
+                      <FormControl>
+                        <Input
+                          min={0}
+                          max={100}
+                          step={"any"}
+                          type="number"
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* Type */}
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem className="flex-1/3">
+                      <FormLabel>Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a type of consignment" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup className="w-full">
+                            <SelectItem value="In">In</SelectItem>
+                            <SelectItem value="Out">Out</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Partner */}
-            <FormField
-              control={form.control}
-              name="partner"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Partner</FormLabel>
-                  <FormControl>
-                    <PartnerComboBox
-                      value={field.value}
-                      onChange={(partner) => field.onChange(partner)}
-                      type={watchedType === "In" ? "Supplier" : "Customer"}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="flex md:flex-row flex-col md:h-[510px] gap-2">
+              {/* Item Lists */}
+              <div className="flex flex-1/4 text-sm md:h-full">
+                <AddItemRow
+                  handleAddProduct={handleAddProduct}
+                  handleAddService={undefined}
+                  handleAddCourse={undefined}
+                  source={"Consignment"}
+                ></AddItemRow>
+              </div>
 
-            {/* Payer */}
-            {watchedType === "In" && (
-              <FormField
-                control={form.control}
-                name="payer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payer</FormLabel>
-                    <FormControl>
-                      <UserComboBox
-                        value={field.value}
-                        onChange={(payer) => field.onChange(payer)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+              {/* Table */}
+              {/* Selected item lists for device not mobile*/}
+              <Collapsible
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                className=" flex-col flex-3/4 w-full h-full border-2 md:ml-3 md:flex hidden"
+              >
+                <div className="bg-slate-200 py-3 px-2 flex items-center justify-between gap-4">
+                  <h4 className="text-md font-bold">
+                    ORDER ITEMS ({watchedItems.length})
+                  </h4>
 
-            {/* Consignment Discount */}
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <ChevronsUpDown />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent className="flex-1 overflow-y-auto">
+                  <Table>
+                    <TableCaption>A list of your selected items.</TableCaption>
+                    <TableHeader className="sticky top-0 z-10 bg-red-50">
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Unit Price</TableHead>
+                        <TableHead>Subtotal</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fields.map((field, index) => {
+                        return (
+                          <TableRow key={field.id}>
+                            <TableCell className="text-left px-3 py-2">
+                              {watchedItems?.[index]?.name}
+                            </TableCell>
+
+                            {/* Quantity */}
+                            <TableCell>
+                              <FormField
+                                name={`items.${index}.quantity`}
+                                control={control}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min={1}
+                                        value={field.value}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const number = !val
+                                            ? null
+                                            : Number(val);
+                                          field.onChange(number);
+                                          handleQuantityChange(
+                                            index,
+                                            number ?? 1
+                                          );
+                                        }}
+                                        onBlur={(e) => {
+                                          let number = Number(e.target.value);
+                                          if (!number) number = 1;
+                                          field.onChange(number);
+                                          handleQuantityChange(index, number);
+                                        }}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              <FormMessage></FormMessage>
+                            </TableCell>
+
+                            {/* Unit Price */}
+                            <TableCell>
+                              <FormField
+                                name={`items.${index}.unitPrice`}
+                                control={control}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        value={field.value}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          const number = !val
+                                            ? null
+                                            : Number(val);
+                                          field.onChange(number);
+                                          handleChangeUnitPrice(
+                                            index,
+                                            number ?? 0
+                                          );
+                                        }}
+                                        onBlur={(e) => {
+                                          const number = Number(e.target.value);
+                                          field.onChange(number ?? 0);
+                                        }}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </TableCell>
+
+                            {/* Subtotal */}
+                            <TableCell>
+                              {formatCurrency(
+                                watchedItems?.[index]?.subtotal || 0
+                              )}
+                            </TableCell>
+
+                            {/* Total */}
+                            <TableCell>
+                              {formatCurrency(
+                                watchedItems?.[index]?.subtotal -
+                                  (watchedItems?.[index]?.discountAmount ?? 0) >
+                                  0
+                                  ? watchedItems?.[index]?.subtotal -
+                                      (watchedItems?.[index]?.discountAmount ??
+                                        0)
+                                  : 0
+                              )}
+                            </TableCell>
+
+                            <TableCell>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => handleRemoveItem(index)}
+                                className="hover:bg-red-200 hover:text-red-500"
+                              >
+                                <X size={20} />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Selected item lists for mobile*/}
+              <Collapsible
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                className="flex flex-col flex-3/4 w-full h-full border-2 md:ml-3 md:hidden"
+              >
+                <div className="bg-slate-200 py-3 px-2 flex items-center justify-between gap-4">
+                  <h4 className="text-md font-bold">
+                    ORDER ITEMS ({watchedItems.length})
+                  </h4>
+
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <ChevronsUpDown />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent className="flex-1 overflow-y-auto">
+                  {fields.map((field, index) => {
+                    return (
+                      <Card
+                        key={field.id}
+                        className="w-full max-w-sm text-md mb-4"
+                      >
+                        <CardHeader className="flex justify-between items-center">
+                          <CardTitle>{watchedItems?.[index]?.name}</CardTitle>
+                          <CardAction>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleRemoveItem(index)}
+                              className="hover:bg-red-200 hover:text-red-500"
+                            >
+                              <X size={20} />
+                            </Button>
+                          </CardAction>
+                        </CardHeader>
+
+                        <CardContent className="space-y-3">
+                          {/* Quantity */}
+                          <div className="flex justify-between items-center">
+                            <span>Quantity</span>
+                            <FormField
+                              name={`items.${index}.quantity`}
+                              control={control}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const number = !val
+                                          ? null
+                                          : Number(val);
+                                        field.onChange(number);
+                                        handleQuantityChange(
+                                          index,
+                                          number ?? 1
+                                        );
+                                      }}
+                                      onBlur={(e) => {
+                                        let number = Number(e.target.value);
+                                        if (!number) number = 1;
+                                        field.onChange(number);
+                                        handleQuantityChange(index, number);
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Unit Price */}
+                          <div className="flex justify-between items-center">
+                            <span>Unit Price</span>
+                            <FormField
+                              name={`items.${index}.unitPrice`}
+                              control={control}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const number = !val
+                                          ? null
+                                          : Number(val);
+                                        field.onChange(number);
+                                        handleChangeUnitPrice(
+                                          index,
+                                          number ?? 0
+                                        );
+                                      }}
+                                      onBlur={(e) => {
+                                        const number = Number(e.target.value);
+
+                                        field.onChange(number ?? 0);
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Subtotal */}
+                          <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>
+                              {formatCurrency(
+                                watchedItems?.[index]?.subtotal ?? 0
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Discount amount */}
+                          <div className="flex justify-between border-b-2 pb-2">
+                            <span>Discount amount</span>
+                            <span>
+                              {formatCurrency(
+                                watchedItems?.[index]?.discountAmount ?? 0
+                              )}
+                            </span>
+                          </div>
+                        </CardContent>
+
+                        <CardFooter className="flex justify-between font-bold">
+                          <span>Total</span>
+                          <span>
+                            {watchedItems?.[index]?.subtotal -
+                              (watchedItems?.[index]?.discountAmount ?? 0) >
+                            0
+                              ? watchedItems?.[index]?.subtotal -
+                                  (watchedItems?.[index]?.discountAmount ?? 0) >
+                                0
+                              : 0}
+                          </span>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 md:flex-1/4 px-3">
             <Card>
               <CardHeader>
                 <CardTitle>Consignment Summary</CardTitle>
@@ -405,101 +747,12 @@ export default function CreateConsignmentForm({ onSubmit }: ConsignmentProps) {
                 </span>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Item List */}
-          <div className="flex flex-1/3 space-y-5 h-full">
-            <AddItemRow
-              handleAddProduct={handleAddProduct}
-              type={"Consignment"}
-            ></AddItemRow>
-          </div>
-
-          {/* Item Lists */}
-          <div className="flex flex-1/3 space-y-5">
-            {watchedItems.length !== 0 && (
-              <>
-                <div className="flex flex-col p-4 space-y-5 justify-start items-end w-full max-h-[550px] overflow-auto">
-                  {fields.map((item, index) => (
-                    <Card key={item.id} className="w-full">
-                      <CardHeader>
-                        <CardTitle>
-                          {item.itemableType} {item.name}
-                        </CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                        <CardAction>
-                          <div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => handleRemoveItem(index)}
-                              className="hover:bg-red-200 hover:text-red-500"
-                            >
-                              <X size={28} />
-                            </Button>
-                          </div>
-                        </CardAction>
-                      </CardHeader>
-
-                      {/* Quanity */}
-                      <CardContent className="flex justify-between">
-                        <span>Quantity: </span>
-                        <Input
-                          type="number"
-                          min={1}
-                          {...form.register(`items.${index}.quantity`, {
-                            valueAsNumber: true,
-                            onChange: (e) => {
-                              const quantity = Number(e.target.value);
-                              handleQuantityChange(index, quantity);
-                            },
-                          })}
-                          className="w-20 inline-block"
-                        />
-                      </CardContent>
-
-                      {/* Unit Price */}
-                      <CardContent className="flex justify-between">
-                        <span>Unit Price: </span>
-                        <Input
-                          type="number"
-                          min={1}
-                          {...form.register(`items.${index}.unitPrice`, {
-                            valueAsNumber: true,
-                            onChange: (e) => {
-                              const unitPrice = Number(e.target.value);
-                              handleChangeUnitPrice(index, unitPrice);
-                            },
-                          })}
-                          className="w-20 inline-block"
-                        />
-                      </CardContent>
-
-                      {/* Item Total */}
-                      <CardContent className="flex justify-between border-t-2 pt-2">
-                        <h1 className="font-bold">Total: </h1>
-                        <span>{}</span>
-                        <span>
-                          {watchedItems?.[index]?.subtotal.toLocaleString(
-                            "vi-VN",
-                            {
-                              style: "currency",
-                              currency: "VND",
-                            }
-                          )}
-                        </span>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </>
-            )}
+            <Button type="submit" className="w-full">
+              Create Consignment
+            </Button>
           </div>
         </div>
-
-        <Button type="submit" className="w-full">
-          Create Consignment
-        </Button>
       </form>
     </Form>
   );

@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { UserService } from './../user/user.service';
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -11,8 +12,7 @@ import { UserRole, UserStatus } from 'src/common/enums/enum';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { TokenService } from 'src/token/token.service';
 import { MailService } from 'src/mail/mail.service';
-import { UserOAuthData, UserPayload } from './user-payload.interface';
-import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { UserPayload } from './user-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -57,8 +57,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid Credentials!');
     }
 
-    if (user.status !== UserStatus.ACTIVE)
-      throw new UnauthorizedException('Account is not activated!');
+    switch (user.status) {
+      case UserStatus.INACTIVE:
+        throw new ForbiddenException('Account is inactive!');
+      case UserStatus.UNVERIFIED:
+        throw new UnauthorizedException('Account is not verified!');
+      case UserStatus.PENDING:
+        throw new ForbiddenException(
+          'Account is pending approval. Please contact the administrator to validate your account.',
+        );
+    }
 
     return {
       id: user.id,

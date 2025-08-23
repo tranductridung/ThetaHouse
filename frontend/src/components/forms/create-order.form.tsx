@@ -1,15 +1,23 @@
 "use client";
 
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
@@ -21,25 +29,20 @@ import {
   type OrderDraftType,
 } from "@/components/schemas/source.schema";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import AddDiscount from "@/pages/AddDiscount";
 import { Button } from "@/components/ui/button";
 import { type ProductType } from "../schemas/product.schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ServiceType } from "../schemas/service.schema";
 import type { DiscountType } from "../schemas/discount.schema";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
-  Banknote,
-  Barcode,
-  ChevronsUpDown,
-  Edit,
-  Percent,
-  Tag,
-  X,
-} from "lucide-react";
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
+import { ChevronsUpDown, X } from "lucide-react";
 import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
 import AddItemRow from "../commands/items.command";
 import type { CourseType } from "../schemas/course.schema";
@@ -48,6 +51,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
+import { DiscountComboBox } from "../comboBoxs/discount.comboBox";
+import { formatCurrency } from "@/lib/utils";
 
 type OrderProps = {
   onSubmit: (formData: OrderDraftType) => void;
@@ -55,9 +60,6 @@ type OrderProps = {
 
 export default function CreateOrderForm({ onSubmit }: OrderProps) {
   const [isOpen, setIsOpen] = useState(true);
-  const [openDialogIndex, setOpenDialogIndex] = useState<number | null>(null);
-  const [openOrderDiscountDialog, setOpenOrderDiscountDialog] =
-    useState<boolean>(false);
 
   const form = useForm<OrderDraftType>({
     resolver: zodResolver(orderDraftSchema),
@@ -123,7 +125,32 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
     form.setValue(`items.${index}.discountAmount`, discountAmount);
   };
 
+  const handleChangeUnitPrice = (index: number, unitPrice: number) => {
+    const item = form.getValues(`items.${index}`);
+    const { quantity, discount } = item;
+
+    const { discountAmount, subtotal } = calculateDiscountAmount(
+      quantity,
+      unitPrice,
+      discount
+    );
+
+    const allItems = form.getValues("items");
+    const orderSubtotal = allItems.reduce((acc, item, i) => {
+      return acc + (i === index ? unitPrice : item.unitPrice);
+    }, 0);
+
+    form.setValue(`subtotal`, orderSubtotal);
+    form.setValue(`items.${index}.subtotal`, subtotal);
+    form.setValue(`items.${index}.discountAmount`, discountAmount);
+  };
+
   const handleAddProduct = (product: ProductType) => {
+    if (product.quantity <= 0) {
+      toast.error("Product not available!");
+      return;
+    }
+
     const selectedProducts = form.getValues("items");
 
     const alreadyExists = selectedProducts.some(
@@ -148,6 +175,7 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
       itemableType: "Product",
       discount: undefined,
       name: product.name,
+      availableQuantity: product.quantity,
       description: product.description,
       unitPrice: product.defaultOrderPrice ?? 0,
       subtotal: subtotal,
@@ -225,15 +253,20 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
   };
 
   const handleRemoveItem = (index: number) => {
-    const item = form.getValues(`items.${index}`);
+    const items = form.getValues("items");
+
+    if (!items || !items[index]) return;
+
+    const item = items[index];
+    const itemSubtotal =
+      (item.subtotal ?? item.quantity * item.unitPrice) -
+      (item.discountAmount ?? 0);
 
     setValue("quantity", watchedQuantity - item.quantity);
-    setValue(
-      "subtotal",
-      watchedSubtotal - (item.subtotal - (item.discountAmount ?? 0))
-    );
+    setValue("subtotal", watchedSubtotal - itemSubtotal);
 
     remove(index);
+
     toast.success(`Remove item success!`);
   };
 
@@ -249,14 +282,10 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
       else discountAmount = subtotal * (discount.value / 100);
     }
 
-    // Min value of item to use this discount
-    if (
-      discount?.minTotalValue &&
-      discount.maxDiscountAmount !== 0 &&
-      discount.minTotalValue > subtotal
-    )
+    // Check if item not satisfy discount condition
+    if (discount?.minTotalValue && subtotal < discount.minTotalValue)
       return {
-        discountAmount,
+        discountAmount: 0,
         subtotal,
       };
 
@@ -295,10 +324,8 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
 
       // Order subtotal minus new discount amount of item
       form.setValue("subtotal", watchedSubtotal - discountAmount);
-      setOpenDialogIndex(null);
     } else {
       form.setValue("discount", discount);
-      setOpenOrderDiscountDialog(false);
     }
 
     toast.success(`Add discount success!`);
@@ -333,6 +360,7 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
 
   const calculateOrder = () => {
     const items = form.getValues("items");
+
     let orderQuantity = 0;
     let orderSubtotal = 0;
 
@@ -349,13 +377,14 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
 
     return {
       quantity: orderQuantity,
-      subtotal: orderSubtotal >= 0 ? orderSubtotal : 0,
+      subtotal: orderSubtotal > 0 ? orderSubtotal : 0,
       discountAmount,
     };
   };
 
   useEffect(() => {
     const result = calculateOrder();
+
     const currentSubtotal = form.getValues("subtotal");
     const currentDiscountAmount = form.getValues("discountAmount");
     const currentQuantity = form.getValues("quantity");
@@ -384,120 +413,426 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
     reset();
   };
 
-  const handleChangeUnitPrice = (index: number, unitPrice: number) => {
-    const item = form.getValues(`items.${index}`);
-
-    const itemSubtotal = unitPrice * item.quantity;
-
-    const allItems = form.getValues("items");
-    const orderSubtotal = allItems.reduce((acc, item, i) => {
-      return acc + (i === index ? unitPrice : item.unitPrice);
-    }, 0);
-
-    form.setValue(`subtotal`, orderSubtotal);
-    form.setValue(`items.${index}.subtotal`, itemSubtotal);
-  };
-
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form
         onSubmit={form.handleSubmit(onInternalSubmit)}
-        className="space-y-4 text-xl h-full w-full "
+        className="space-y-4 text-xl h-full w-full"
       >
         <div className="flex md:flex-row flex-col text-sm md:text-xl">
-          {/* General Information */}
-          <div className="flex flex-1/4 flex-col space-y-5 px-5">
-            {/* Note */}
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Note</FormLabel>
-                  <FormControl>
-                    <Input type="text" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="flex flex-col md:flex-3/4 space-y-5 px-3">
+            {/* General Information */}
+            <div className="flex md:flex-row justify-between gap-5 flex-col">
+              {/* Customer */}
+              <FormField
+                control={form.control}
+                name="customer"
+                render={({ field }) => (
+                  <FormItem className="flex-1/3">
+                    <FormLabel>Customer</FormLabel>
+                    <FormControl>
+                      <PartnerComboBox
+                        value={field.value}
+                        onChange={(partner) => field.onChange(partner)}
+                        type="Customer"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Discount */}
+              <FormField
+                control={form.control}
+                name="discount"
+                render={({ field }) => (
+                  <FormItem className="flex-1/3">
+                    <FormLabel>Discount</FormLabel>
+                    <FormControl>
+                      <DiscountComboBox
+                        value={field.value}
+                        onChange={(discount) => field.onChange(discount)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Customer */}
-            <FormField
-              control={form.control}
-              name="customer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Customer</FormLabel>
-                  <FormControl>
-                    <PartnerComboBox
-                      value={field.value}
-                      onChange={(partner) => field.onChange(partner)}
-                      type="Customer"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Note */}
+              <FormField
+                control={form.control}
+                name="note"
+                render={({ field }) => (
+                  <FormItem className="flex-1/3">
+                    <FormLabel>Note</FormLabel>
+                    <FormControl>
+                      <Input type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            {/* Order Discount */}
-            <Card>
-              {watchedDiscount ? (
-                <>
-                  <CardHeader>
-                    <CardTitle className="text-2xl">Discount</CardTitle>
-                    <CardAction>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setOpenOrderDiscountDialog(true);
-                        }}
-                        className="bg-transparent text-blue-500 hover:bg-blue-100"
+            <div className="flex md:flex-row flex-col md:h-[510px] gap-2">
+              {/* Item Lists */}
+              <div className="flex flex-1/4 text-sm md:h-full">
+                <AddItemRow
+                  handleAddProduct={handleAddProduct}
+                  handleAddService={handleAddService}
+                  handleAddCourse={handleAddCourse}
+                  source={"Order"}
+                ></AddItemRow>
+              </div>
+
+              {/* Table */}
+              {/* Selected item lists for device not mobile*/}
+              <Collapsible
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                className=" flex-col flex-3/4 w-full h-full border-2 md:ml-3 md:flex hidden"
+              >
+                <div className="bg-slate-200 py-3 px-2 flex items-center justify-between gap-4">
+                  <h4 className="text-md font-bold">
+                    ORDER ITEMS ({watchedItems.length})
+                  </h4>
+
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <ChevronsUpDown />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent className="flex-1 overflow-y-auto">
+                  <Table>
+                    <TableCaption>A list of your selected items.</TableCaption>
+                    <TableHeader className="sticky top-0 z-10 bg-red-50">
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Unit Price</TableHead>
+                        <TableHead>Subtotal</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fields.map((field, index) => {
+                        return (
+                          <React.Fragment key={field.id}>
+                            <TableRow>
+                              <TableCell className="text-left px-3 py-2">
+                                {watchedItems?.[index]?.name}
+                              </TableCell>
+
+                              {/* Quantity */}
+                              <TableCell>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.quantity`}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min={1}
+                                          value={field.value}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            const number = !val
+                                              ? null
+                                              : Number(val);
+                                            field.onChange(number);
+                                            handleQuantityChange(
+                                              index,
+                                              number ?? 1
+                                            );
+                                          }}
+                                          onBlur={(e) => {
+                                            let number = Number(e.target.value);
+                                            if (!number) number = 1;
+                                            field.onChange(number);
+                                            handleQuantityChange(index, number);
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+
+                              {/* Unit Price */}
+                              <TableCell>
+                                <FormField
+                                  name={`items.${index}.unitPrice`}
+                                  control={control}
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min={0}
+                                          value={field.value}
+                                          onChange={(e) => {
+                                            const val = e.target.value;
+                                            const number = !val
+                                              ? null
+                                              : Number(val);
+                                            field.onChange(number);
+                                            handleChangeUnitPrice(
+                                              index,
+                                              number ?? 0
+                                            );
+                                          }}
+                                          onBlur={(e) => {
+                                            const number = Number(
+                                              e.target.value
+                                            );
+                                            field.onChange(number ?? 0);
+                                          }}
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                              </TableCell>
+
+                              {/* Subtotal */}
+                              <TableCell>
+                                {formatCurrency(
+                                  watchedItems?.[index]?.subtotal || 0
+                                )}
+                              </TableCell>
+
+                              {/* Total */}
+                              <TableCell>
+                                {formatCurrency(
+                                  watchedItems?.[index]?.subtotal -
+                                    (watchedItems?.[index]?.discountAmount ??
+                                      0) >
+                                    0
+                                    ? watchedItems?.[index]?.subtotal -
+                                        (watchedItems?.[index]
+                                          ?.discountAmount ?? 0)
+                                    : 0
+                                )}
+                              </TableCell>
+
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveItem(index)}
+                                  className="hover:bg-red-200 hover:text-red-500"
+                                >
+                                  <X size={20} />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+
+                            <TableRow className="shadow-sm bg-gray-50">
+                              <TableCell>
+                                <DiscountComboBox
+                                  value={watchedItems?.[index]?.discount}
+                                  onChange={(discount) => {
+                                    if (discount)
+                                      handleAddDiscount(discount, index);
+                                    else handleRemoveDiscount(index);
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell />
+                              <TableCell />
+                              <TableCell className="text-right px-3 py-1 font-semibold text-red-600">
+                                {watchedItems?.[index]?.discountAmount
+                                  ? formatCurrency(
+                                      watchedItems?.[index]?.discountAmount ?? 0
+                                    )
+                                  : "-"}
+                              </TableCell>
+                              <TableCell />
+                              <TableCell />
+                            </TableRow>
+                          </React.Fragment>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Selected item lists for mobile*/}
+              <Collapsible
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                className="flex flex-col flex-3/4 w-full h-full border-2 md:ml-3 md:hidden"
+              >
+                <div className="bg-slate-200 py-3 px-2 flex items-center justify-between gap-4">
+                  <h4 className="text-md font-bold">
+                    ORDER ITEMS ({watchedItems.length})
+                  </h4>
+
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <ChevronsUpDown />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent className="flex-1 overflow-y-auto">
+                  {fields.map((field, index) => {
+                    return (
+                      <Card
+                        key={field.id}
+                        className="w-full max-w-sm text-md mb-4"
                       >
-                        <Edit />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => handleRemoveDiscount()}
-                        className="hover:bg-red-100 "
-                      >
-                        <X size={28} className="text-red-500" />
-                      </Button>
-                    </CardAction>
-                  </CardHeader>
-                  {watchedDiscount ? "" : ""}
-                  <CardContent className="flex flex-row space-x-3">
-                    <Tag />
-                    <p> {`${watchedDiscount?.name}`}</p>
-                  </CardContent>
-                  <CardContent className="flex flex-row space-x-3">
-                    <Barcode />
-                    <p> {`${watchedDiscount?.code}`}</p>
-                  </CardContent>
-                  <CardContent className="flex flex-row space-x-3">
-                    {watchedDiscount?.type === "Fixed" ? (
-                      <Banknote />
-                    ) : (
-                      <Percent />
-                    )}
-                    <p> {`${form.getValues("discount.value")}`}</p>
-                  </CardContent>
-                </>
-              ) : (
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => {
-                    setOpenOrderDiscountDialog(true);
-                  }}
-                >
-                  Add Discount (Optional)
-                </Button>
-              )}
-            </Card>
+                        <CardHeader className="flex justify-between items-center">
+                          <CardTitle>{watchedItems?.[index]?.name}</CardTitle>
+                          <CardAction>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => handleRemoveItem(index)}
+                              className="hover:bg-red-200 hover:text-red-500"
+                            >
+                              <X size={20} />
+                            </Button>
+                          </CardAction>
+                        </CardHeader>
 
+                        <CardContent className="space-y-3">
+                          {/* Quantity */}
+                          <div className="flex justify-between items-center">
+                            <span>Quantity</span>
+                            <FormField
+                              name={`items.${index}.quantity`}
+                              control={control}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const number = !val
+                                          ? null
+                                          : Number(val);
+                                        field.onChange(number);
+                                        handleQuantityChange(
+                                          index,
+                                          number ?? 1
+                                        );
+                                      }}
+                                      onBlur={(e) => {
+                                        let number = Number(e.target.value);
+                                        if (!number) number = 1;
+                                        field.onChange(number);
+                                        handleQuantityChange(index, number);
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Unit Price */}
+                          <div className="flex justify-between items-center">
+                            <span>Unit Price</span>
+                            <FormField
+                              name={`items.${index}.unitPrice`}
+                              control={control}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={field.value}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        const number = !val
+                                          ? null
+                                          : Number(val);
+                                        field.onChange(number);
+                                        handleChangeUnitPrice(
+                                          index,
+                                          number ?? 0
+                                        );
+                                      }}
+                                      onBlur={(e) => {
+                                        const number = Number(e.target.value);
+                                        field.onChange(number ?? 0);
+                                      }}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Subtotal */}
+                          <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>
+                              {formatCurrency(
+                                watchedItems?.[index]?.subtotal ?? 0
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Discount */}
+                          <div className="flex justify-between border-t-2 pt-2">
+                            <span>Discount</span>
+                            <span>
+                              <DiscountComboBox
+                                value={watchedItems?.[index]?.discount}
+                                onChange={(discount) => {
+                                  if (discount)
+                                    handleAddDiscount?.(discount, index);
+                                  else handleRemoveDiscount?.(index);
+                                }}
+                              />
+                            </span>
+                          </div>
+
+                          {/* Discount amount */}
+                          <div className="flex justify-between border-b-2 pb-2">
+                            <span>Discount amount</span>
+                            <span>
+                              {formatCurrency(
+                                watchedItems?.[index]?.discountAmount ?? 0
+                              )}
+                            </span>
+                          </div>
+                        </CardContent>
+
+                        <CardFooter className="flex justify-between font-bold">
+                          <span>Total</span>
+                          <span>
+                            {watchedItems?.[index]?.subtotal -
+                              (watchedItems?.[index]?.discountAmount ?? 0) >
+                            0
+                              ? watchedItems?.[index]?.subtotal -
+                                  (watchedItems?.[index]?.discountAmount ?? 0) >
+                                0
+                              : 0}
+                          </span>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 md:flex-1/4 px-3">
             <Card>
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
@@ -509,231 +844,31 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
               </CardContent>
               <CardContent className="flex justify-between">
                 <span>Subtotal: </span>
-                <span>{watchedSubtotal}</span>
+                <span>{formatCurrency(watchedSubtotal)}</span>
               </CardContent>
               <CardContent className="flex justify-between">
-                <span>Discount amount:</span>
-                <span> {watchedDiscountAmount}</span>
+                <span>Discount:</span>
+                <span> {formatCurrency(watchedDiscountAmount)}</span>
               </CardContent>
 
               <CardContent className="flex justify-between border-t-2 pt-2">
                 <span className="font-bold">Total: </span>
                 <span>
-                  {watchedSubtotal - watchedDiscountAmount > 0
-                    ? watchedSubtotal - watchedDiscountAmount
-                    : 0}
+                  {formatCurrency(
+                    watchedSubtotal - watchedDiscountAmount > 0
+                      ? watchedSubtotal - watchedDiscountAmount
+                      : 0
+                  )}
                 </span>
               </CardContent>
             </Card>
+
+            <Button type="submit" className="w-full">
+              Create Order
+            </Button>
           </div>
-
-          {/* Item List */}
-          <div className="flex flex-1/4 space-y-5 h-full">
-            <AddItemRow
-              handleAddProduct={handleAddProduct}
-              handleAddService={handleAddService}
-              handleAddCourse={handleAddCourse}
-              source={"Order"}
-            ></AddItemRow>
-          </div>
-
-          {/* Selected Item List RAW */}
-          <Collapsible
-            open={isOpen}
-            onOpenChange={setIsOpen}
-            className="flex flex-col gap-2 flex-1/2"
-          >
-            <div className="flex items-center justify-between gap-4 px-4">
-              <h4 className="text-md font-bold">
-                Order items ({watchedItems.length})
-              </h4>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="size-8">
-                  <ChevronsUpDown />
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className="flex flex-col gap-2">
-              <div className="flex flex-col p-4 space-y-5 justify-start items-end w-full max-h-[500px] overflow-auto">
-                {fields.map((item, index) => (
-                  <Card key={item.id} className="w-full">
-                    <CardHeader>
-                      <CardTitle>
-                        {item.itemableType} {item.name}
-                      </CardTitle>
-                      <CardDescription>{item.description}</CardDescription>
-                      <CardAction>
-                        <div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => handleRemoveItem(index)}
-                            className="hover:bg-red-200 hover:text-red-500"
-                          >
-                            <X size={28} />
-                          </Button>
-
-                          <Dialog
-                            open={openDialogIndex === index}
-                            onOpenChange={(isOpen) => {
-                              if (!isOpen) {
-                                setOpenDialogIndex(null);
-                              }
-                            }}
-                          >
-                            <DialogContent>
-                              <DialogTitle></DialogTitle>
-                              <AddDiscount
-                                handleAddDiscount={handleAddDiscount}
-                                itemId={index}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </CardAction>
-                    </CardHeader>
-
-                    {/* Button */}
-                    <div>
-                      <Dialog
-                        open={openDialogIndex === index}
-                        onOpenChange={(isOpen) => {
-                          if (!isOpen) {
-                            setOpenDialogIndex(null);
-                          }
-                        }}
-                      >
-                        <DialogContent>
-                          <DialogTitle></DialogTitle>
-                          <AddDiscount
-                            handleAddDiscount={handleAddDiscount}
-                            itemId={index}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-
-                    {/* Quanity */}
-                    <CardContent className="flex justify-between">
-                      <span>Quantity: </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register(`items.${index}.quantity`, {
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const quantity = Number(e.target.value);
-                            handleQuantityChange(index, quantity);
-                          },
-                        })}
-                        className="w-20 inline-block"
-                      />
-                    </CardContent>
-
-                    {/* Subtotal */}
-                    <CardContent className="flex justify-between">
-                      <span>Unit Price: </span>
-                      <Input
-                        type="number"
-                        min={1}
-                        {...form.register(`items.${index}.unitPrice`, {
-                          valueAsNumber: true,
-                          onChange: (e) => {
-                            const unitPrice = Number(e.target.value);
-                            handleChangeUnitPrice(index, unitPrice);
-                          },
-                        })}
-                        className="w-20 inline-block"
-                      />
-                    </CardContent>
-
-                    <CardContent className="flex justify-between border-t-2 pt-2">
-                      <span>Subtotal:</span>
-                      <span>{watchedItems?.[index]?.subtotal || 0}</span>
-                    </CardContent>
-
-                    {/* Item Discount */}
-                    <CardContent className="flex flex-col border-t-2 pt-2">
-                      {watchedItems?.[index]?.discount ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span>Discount Code:</span>
-                            <span>{watchedItems?.[index]?.discount.code}</span>
-                          </div>
-
-                          <div className="flex justify-between">
-                            <span>Discount Amount:</span>
-                            <span>{watchedItems?.[index]?.discountAmount}</span>
-                          </div>
-
-                          <div className="text-right text-xl">
-                            <Button
-                              type="button"
-                              variant="link"
-                              onClick={() => handleRemoveDiscount(index)}
-                              className="text-red-500 p-0"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="link"
-                          onClick={() => {
-                            setOpenDialogIndex(index);
-                          }}
-                          className="p-0 text-xl"
-                        >
-                          Add Discount?
-                        </Button>
-                      )}
-                    </CardContent>
-
-                    {/* Item Total */}
-                    <CardContent className="flex justify-between border-t-2 pt-2">
-                      <h1 className="font-bold">Total: </h1>
-                      <span>
-                        {watchedItems?.[index]?.subtotal -
-                          (watchedItems?.[index]?.discountAmount ?? 0) >
-                        0
-                          ? watchedItems?.[index]?.subtotal -
-                            (watchedItems?.[index]?.discountAmount ?? 0)
-                          : 0}
-                      </span>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
         </div>
-
-        {/* Choose Order Discount */}
-        <Dialog
-          open={openOrderDiscountDialog}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setOpenOrderDiscountDialog(false);
-            }
-          }}
-        >
-          <DialogContent className="w-fit p-6">
-            <DialogTitle></DialogTitle>
-            <div className="max-w-[90vw] max-h-[80vh] overflow-y-auto overflow-x-auto">
-              <AddDiscount
-                handleAddDiscount={handleAddDiscount}
-                itemId={undefined}
-              />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        <Button type="submit" className="w-full">
-          Create Order
-        </Button>
       </form>
-    </Form>
+    </FormProvider>
   );
 }

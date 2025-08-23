@@ -10,7 +10,7 @@ import { partnerColumns } from "@/components/columns/partner.column";
 import { toast } from "sonner";
 import { handleAxiosError } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import type { TypeOfPartner } from "@/components/constants/constants";
+import type { PartnerTypeConst } from "@/components/constants/constants";
 import PageTitle from "@/components/Title";
 import PartnerModal from "@/components/modals/partner.modal";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
@@ -57,7 +57,7 @@ const Partner = ({ isUseTitle = true }: PartnerProps) => {
     }
   };
 
-  const onDetail = (partnerId: number, partnerType: TypeOfPartner) => {
+  const onDetail = (partnerId: number, partnerType: PartnerTypeConst) => {
     const tmp = partnerType.toLowerCase();
 
     navigate(`/partners/${tmp}s/${partnerId}`);

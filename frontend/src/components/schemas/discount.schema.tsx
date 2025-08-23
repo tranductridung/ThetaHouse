@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CommonStatus, DiscountType } from "../constants/constants";
+import { COMMON_STATUS, DISCOUNT_TYPE } from "../constants/constants";
 
 export const baseDiscountSchema = z.object({
   name: z.string(),
@@ -10,23 +10,23 @@ export const baseDiscountSchema = z.object({
 export const discountSchema = baseDiscountSchema.extend({
   id: z.number(),
   value: z.number().gte(0),
-  type: z.enum(DiscountType),
+  type: z.enum(DISCOUNT_TYPE),
   maxDiscountAmount: z.number().gte(0),
-  status: z.enum(CommonStatus),
+  status: z.enum(COMMON_STATUS),
   minTotalValue: z.number().gte(0),
 });
 
 export const discountDraftSchema = baseDiscountSchema.extend({
   id: z.number(),
   value: z.number().gte(0),
-  type: z.enum(DiscountType),
+  type: z.enum(DISCOUNT_TYPE),
   maxDiscountAmount: z.number().gte(0),
   minTotalValue: z.number().gte(0),
 });
 
 export const createDiscountFormSchema = baseDiscountSchema.extend({
   value: z.number().gte(0),
-  type: z.enum(DiscountType),
+  type: z.enum(DISCOUNT_TYPE),
   maxDiscountAmount: z.number().gte(0).optional(),
   minTotalValue: z.number().gte(0).optional(),
 });

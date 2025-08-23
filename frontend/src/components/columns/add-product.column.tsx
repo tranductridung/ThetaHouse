@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
 import type { ProductType } from "../schemas/product.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type AddProductProps = {
   handleAddProduct: (product: ProductType) => void;
@@ -66,20 +67,11 @@ export const addProductColumns = ({
     header: "Quantity",
   },
   {
-    accessorFn: (row) =>
-      (row?.defaultOrderPrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.defaultOrderPrice ?? 0),
     header: "Order Price",
   },
   {
-    accessorFn: (row) =>
-      (row?.defaultPurchasePrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
-
+    accessorFn: (row) => formatCurrency(row?.defaultPurchasePrice ?? 0),
     header: "Purchase Price",
   },
 ];

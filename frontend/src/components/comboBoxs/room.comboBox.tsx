@@ -137,7 +137,7 @@ export function RoomComboBox({
               {rooms.map((room) => (
                 <CommandItem
                   key={room.id}
-                  value={room.name}
+                  value={room.id.toString()}
                   onSelect={() => {
                     onChange(room);
                     setOpen(false);

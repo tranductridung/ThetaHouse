@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { UserType } from "@/components/schemas/user.schema";
-import { UserRoleEnum } from "@/components/constants/constants";
+import type { UserRoleConst } from "@/components/constants/constants";
 import {
   Select,
   SelectContent,
@@ -28,7 +28,7 @@ import { format } from "date-fns";
 
 type UserProps = {
   toggleStatus: (id: number) => void;
-  handleChangeRole: (id: number, role: UserRoleEnum) => void;
+  handleChangeRole: (id: number, role: UserRoleConst) => void;
 };
 
 export const userColumns = ({
@@ -125,16 +125,16 @@ export const userColumns = ({
         <Select
           value={currentRole}
           onValueChange={(newRole) => {
-            handleChangeRole(userId, newRole as UserRoleEnum);
+            handleChangeRole(userId, newRole as UserRoleConst);
           }}
         >
           <SelectTrigger className="h-8 w-40" id={`${userId}-role`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value={UserRoleEnum.ADMIN}>Admin</SelectItem>
-            <SelectItem value={UserRoleEnum.MANAGER}>Manager</SelectItem>
-            <SelectItem value={UserRoleEnum.EMPLOYEE}>Employee</SelectItem>
+            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="Manager">Manager</SelectItem>
+            <SelectItem value="Employee">Employee</SelectItem>
           </SelectContent>
         </Select>
       );

@@ -29,6 +29,7 @@ import { CourseModule } from './course/course.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
+import { ReportModule } from './report/report.module';
 
 config();
 @Module({
@@ -72,6 +73,7 @@ config();
     EnrollmentModule,
     EncryptionModule,
     GoogleCalendarModule,
+    ReportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

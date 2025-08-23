@@ -370,11 +370,6 @@ export class ItemService {
   }
 
   async calculateDiscountAmount(totalAmount: number, discountId?: number) {
-    console.log(
-      '-------total amount in calculate discount amounttt',
-      totalAmount,
-    );
-
     let finalAmount = totalAmount;
 
     // Calculate finalAmount by totalAmount and discount (if item has discount)
@@ -382,8 +377,6 @@ export class ItemService {
       // Get discount
       const discount =
         await this.discountService.getActiveDiscountValue(discountId);
-      console.log('discounttttt', discount);
-      console.log(discount.minTotalValue, totalAmount, discount.minTotalValue);
 
       // Calculate discount amount
       if (!discount.minTotalValue || totalAmount >= discount.minTotalValue) {

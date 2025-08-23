@@ -7,6 +7,7 @@ import { UserModule } from 'src/user/user.module';
 import { EncryptionModule } from 'src/encryption/encryption.module';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleCalendarStrategy } from './strategies/google-calendar.strategy';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GoogleCalendarStrategy } from './strategies/google-calendar.strategy';
     JwtModule,
     UserModule,
     EncryptionModule,
+    AuthModule,
     PassportModule,
   ],
   controllers: [GoogleCalendarController],

@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { Request } from 'express';
 import { UserOAuthData } from '../../auth/user-payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class GoogleCalendarStrategy extends PassportStrategy(
@@ -14,6 +15,7 @@ export class GoogleCalendarStrategy extends PassportStrategy(
   constructor(
     private configService: ConfigService,
     private userService: UserService,
+    private jwtService: JwtService,
   ) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
@@ -34,14 +36,24 @@ export class GoogleCalendarStrategy extends PassportStrategy(
         'profile',
         'https://www.googleapis.com/auth/calendar.events',
         'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/calendar.settings.readonly',
       ],
       passReqToCallback: true,
     });
   }
 
-  authorizationParams(): Record<string, string> {
+  authorizationParams(req: Request): Record<string, string> {
+    const token = req.query.token as string;
+    if (!token) {
+      throw new UnauthorizedException('Missing token in query');
+    }
+
     return {
-      prompt: 'select_account',
+      prompt: 'select_account consent',
+      access_type: 'offline',
+      include_granted_scopes: 'true',
+      state: token,
     };
   }
 
@@ -52,25 +64,40 @@ export class GoogleCalendarStrategy extends PassportStrategy(
     profile: Profile,
     done: VerifyCallback,
   ) {
-    const email = profile.emails?.[0]?.value;
+    const googleEmail = profile.emails?.[0]?.value;
+    const jwtToken = req.query.state as string;
 
-    if (!email) {
-      return done(
-        new UnauthorizedException('Email not found in Google profile'),
-        false,
-      );
+    if (!googleEmail || !jwtToken) {
+      return done(new UnauthorizedException('Missing email or token'), false);
     }
 
-    const userRecord = await this.userService.findByEmail(email, true);
+    let decoded: UserOAuthData;
+    try {
+      decoded = this.jwtService.verify(jwtToken, {
+        secret: this.configService.get<string>('ACCESS_TOKEN'),
+      });
+    } catch (err) {
+      return done(new UnauthorizedException('Invalid JWT token'), false);
+    }
 
-    const user: UserOAuthData & { missingRefreshToken?: boolean } = {
+    const systemEmail = decoded.email;
+
+    console.log('systemt payload decodedddd', decoded);
+
+    if (googleEmail !== systemEmail) {
+      return done(new UnauthorizedException('Email mismatch'), false);
+    }
+
+    // Tiếp tục tạo user payload
+    const userRecord = await this.userService.findByEmail(googleEmail, true);
+
+    const user: UserOAuthData = {
       id: userRecord.id,
       email: userRecord.email,
       fullName: userRecord.fullName,
       role: userRecord.role,
       accessToken,
       refreshToken,
-      missingRefreshToken: !refreshToken && !userRecord?.calendarRefreshToken,
     };
 
     return done(null, user);

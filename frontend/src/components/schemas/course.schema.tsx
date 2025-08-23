@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CommonStatus, CourseMode, CourseRole } from "../constants/constants";
+import {
+  COMMON_STATUS,
+  COURSE_MODE,
+  COURSE_ROLE,
+} from "../constants/constants";
 
 export const baseCourseSchema = z.object({
   name: z.string(),
@@ -9,14 +13,14 @@ export const baseCourseSchema = z.object({
   offlineSession: z.number().nullable().optional(),
   onlineSession: z.number().nullable().optional(),
   price: z.number(),
-  mode: z.enum(CourseMode),
+  mode: z.enum(COURSE_MODE),
   startDate: z.date(),
   maxStudent: z.number(),
 });
 
 export const courseSchema = baseCourseSchema.extend({
   id: z.number(),
-  status: z.enum(CommonStatus),
+  status: z.enum(COMMON_STATUS),
 });
 
 export const courseFormSchema = baseCourseSchema
@@ -63,11 +67,11 @@ export const courseFormSchema = baseCourseSchema
 
 export const courseStaffSchema = z.object({
   staff: z.object({ id: z.number(), fullName: z.string() }),
-  role: z.enum(CourseRole),
+  role: z.enum(COURSE_ROLE),
   course: z.object({
     id: z.number(),
     name: z.string(),
-    mode: z.enum(CourseMode),
+    mode: z.enum(COURSE_MODE),
     startDate: z.date(),
   }),
 });

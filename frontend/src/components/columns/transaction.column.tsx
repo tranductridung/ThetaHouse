@@ -12,13 +12,13 @@ import { Button } from "../ui/button";
 import type { TransactionType } from "../schemas/transaction.schema";
 import { Badge } from "../ui/badge";
 import { getTransactionStatusIcon } from "../styles/TransactionStatus";
-import type { SourceType, TypeOfTransaction } from "../constants/constants";
+import type { SourceTypeConst, TransactionTypeConst } from "../constants/constants";
 
 type TransactionProps = {
   onAddPayment: (
     transactionId: number,
-    transactionType: TypeOfTransaction,
-    sourceType?: SourceType
+    transactionType: TransactionTypeConst,
+    sourceType?: SourceTypeConst
   ) => void;
 };
 
