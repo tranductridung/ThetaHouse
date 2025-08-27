@@ -14,6 +14,8 @@ import { LoginDTO } from './dto/login.dto';
 import { Request, Response } from 'express';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { VerifyEmailJwtGuard } from './guards/auth.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -81,5 +83,15 @@ export class AuthController {
     const accessToken = await this.authService.refresh(refreshToken);
 
     return { accessToken };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    return this.authService.sendResetPasswordLink(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDTO: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDTO);
   }
 }

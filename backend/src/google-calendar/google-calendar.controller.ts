@@ -27,7 +27,7 @@ export class GoogleCalendarController {
     private readonly configService: ConfigService,
   ) {}
 
-  @Get()
+  @Get('connect')
   async redirectToGoogle(@Req() req: Request, @Res() res: Response) {
     let jwtToken = req.query.token as string;
     const refreshToken = req.cookies['refreshToken'] as string;
@@ -36,11 +36,11 @@ export class GoogleCalendarController {
       this.jwtService.verify(jwtToken, {
         secret: this.configService.get<string>('ACCESS_TOKEN'),
       });
-    } catch (err) {
+    } catch (err: any) {
       if (err.name === 'TokenExpiredError' && refreshToken) {
         try {
           jwtToken = await this.authService.refresh(refreshToken);
-        } catch (error) {
+        } catch (error: any) {
           console.log(error);
           throw new UnauthorizedException('Refresh token invalid!');
         }
@@ -88,7 +88,8 @@ export class GoogleCalendarController {
     return res.redirect('http://localhost:5173');
   }
 
-  @Post('create-event')
+  @UseGuards(AuthJwtGuard)
+  @Post()
   async createEvent(@Body() dto: CreateCalendarDto) {
     try {
       const tokens = await this.googleCalendarService.getUserTokens(dto.userId);
@@ -111,10 +112,10 @@ export class GoogleCalendarController {
         message: 'Event created successfully',
         event,
       };
-    } catch (error) {
+    } catch (error: any) {
       return {
         success: false,
-        message: error.message || 'Failed to create event',
+        message: error?.message || 'Create event failed!',
       };
     }
   }

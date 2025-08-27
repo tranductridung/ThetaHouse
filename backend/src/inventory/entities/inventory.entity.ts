@@ -1,5 +1,4 @@
 import { ColumnNumericTransformer } from 'src/common/transformers/column-numeric.transformer';
-import { Product } from './../../product/entities/product.entity';
 import { InventoryAction } from 'src/common/enums/enum';
 import { Item } from 'src/item/entities/item.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -12,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Product } from 'src/product/entities/product.entity';
 
 @Entity()
 export class Inventory {

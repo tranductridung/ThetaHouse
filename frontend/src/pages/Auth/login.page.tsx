@@ -1,4 +1,5 @@
 import LoginForm from "@/components/forms/login.form";
+
 export default function Login() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -7,16 +8,6 @@ export default function Login() {
           <div className="w-full max-w-xs">
             <LoginForm />
           </div>
-          {/* <div>
-            <Button
-              onClick={() => {
-                window.location.href =
-                  "http://localhost:3000/api/v1/google-calendar";
-              }}
-            >
-              Login with Google
-            </Button>
-          </div> */}
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">

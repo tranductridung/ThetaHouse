@@ -46,19 +46,11 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
   },
   {
     accessorFn: (row) =>
-      (row.product?.defaultOrderPrice ?? 0).toLocaleString("vi-VN", {
+      (row.unitPrice ?? 0).toLocaleString("vi-VN", {
         style: "currency",
         currency: "VND",
       }),
-    header: "Order Price",
-  },
-  {
-    accessorFn: (row) =>
-      (row.product?.defaultPurchasePrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
-    header: "Purchase Price",
+    header: "Unit Price",
   },
   {
     accessorKey: "action",

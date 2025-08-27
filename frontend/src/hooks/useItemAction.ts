@@ -1,7 +1,7 @@
 import api from "@/api/api";
 import type {
-  SourceType,
-  TypeOfConsignment,
+  ConsignmentTypeConst,
+  SourceTypeConst,
 } from "@/components/constants/constants";
 import type { AppointmentDraftType } from "@/components/schemas/appointment.schema";
 import type {
@@ -14,11 +14,10 @@ import { toast } from "sonner";
 export const useItemActions = (refetch: () => void) => {
   const handleExportImportItem = async (
     itemId: number,
-    sourceType: SourceType,
+    sourceType: SourceTypeConst,
     quantity?: number,
-    consignmentType?: TypeOfConsignment
+    consignmentType?: ConsignmentTypeConst
   ) => {
-    console.log("handleExportImportItem", quantity);
     let url;
     let action;
     switch (sourceType) {
@@ -54,7 +53,7 @@ export const useItemActions = (refetch: () => void) => {
   const handleRemove = async (
     itemId: number,
     sourceId: number,
-    sourceType: SourceType
+    sourceType: SourceTypeConst
   ) => {
     try {
       await api.delete(`${sourceType}s/${sourceId}/items/${itemId}`);
@@ -105,7 +104,6 @@ export const useItemActions = (refetch: () => void) => {
         );
       }
 
-      console.log("---------------------", response);
       return true;
     } catch (error) {
       handleAxiosError(error);
@@ -116,7 +114,7 @@ export const useItemActions = (refetch: () => void) => {
   const handleAddItemList = async (
     itemDraftList: ItemDraftListType,
     sourceId: number,
-    sourceType: SourceType
+    sourceType: SourceTypeConst
   ) => {
     const payload: CreateItemType[] = [];
     for (const item of itemDraftList.items) {

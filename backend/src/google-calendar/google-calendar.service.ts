@@ -1,19 +1,19 @@
+import axios from 'axios';
+import { google } from 'googleapis';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { OAuth2Client } from 'google-auth-library';
+import { UserService } from 'src/user/user.service';
+import { TokenService } from 'src/token/token.service';
+import { UpdateUserDto } from 'src/user/dto/update-user.dto';
+import { CreateCalendarDto } from './dtos/create-calendar.dto';
+import { UserOAuthData } from 'src/auth/user-payload.interface';
 import { EncryptionService } from './../encryption/encryption.service';
 import {
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { OAuth2Client } from 'google-auth-library';
-import { google } from 'googleapis';
-import { UserOAuthData } from 'src/auth/user-payload.interface';
-import { TokenService } from 'src/token/token.service';
-import { UpdateUserDto } from 'src/user/dto/update-user.dto';
-import { UserService } from 'src/user/user.service';
-import { CreateCalendarDto } from './dtos/create-calendar.dto';
-import axios from 'axios';
 
 @Injectable()
 export class GoogleCalendarService {
@@ -148,9 +148,9 @@ export class GoogleCalendarService {
       await calendar.calendarList.list();
 
       return { connected: true };
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        // Token expired
+    } catch (error: any) {
+      // Token expired
+      if (axios.isAxiosError(error) && error?.response?.status === 401) {
         return { connected: false };
       }
 

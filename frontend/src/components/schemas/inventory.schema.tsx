@@ -4,6 +4,7 @@ import { INVENTORY_ACTION } from "../constants/constants";
 export const baseInventorySchema = z.object({
   action: z.enum(INVENTORY_ACTION),
   quantity: z.number(),
+  unitPrice: z.number(),
   note: z.string().optional(),
 });
 
@@ -12,8 +13,6 @@ export const inventorySchema = baseInventorySchema.extend({
   product: z.object({
     name: z.string(),
     unit: z.string(),
-    defaultOrderPrice: z.number(),
-    defaultPurchasePrice: z.number(),
   }),
   creator: z.object({
     fullName: z.string(),
@@ -27,10 +26,7 @@ export const inventoryDraftSchema = baseInventorySchema.extend({
   product: z.object({
     id: z.number(),
     name: z.string(),
-    description: z.string().nullable().optional(),
     unit: z.enum(["Piece", "Kg", "Box", "Liter", "Package"]),
-    defaultOrderPrice: z.number(),
-    defaultPurchasePrice: z.number(),
     quantity: z.number(),
   }),
 });

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import * as z from "zod";
 import PasswordField from "../PasswordField";
 import { useAuth } from "@/auth/useAuth";
+import { useNavigate } from "react-router-dom";
 const loginSchema = z.object({
   email: z.string().email({ message: "Email invalid!" }),
   password: z.string(),
@@ -24,6 +25,11 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const onForgotPassword = () => {
+    navigate("/auth/forgot-password");
+  };
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -85,6 +91,14 @@ const LoginForm = () => {
               className="hover:cursor-pointer text-primary"
             >
               Sign up
+            </a>
+          </div>
+          <div className="text-center text-sm">
+            <a
+              onClick={onForgotPassword}
+              className="hover:cursor-pointer text-primary"
+            >
+              Forgot password?
             </a>
           </div>
         </form>

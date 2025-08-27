@@ -35,13 +35,18 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
   };
 
   const handleSubmit = async (formData: InventoryDraftType) => {
+    console.log("formDataaaaaaaaaaaaa", formData);
     try {
       const payload: CreateInventoryType = {
         productId: formData.product.id,
         quantity: formData.quantity,
         note: formData.note,
         action: formData.action,
+        unitPrice: formData.unitPrice,
       };
+
+      console.log("payloadddddddddddddddd", payload);
+
       await api.post("/inventories", payload);
       toast.success("Add new inventory success!");
       fetchData();

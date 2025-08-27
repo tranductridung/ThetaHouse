@@ -21,6 +21,8 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserAuthContextType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,12 +31,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch user data from the server
   const fetchUser = async () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
+      // const token = localStorage.getItem("accessToken");
+      // if (!token) {
+      //   setUser(null);
+      //   setLoading(false);
+      //   return;
+      // }
 
       const res = await api.get("/users/me");
       setUser(res.data.user);
@@ -59,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "http://localhost:3000/api/v1/auth/login",
+        `${backendUrl}/api/v1/auth/login`,
         { email, password },
         { withCredentials: true }
       );

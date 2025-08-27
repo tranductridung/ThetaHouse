@@ -7,7 +7,6 @@ interface Props {
 
 const ProtectedRoute = ({ role }: Props) => {
   const { user, loading } = useAuth();
-
   // Show loading while checking authentication
   if (loading) {
     return (

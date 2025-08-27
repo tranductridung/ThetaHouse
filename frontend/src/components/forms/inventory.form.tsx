@@ -1,15 +1,17 @@
 "use client";
 
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  inventoryDraftSchema,
+  type InventoryDraftType,
+} from "../schemas/inventory.schema";
 import {
   Form,
   FormField,
@@ -20,32 +22,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  inventoryDraftSchema,
-  type InventoryDraftType,
-} from "../schemas/inventory.schema";
-import { useState } from "react";
-import type { ProductType } from "../schemas/product.schema";
-import { toast } from "sonner";
-import ChooseProduct from "../ChooseProduct";
-import { Edit } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ProductComboBox } from "../comboBoxs/product.comboBox";
 
 type InventoryProps = {
   onSubmit: (formData: InventoryDraftType) => void;
 };
 
 const InventoryForm = ({ onSubmit }: InventoryProps) => {
-  const [openProductDialog, setOpenProductDialog] = useState<boolean>(false);
-
   const form = useForm<InventoryDraftType>({
     resolver: zodResolver(inventoryDraftSchema),
     defaultValues: {
@@ -60,13 +45,10 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
     name: "product",
   });
 
-  const handleChooseProduct = (product: ProductType) => {
-    form.setValue("product", product);
-    setOpenProductDialog(false);
-    toast.success("Choose product success!");
-  };
-
-  console.log("Form errors:", form.formState.errors);
+  const watchedAction = useWatch({
+    control: form.control,
+    name: "action",
+  });
 
   return (
     <Form {...form}>
@@ -88,7 +70,22 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
             </FormItem>
           )}
         />
-
+        <FormField
+          control={form.control}
+          name="product"
+          render={({ field }) => (
+            <FormItem className="flex-1/3">
+              <FormLabel>Product</FormLabel>
+              <FormControl>
+                <ProductComboBox
+                  value={field.value}
+                  onChange={(discount) => field.onChange(discount)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="flex flex-col md:flex-row gap-5">
           {/* Quantity */}
           <FormField
@@ -99,14 +96,24 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
                 <FormLabel>Quantity</FormLabel>
                 <FormControl>
                   <Input
-                    step={"any"}
                     type="number"
-                    value={field.value ?? ""}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
+                    min={1}
+                    max={
+                      watchedAction === "Adjust-Minus" && watchedProduct
+                        ? watchedProduct.quantity
+                        : undefined
                     }
+                    value={field.value}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const number = !val ? null : Number(val);
+                      field.onChange(number);
+                    }}
+                    onBlur={(e) => {
+                      let number = Number(e.target.value);
+                      if (!number) number = 1;
+                      field.onChange(number);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -114,7 +121,36 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
             )}
           />
 
-          {/* Type */}
+          {/* Unit Price */}
+          <FormField
+            control={form.control}
+            name="unitPrice"
+            render={({ field }) => (
+              <FormItem className="flex flex-col md:flex-1/2">
+                <FormLabel>Unit Price</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={field.value}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const number = !val ? null : Number(val);
+                      field.onChange(number);
+                    }}
+                    onBlur={(e) => {
+                      let number = Number(e.target.value);
+                      if (!number) number = 1;
+                      field.onChange(number);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Action */}
           <FormField
             control={form.control}
             name="action"
@@ -131,7 +167,12 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
                   <SelectContent>
                     <SelectGroup className="w-full">
                       <SelectItem value="Adjust-Plus">Adjust Plus</SelectItem>
-                      <SelectItem value="Adjust-Minus">Adjust Minus</SelectItem>
+                      <SelectItem
+                        disabled={watchedProduct?.quantity <= 0}
+                        value="Adjust-Minus"
+                      >
+                        Adjust Minus
+                      </SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -141,75 +182,6 @@ const InventoryForm = ({ onSubmit }: InventoryProps) => {
             )}
           />
         </div>
-
-        {/* Choose Product Dialog */}
-        <Dialog
-          open={openProductDialog}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setOpenProductDialog(false);
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogTitle></DialogTitle>
-            <div className="max-w-[90vw] max-h-[80vh] ">
-              <ChooseProduct handleAddProduct={handleChooseProduct} />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Product */}
-        <Card>
-          {watchedProduct ? (
-            <>
-              <CardHeader>
-                <CardTitle>{watchedProduct?.name ?? ""}</CardTitle>
-                <CardDescription>{watchedProduct?.name ?? ""}</CardDescription>
-                <CardAction>
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => {
-                      setOpenProductDialog(true);
-                    }}
-                    className="text-xl m-auto"
-                  >
-                    <Edit />
-                  </Button>
-                </CardAction>
-              </CardHeader>
-
-              <CardContent className="flex justify-between">
-                <span>Quantity: </span>
-                <span>{watchedProduct?.quantity ?? 0}</span>
-              </CardContent>
-
-              <CardContent className="flex justify-between">
-                <span>Unit: </span>
-                <span>{watchedProduct?.unit ?? ""}</span>
-              </CardContent>
-
-              <CardContent className="flex justify-between">
-                <span>Unit Price: </span>
-                <span>{watchedProduct?.unitPrice ?? 0}</span>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => {
-                  setOpenProductDialog(true);
-                }}
-                className="text-xl m-auto w-full"
-              >
-                Add Product
-              </Button>
-            </CardContent>
-          )}
-        </Card>
 
         <Button type="submit" className="w-full">
           Create Inventory

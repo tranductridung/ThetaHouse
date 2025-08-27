@@ -1,3 +1,4 @@
+import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from './../user/user.service';
 import {
@@ -13,12 +14,15 @@ import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { TokenService } from 'src/token/token.service';
 import { MailService } from 'src/mail/mail.service';
 import { UserPayload } from './user-payload.interface';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
     private tokenService: TokenService,
+    private dataSource: DataSource,
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailService: MailService,
@@ -176,5 +180,55 @@ export class AuthService {
     );
 
     return accessToken;
+  }
+
+  async sendResetPasswordLink(email: string) {
+    const user = await this.dataSource
+      .createQueryBuilder(User, 'user')
+      .where('user.email = :email', { email })
+      .andWhere('user.status = :status', { status: UserStatus.ACTIVE })
+      .select(['user.id', 'user.email'])
+      .getOne();
+
+    if (!user)
+      return {
+        success: true,
+        message: 'Reset link is sent to your email hehe!',
+      };
+
+    const payload = { email: user.email, sub: user.id };
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('RESET_PASSWORD_TOKEN'),
+      expiresIn: this.configService.get<string>('RESET_PASSWORD_TOKEN_EXPIRES'),
+    });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+
+    const resetPwdLink = `${frontendUrl}/auth/reset-password?token=${token}`;
+
+    await this.mailService.resetPasswordEmail(user.email, resetPwdLink);
+
+    return {
+      success: true,
+      message: 'Reset link is sent to your email!',
+    };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    try {
+      const payload: { sub: number; email: string } =
+        await this.jwtService.verify(resetPasswordDto.token, {
+          secret: this.configService.get<string>('RESET_PASSWORD_TOKEN'),
+        });
+
+      await this.userService.resetPassword(
+        resetPasswordDto.newPassword,
+        payload.sub,
+      );
+
+      return { message: 'Reset password success!' };
+    } catch (e) {
+      throw new Error('Token invalid or expired!');
+    }
   }
 }

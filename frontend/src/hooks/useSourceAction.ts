@@ -1,7 +1,7 @@
 import api from "@/api/api";
 import type {
-  SourceType,
-  TypeOfConsignment,
+  ConsignmentTypeConst,
+  SourceTypeConst,
 } from "@/components/constants/constants";
 import type {
   CreatePaymentType,
@@ -34,8 +34,8 @@ export const useSourceActions = (refetch: () => void) => {
 
   const handleExportImport = async (
     sourceId: number,
-    sourceType: SourceType,
-    consignmentType?: TypeOfConsignment
+    sourceType: SourceTypeConst,
+    consignmentType?: ConsignmentTypeConst
   ) => {
     let url;
     let action;

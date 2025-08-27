@@ -5,20 +5,20 @@ import { DataTable } from "@/components/data-table";
 import { useNavigate } from "react-router-dom";
 import { consignmentColumns } from "@/components/columns/consigment.column";
 import { useSourceActions } from "@/hooks/useSourceAction";
-import type {
-  TypeOfConsignment,
-  TypeOfPartner,
-} from "@/components/constants/constants";
 import PageTitle from "@/components/Title";
 import { toast } from "sonner";
 import { handleAxiosError } from "@/lib/utils";
 import type { AddPayerType } from "@/components/schemas/add-payer.schema";
 import AddPayerModal from "@/components/modals/add-payer.modal";
 import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
+import type {
+  ConsignmentTypeConst,
+  PartnerTypeConst,
+} from "@/components/constants/constants";
 
 type ConsignmentProps = {
   partnerId?: number | undefined;
-  partnerType?: TypeOfPartner;
+  partnerType?: PartnerTypeConst;
   isUseTitle?: boolean;
 };
 const Consignment = ({
@@ -85,7 +85,7 @@ const Consignment = ({
     }
   };
 
-  const onCancel = (id: number, type: TypeOfConsignment) => {
+  const onCancel = (id: number, type: ConsignmentTypeConst) => {
     if (type === "In") {
       setShowConfirmDialog(true);
       setSelectedConsignmentId(id);

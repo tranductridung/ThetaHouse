@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/pages/Layout";
-import Login from "@/pages/Auth/Login";
-import Signup from "@/pages/Auth/Signup";
+import Login from "@/pages/Auth/login.page";
+import Signup from "@/pages/Auth/signup.page";
 import Dashboard from "@/pages/dashboard.page";
 import Product from "@/pages/product.page";
 import Service from "@/pages/service.page";
@@ -36,6 +36,8 @@ import Test from "./pages/test.page";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { AuthProvider } from "./auth/AuthContext";
 import PublicRoute from "./auth/PublicRoute";
+import ResetPassword from "./pages/Auth/reset-password.page";
+import ForgotPassword from "./pages/Auth/forgot-password.page";
 
 const App = () => {
   return (
@@ -95,6 +97,8 @@ const App = () => {
         <Route element={<PublicRoute />}>
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/signup" element={<Signup />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

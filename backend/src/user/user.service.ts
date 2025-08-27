@@ -151,7 +151,6 @@ export class UserService {
 
   async updateUser(id: number, updateData: UpdateUserDto) {
     const user = await this.findOne(id);
-    console.log('userrrrr before editttttttttttt', user);
 
     this.userRepo.merge(user, updateData);
     if (updateData.accessToken) {
@@ -171,6 +170,26 @@ export class UserService {
     console.log('userrrrr', user);
     const { password, ...result } = user;
     return result;
+  }
+
+  async resetPassword(newPassword: string, id: number) {
+    const user = await this.userRepo.findOne({
+      where: { id, status: UserStatus.ACTIVE },
+      select: ['id', 'password'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+
+    user.password = await bcrypt.hash(
+      newPassword,
+      Number(this.configService.get('SALT')) || 10,
+    );
+
+    await this.userRepo.save(user);
+
+    return { message: 'Reset password success!' };
   }
 
   async changePassword(data: ChangePasswordDTO, id: number) {

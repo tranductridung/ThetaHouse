@@ -1,14 +1,6 @@
 "use client";
 
 import {
-  BadgeCheck,
-  Bell,
-  Calendar,
-  ChevronsUpDown,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -23,22 +15,22 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { toast } from "sonner";
 import { useState, useRef } from "react";
 import UserProfile from "./user-profile";
 import { useAuth } from "@/auth/useAuth";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { GoogleCalendarConnectModal } from "./GoogleCalendarConnectModal";
+import GoogleCalendarDialog from "./modals/google-calendar.modal";
+import { BadgeCheck, Calendar, ChevronsUpDown, LogOut } from "lucide-react";
 
 export function NavUser() {
-  const { isMobile } = useSidebar();
-  const { logout } = useAuth();
-  const [isShow, setIsShow] = useState(false);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { user } = useAuth();
+  const { logout } = useAuth();
+  const { isMobile } = useSidebar();
+  const [isShow, setIsShow] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showGoogleCalendar, setShowGoogleCalendar] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Early return if user is not available
   if (!user) {
@@ -56,32 +48,9 @@ export function NavUser() {
       .slice(0, 2);
   };
 
-  const handleConnectGoogleCalendar = () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      toast.error("Please login before connect google calendar!");
-      return;
-    }
-
-    // Close dropdown and calendar modal before redirecting
-    setDropdownOpen(false);
-    setShowCalendarModal(false);
-
-    window.location.href = `http://localhost:3000/api/v1/google-calendar?token=${token}`;
-  };
-
-  const openCalendarModal = () => {
-    setShowCalendarModal(true);
-    setDropdownOpen(false); // Close dropdown when opening modal
-  };
-
-  const closeCalendarModal = () => {
-    setShowCalendarModal(false);
-  };
-
   const openUserProfile = () => {
     setIsShow(true);
-    setDropdownOpen(false); // Close dropdown when opening modal
+    setDropdownOpen(false);
   };
 
   const closeUserProfile = () => {
@@ -140,13 +109,6 @@ export function NavUser() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem>
-                  <Sparkles />
-                  Upgrade to Pro
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.preventDefault();
@@ -161,15 +123,12 @@ export function NavUser() {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    openCalendarModal();
+                    setDropdownOpen(false);
+                    setShowGoogleCalendar(true);
                   }}
                 >
                   <Calendar />
-                  Connect Google Calendar
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Bell />
-                  Notifications
+                  <span>Google Calendar</span>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -188,6 +147,7 @@ export function NavUser() {
         </SidebarMenuItem>
       </SidebarMenu>
 
+      {/* User Profile */}
       <Dialog
         open={isShow}
         modal={true}
@@ -211,11 +171,10 @@ export function NavUser() {
         </DialogContent>
       </Dialog>
 
-      <GoogleCalendarConnectModal
-        isOpen={showCalendarModal}
-        onClose={closeCalendarModal}
-        onConnect={handleConnectGoogleCalendar}
-        currentEmail={user?.email}
+      {/* Google Calendar Dialog */}
+      <GoogleCalendarDialog
+        isOpen={showGoogleCalendar}
+        onOpenChange={setShowGoogleCalendar}
       />
     </>
   );
