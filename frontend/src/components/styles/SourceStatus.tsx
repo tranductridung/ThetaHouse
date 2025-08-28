@@ -1,16 +1,16 @@
-import type {
-  AppointmentStatusType,
-  SourceStatusType,
-  TypeOfConsignment,
-} from "@/components/constants/constants";
 import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   CalendarCheck2,
 } from "lucide-react";
+import type {
+  AppointmentStatusConst,
+  ConsignmentTypeConst,
+  SourceStatusConst,
+} from "../constants/constants";
 
-export const getSourceStatusIcon = (status: SourceStatusType) => {
+export const getSourceStatusIcon = (status: SourceStatusConst) => {
   switch (status) {
     case "Completed":
       return (
@@ -25,7 +25,9 @@ export const getSourceStatusIcon = (status: SourceStatusType) => {
   }
 };
 
-export const getConsignmentTypeIcon = (type: TypeOfConsignment | undefined) => {
+export const getConsignmentTypeIcon = (
+  type: ConsignmentTypeConst | undefined
+) => {
   if (!type) return;
 
   switch (type) {
@@ -36,7 +38,7 @@ export const getConsignmentTypeIcon = (type: TypeOfConsignment | undefined) => {
   }
 };
 
-export const getAppointmentStatusIcon = (status: AppointmentStatusType) => {
+export const getAppointmentStatusIcon = (status: AppointmentStatusConst) => {
   switch (status) {
     case "Completed":
       return (
@@ -51,7 +53,7 @@ export const getAppointmentStatusIcon = (status: AppointmentStatusType) => {
   }
 };
 
-export const getSourceStatusStyle = (status?: SourceStatusType) => {
+export const getSourceStatusStyle = (status?: SourceStatusConst) => {
   switch (status) {
     case "Completed":
       return "bg-green-200 text-green-600";

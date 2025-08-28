@@ -396,7 +396,7 @@ export class ItemService {
       }
     }
 
-    return finalAmount;
+    return finalAmount >= 0 ? finalAmount : 0;
   }
 
   isProduct(items: CreateItemDto[]) {

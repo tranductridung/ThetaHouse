@@ -36,7 +36,7 @@ export const courseFormSchema = baseCourseSchema
         });
       }
 
-      if (value <= 0) {
+      if (value && value <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Session and must be > 0",
@@ -55,7 +55,7 @@ export const courseFormSchema = baseCourseSchema
         });
       }
 
-      if (value <= 0) {
+      if (value && value <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Session and must be > 0",

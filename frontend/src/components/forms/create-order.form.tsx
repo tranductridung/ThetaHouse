@@ -508,7 +508,7 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
                 <CollapsibleContent className="flex-1 overflow-y-auto">
                   <Table>
                     <TableCaption>A list of your selected items.</TableCaption>
-                    <TableHeader className="sticky top-0 z-10 bg-red-50">
+                    <TableHeader className="sticky top-0 z-10">
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Qty</TableHead>

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { ITEMABLE_TYPE, ITEM_STATUS } from "../constants/constants";
+import {
+  ITEMABLE_TYPE,
+  ITEM_STATUS,
+  SOURCE_TYPE,
+} from "../constants/constants";
 import { discountSchema } from "./discount.schema";
 
 export const baseItemSchema = z.object({
@@ -8,7 +12,8 @@ export const baseItemSchema = z.object({
 });
 
 export const itemSchema = baseItemSchema.extend({
-  sourceType: z.string(),
+  id: z.number(),
+  sourceType: z.enum(SOURCE_TYPE),
   sourceId: z.number(),
   totalAmount: z.number(),
   finalAmount: z.number(),

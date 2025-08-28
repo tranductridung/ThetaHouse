@@ -47,7 +47,7 @@ const Appointment = ({
       formManager.type === "edit" ||
       formManager.type === "editConsultation"
     ) {
-      isSuccess = await handleSubmitEdit(formData, formManager?.data?.id);
+      isSuccess = await handleSubmitEdit(formData, formManager!.data!.id!);
     } else if (
       formManager.type === "addFree" ||
       formManager.type === "consultation"

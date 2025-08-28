@@ -27,8 +27,8 @@ const ItemModal = ({
           }
         }}
       >
-        <DialogContent>
-          <DialogTitle></DialogTitle>
+        <DialogContent className="max-h-[90vh]">
+          <DialogTitle>ADD ITEM</DialogTitle>
           <AddItemForm onSubmit={handleSubmit} source={source} />
         </DialogContent>
       </Dialog>

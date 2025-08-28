@@ -18,11 +18,11 @@ type CourseStaffProps = { courseId?: number; isUseTitle?: boolean };
 
 const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
   const [data, setData] = useState<CourseStaffType[]>([]);
-  const [formManager, setFormManager] = useState<FormManagerType>({
-    isShow: false,
-    type: "add",
-    data: null,
-  });
+  // const [formManager, setFormManager] = useState<FormManagerType>({
+  //   isShow: false,
+  //   type: "add",
+  //   data: null,
+  // });
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -62,11 +62,12 @@ const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
   // };
 
   const onEdit = (courseStaff: CourseStaffType) => {
-    setFormManager({
-      isShow: true,
-      type: "edit",
-      data: courseStaff,
-    });
+    console.log("edit", courseStaff);
+    // setFormManager({
+    //   isShow: true,
+    //   type: "edit",
+    //   data: courseStaff,
+    // });
   };
 
   const handleDelete = async (courseId: number, staffId: number) => {

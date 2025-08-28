@@ -1,9 +1,11 @@
-import { ConsignmentType } from "./../../../backend/src/common/enums/enum";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import axios from "axios";
 import { toast } from "sonner";
-import type { SourceTypeConst } from "@/components/constants/constants";
+import type {
+  ConsignmentTypeConst,
+  SourceTypeConst,
+} from "@/components/constants/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,7 +36,7 @@ export const formatCurrency = (value: number): string => {
 
 export const getDefaultPrice = (
   sourceType: SourceTypeConst,
-  consignmentType?: ConsignmentType
+  consignmentType?: ConsignmentTypeConst
 ) => {
   if (sourceType === "Order") return "defaultOrderPrice";
   if (sourceType === "Purchase") return "defaultPurchasePrice";

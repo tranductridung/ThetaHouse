@@ -24,7 +24,6 @@ export function ProductList({
     if (isFetching.current || !hasMore) return;
     isFetching.current = true;
     try {
-      console.log("hello");
       const res = await api.get(`/products?page=${page}&limit=${pageSize}`);
       const items: ProductType[] = res.data.products || [];
 
@@ -59,7 +58,7 @@ export function ProductList({
           <div className="font-medium">
             {product.name} - {product.quantity}
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground 30px] overflow-hidden">
             {product.description}
           </div>
         </div>

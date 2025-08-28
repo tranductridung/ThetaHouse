@@ -1,10 +1,7 @@
-import api from "@/api/api";
-import { formatCurrency, handleAxiosError } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import type { OrderDetailType } from "@/components/schemas/source-detail.schema";
-import { DataTable } from "@/components/data-table";
-import { itemColumns } from "@/components/columns/item.column";
+import {
+  useCreateFormManager,
+  useSelectedItemFormManager,
+} from "@/hooks/use-custom-manager";
 import {
   Card,
   CardContent,
@@ -12,30 +9,33 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { paymentColumns } from "@/components/columns/payment.column";
-import { getSourceStatusStyle } from "@/components/styles/SourceStatus";
-import { getTransactionStatusStyle } from "@/components/styles/TransactionStatus";
-import type { TransactionType } from "@/components/schemas/transaction.schema";
-import DisplayUser from "@/components/DisplayUser";
-import { type AppointmentDraftType } from "@/components/schemas/appointment.schema";
-import { useItemActions } from "@/hooks/useItemAction";
+import api from "@/api/api";
 import { toast } from "sonner";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import DisplayUser from "@/components/DisplayUser";
+import { DataTable } from "@/components/data-table";
+import ItemModal from "@/components/modals/item.modal";
+import { useItemActions } from "@/hooks/useItemAction";
+import { useSourceActions } from "@/hooks/useSourceAction";
+import PaymentModal from "@/components/modals/payment.modal";
+import { formatCurrency, handleAxiosError } from "@/lib/utils";
+import { itemColumns } from "@/components/columns/item.column";
+import AddPartnerModal from "@/components/modals/add-partner.modal";
+import { paymentColumns } from "@/components/columns/payment.column";
+import AppointmentModal from "@/components/modals/appointment.modal";
+import { getSourceStatusStyle } from "@/components/styles/SourceStatus";
+import ChangeCourseModal from "@/components/modals/change-course.modal";
+import ExportImportModal from "@/components/modals/export-import.modal";
 import type { ItemDraftListType } from "@/components/schemas/item.schema";
 import type { PaymentDraftType } from "@/components/schemas/payment.schema";
-import { useSourceActions } from "@/hooks/useSourceAction";
-import PageTitle from "@/components/Title";
-import {
-  useCreateFormManager,
-  useSelectedItemFormManager,
-} from "@/hooks/use-custom-manager";
-import AppointmentModal from "@/components/modals/appointment.modal";
-import PaymentModal from "@/components/modals/payment.modal";
-import ExportImportModal from "@/components/modals/export-import.modal";
-import ItemModal from "@/components/modals/item.modal";
-import AddPartnerModal from "@/components/modals/add-partner.modal";
 import type { AddPartnerType } from "@/components/schemas/add-partner.schema";
-import ChangeCourseModal from "@/components/modals/change-course.modal";
+import type { TransactionType } from "@/components/schemas/transaction.schema";
+import type { OrderDetailType } from "@/components/schemas/source-detail.schema";
+import { getTransactionStatusStyle } from "@/components/styles/TransactionStatus";
 import type { ChangeCourseFormData } from "@/components/forms/change-course.form";
+import { type AppointmentDraftType } from "@/components/schemas/appointment.schema";
 
 type OrderDetailProps = { isUseTitle?: boolean };
 
@@ -233,7 +233,7 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
             total={order?.items?.length ?? 0}
             setPageIndex={() => {}}
             setPageSize={() => {}}
-            title={"Add Item"}
+            title={"Add items"}
           ></DataTable>
 
           <div className="border-1 my-4"></div>
@@ -334,6 +334,7 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
             </Card>
           </div>
         </div>
+
         {/* ==========================================MODAL========================================== */}
         {/* Create appointment modal */}
         <AppointmentModal

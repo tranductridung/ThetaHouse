@@ -39,7 +39,7 @@ export default function CreateConsignmentPage({
       note: data.note,
       commissionRate: data.commissionRate,
       type: data.type,
-      partnerId: data?.partner?.id,
+      partnerId: data!.partner!.id,
       items: newItems,
       payerId: data?.payer?.id,
     };

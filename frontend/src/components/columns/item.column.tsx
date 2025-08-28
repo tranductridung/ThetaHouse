@@ -16,7 +16,11 @@ import type { SourceTypeConst } from "../constants/constants";
 
 type ItemColumnsProps = {
   hasAction: boolean;
-  onRemove?: (itemId: number, sourceId: number, sourceType: SourceTypeConst) => void;
+  onRemove?: (
+    itemId: number,
+    sourceId: number,
+    sourceType: SourceTypeConst
+  ) => void;
   onTransfer?: (itemId: number) => void;
   onAddExportImport?: (itemId: number) => void;
   consignmentType?: "In" | "Out" | undefined;
@@ -136,8 +140,8 @@ export const itemColumns = ({
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  onRemove(
-                    row.original.id,
+                  onRemove?.(
+                    row?.original?.id,
                     row.original.sourceId,
                     row.original.sourceType
                   )
@@ -148,11 +152,13 @@ export const itemColumns = ({
 
               {row.original.itemableType === "Service" && (
                 <>
-                  <DropdownMenuItem onClick={() => onTransfer(row.original.id)}>
+                  <DropdownMenuItem
+                    onClick={() => onTransfer?.(row.original.id)}
+                  >
                     Transfer service
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => onCreateAppointment(row.original.id)}
+                    onClick={() => onCreateAppointment?.(row.original.id)}
                   >
                     Create Appointment
                   </DropdownMenuItem>
@@ -162,7 +168,7 @@ export const itemColumns = ({
               {row.original.itemableType === "Product" &&
                 !["Imported", "Exported"].includes(row.original.status) && (
                   <DropdownMenuItem
-                    onClick={() => onAddExportImport(row.original.id)}
+                    onClick={() => onAddExportImport?.(row.original.id)}
                   >
                     {getAction(row.original.sourceType)}
                   </DropdownMenuItem>
@@ -171,7 +177,7 @@ export const itemColumns = ({
               {row.original.itemableType === "Course" && (
                 <>
                   <DropdownMenuItem
-                    onClick={() => onChangeCourse(row.original.id)}
+                    onClick={() => onChangeCourse?.(row.original.id)}
                   >
                     Change course
                   </DropdownMenuItem>
