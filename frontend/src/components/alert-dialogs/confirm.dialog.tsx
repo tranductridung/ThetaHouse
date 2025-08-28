@@ -15,7 +15,7 @@ type ConfirmDialogProps = {
   selectedId: number | null;
   showConfirmDialog: boolean;
   setShowConfirmDialog: Dispatch<SetStateAction<boolean>>;
-  handleCancel: (id: number) => void;
+  handleCancel: (id: number | null) => void;
 };
 const ConfirmDialog = ({
   type,
