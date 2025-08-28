@@ -13,9 +13,7 @@ import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
 type PurchaseProps = { supplierId?: number; isUseTitle?: boolean };
 const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedPurchaseId, setSelectedPurchaseId] = useState<number | null>(
-    null
-  );
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<number>();
 
   const [data, setData] = useState<PurchaseType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -52,7 +50,9 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
     navigate(`/sources/purchases/${id}`);
   };
 
-  const handleCancel = async (id: number) => {
+  const handleCancel = async (id?: number) => {
+    if (typeof id !== "number") return;
+
     try {
       await api.post(`purchases/${id}/cancel`);
       fetchData();

@@ -12,10 +12,10 @@ import type { Dispatch, SetStateAction } from "react";
 
 type ConfirmDialogProps = {
   type: "order" | "purchase" | "consignment";
-  selectedId: number | null;
+  selectedId?: number;
   showConfirmDialog: boolean;
   setShowConfirmDialog: Dispatch<SetStateAction<boolean>>;
-  handleCancel: (id: number | null) => void;
+  handleCancel: (id?: number) => void;
 };
 const ConfirmDialog = ({
   type,
@@ -39,15 +39,11 @@ const ConfirmDialog = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (selectedId !== null) {
-                  handleCancel(selectedId);
-                }
-              }}
-            >
-              Confirm Cancel
-            </AlertDialogAction>
+            {typeof selectedId === "number" && (
+              <AlertDialogAction onClick={() => handleCancel(selectedId)}>
+                Confirm Cancel
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

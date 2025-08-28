@@ -32,7 +32,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
 
   const [showPayerDialog, setShowPayerDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<number>();
   const [payerId, setPayerId] = useState<number | null>(null);
 
   const fetchData = async () => {
@@ -71,8 +71,8 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
     setShowPayerDialog(true);
   };
 
-  const handleCancel = async (id: number | null) => {
-    if (!id || !payerId) return;
+  const handleCancel = async (id?: number) => {
+    if (typeof id !== "number" || !payerId) return;
 
     try {
       await api.post(`orders/${id}/cancel`, { payerId });
@@ -82,7 +82,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
       handleAxiosError(error);
     } finally {
       setShowConfirmDialog(false);
-      setSelectedOrderId(null);
+      setSelectedOrderId(undefined);
       setPayerId(null);
     }
   };

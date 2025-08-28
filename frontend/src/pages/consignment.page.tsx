@@ -33,9 +33,7 @@ const Consignment = ({
 
   const [showPayerDialog, setShowPayerDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedConsignmentId, setSelectedConsignmentId] = useState<
-    number | null
-  >(null);
+  const [selectedConsignmentId, setSelectedConsignmentId] = useState<number>();
   const [payerId, setPayerId] = useState<number | null>(null);
 
   const navigate = useNavigate();
@@ -75,7 +73,9 @@ const Consignment = ({
     fetchData();
   }, [pageIndex, pageSize]);
 
-  const handleCancel = async (id: number) => {
+  const handleCancel = async (id?: number) => {
+    if (typeof id !== "number") return;
+
     try {
       await api.post(`consignments/${id}/cancel`, { payerId });
       fetchData();
@@ -88,11 +88,10 @@ const Consignment = ({
   const onCancel = (id: number, type: ConsignmentTypeConst) => {
     if (type === "In") {
       setShowConfirmDialog(true);
-      setSelectedConsignmentId(id);
     } else {
-      setSelectedConsignmentId(id);
       setShowPayerDialog(true);
     }
+    setSelectedConsignmentId(id);
   };
 
   const onSubmitAddPayer = (formData: AddPayerType) => {
