@@ -41,7 +41,7 @@ const ConfirmDialog = ({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (selectedId !== null) {
+                if (typeof selectedId === "number") {
                   handleCancel(selectedId);
                 }
               }}
