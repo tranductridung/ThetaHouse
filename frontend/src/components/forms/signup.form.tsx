@@ -33,6 +33,8 @@ type SignupFormData = z.infer<typeof signupSchema>;
 
 const SignupForm = () => {
   const navigate = useNavigate();
+  const backendUrl =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -47,7 +49,7 @@ const SignupForm = () => {
   const onSubmit = async (data: SignupFormData) => {
     const { confirmPassword, ...payload } = data;
     await axios
-      .post("http://localhost:3000/api/v1/auth/signup", { ...payload })
+      .post(`${backendUrl}/api/v1/auth/signup`, { ...payload })
       .then((response) => {
         console.log(response);
         navigate("auth/login");
