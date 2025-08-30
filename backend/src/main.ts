@@ -21,7 +21,8 @@ async function bootstrap() {
       /https:\/\/.*\.vercel\.app$/,
     ],
     credentials: true,
-    methods: 'GET,PUT,PATCH,POST,DELETE',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
