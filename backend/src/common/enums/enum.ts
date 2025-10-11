@@ -5,11 +5,11 @@ export enum UserStatus {
   UNVERIFIED = 'Unverified',
 }
 
-export enum UserRole {
-  ADMIN = 'Admin',
-  MANAGER = 'Manager',
-  EMPLOYEE = 'Employee',
-}
+// export enum UserRole {
+//   ADMIN = 'Admin',
+//   MANAGER = 'Manager',
+//   EMPLOYEE = 'Employee',
+// }
 
 export enum ProductUnit {
   PIECE = 'Piece',

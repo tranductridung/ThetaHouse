@@ -7,17 +7,12 @@ import { UserService } from 'src/user/user.service';
 import { TokenService } from 'src/token/token.service';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { CreateCalendarDto } from './dtos/create-calendar.dto';
-import { UserOAuthData } from 'src/auth/user-payload.interface';
+import { UserOAuthData } from 'src/auth/interfaces/user-payload.interface';
 import { EncryptionService } from './../encryption/encryption.service';
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class GoogleCalendarService {
-  private readonly logger = new Logger(GoogleCalendarService.name);
   private oauth2Client: OAuth2Client;
 
   constructor(
@@ -39,7 +34,7 @@ export class GoogleCalendarService {
       id: userData.id,
       email: userData.email,
       fullName: userData.fullName,
-      role: userData.role,
+      roles: userData.roles,
     };
 
     const accessToken = this.jwtService.sign(payload, {

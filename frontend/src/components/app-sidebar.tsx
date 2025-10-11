@@ -25,12 +25,9 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = {
-    // user: {
-    //   name: user?.fullName || "",
-    //   email: user?.email || "",
-    //   avatar: "/avatars/shadcn.jpg",
-    // },
-    teams: [{ name: "Acme Inc", logo: GalleryVerticalEnd, plan: "Enterprise" }],
+    teams: [
+      { name: "Theta House", logo: GalleryVerticalEnd, plan: "Enterprise" },
+    ],
     navMain: [
       {
         title: "Dashboard",
@@ -74,6 +71,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {
         title: "Appointments",
         url: "/appointments",
+        icon: CalendarIcon,
+        isActive: true,
+      },
+      {
+        title: "Calendars",
+        url: "/calendars",
         icon: CalendarIcon,
         isActive: true,
       },

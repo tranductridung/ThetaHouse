@@ -8,12 +8,17 @@ import PageTitle from "@/components/Title";
 import { toast } from "sonner";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import RoomModal from "@/components/modals/room.modal";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type RoomProps = {
   isUseTitle?: boolean;
 };
 
 const RoomTest = ({ isUseTitle = true }: RoomProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<RoomType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -56,9 +61,18 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("room");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Room"></PageTitle>}

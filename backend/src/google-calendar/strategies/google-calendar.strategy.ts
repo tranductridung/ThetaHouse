@@ -4,7 +4,7 @@ import { Strategy, Profile, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { Request } from 'express';
-import { UserOAuthData } from '../../auth/user-payload.interface';
+import { UserOAuthData } from '../../auth/interfaces/user-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -82,20 +82,19 @@ export class GoogleCalendarStrategy extends PassportStrategy(
 
     const systemEmail = decoded.email;
 
-    console.log('systemt payload decodedddd', decoded);
-
     if (googleEmail !== systemEmail) {
       return done(new UnauthorizedException('Email mismatch'), false);
     }
 
-    // Tiếp tục tạo user payload
     const userRecord = await this.userService.findByEmail(googleEmail, true);
 
     const user: UserOAuthData = {
       id: userRecord.id,
       email: userRecord.email,
       fullName: userRecord.fullName,
-      role: userRecord.role,
+      roles: ['hello'],
+      // roles: userRecord.roles,
+      // permissions: userRecord.permissions,
       accessToken,
       refreshToken,
     };

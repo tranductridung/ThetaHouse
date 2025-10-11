@@ -17,12 +17,17 @@ import {
 import PaymentModal from "@/components/modals/payment.modal";
 import type { PaymentDraftType } from "@/components/schemas/payment.schema";
 import { useSourceActions } from "@/hooks/useSourceAction";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type TransactionProps = {
   isUseTitle?: boolean;
 };
 
 const Transaction = ({ isUseTitle = true }: TransactionProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<TransactionType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -54,9 +59,18 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
   const { formManager, onAdd, onClose } = useCreateFormManager();
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("transaction");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   const {
     formManager: paymentFormManager,
     onAdd: onAddPayment,

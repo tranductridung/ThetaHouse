@@ -1,24 +1,27 @@
 import {
-  Controller,
   Get,
-  Post,
+  Req,
   Body,
+  Post,
+  Query,
   Param,
   UseGuards,
-  Req,
-  Query,
+  Controller,
 } from '@nestjs/common';
-import { PaymentService } from './payment.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
-import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { Request } from 'express';
+import { PaymentService } from './payment.service';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('payments')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
+  @RequirePermissions('payment:create')
   @Post()
   async create(
     @Body() createPaymentDto: CreatePaymentDto,
@@ -33,11 +36,13 @@ export class PaymentController {
     return { payment };
   }
 
+  @RequirePermissions('payment:read')
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.paymentService.findAll(paginationDto);
   }
 
+  @RequirePermissions('payment:read')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const payment = await this.paymentService.findOne(+id);

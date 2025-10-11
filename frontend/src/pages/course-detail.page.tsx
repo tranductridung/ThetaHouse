@@ -12,7 +12,7 @@ type CourseDetailProps = { isUseTitle?: boolean };
 const CourseDetail = ({ isUseTitle = true }: CourseDetailProps) => {
   const { id } = useParams();
   const [data, setData] = useState<CourseType>();
- 
+
   const fetchData = async () => {
     try {
       const response = await api.get(`courses/${id}`);

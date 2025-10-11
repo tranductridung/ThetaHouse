@@ -1,47 +1,45 @@
 import {
-  Controller,
   Get,
   Post,
   Body,
   Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
+  Controller,
 } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { UserRole } from 'src/common/enums/enum';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, RolesGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('enrollments')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('enrollment:create')
   @Post()
   create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
     return this.enrollmentService.create(createEnrollmentDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('enrollment:read')
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.enrollmentService.findAll(paginationDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('enrollment:read')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.enrollmentService.findOne(+id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('enrollment:update')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -50,8 +48,8 @@ export class EnrollmentController {
     return this.enrollmentService.update(+id, updateEnrollmentDto);
   }
 
-  @Roles(UserRole.ADMIN)
-  @Delete(':id')
+  @RequirePermissions('enrollment:update')
+  @Patch(':id')
   withdraw(@Param('id') id: string) {
     return this.enrollmentService.withdraw(+id);
   }

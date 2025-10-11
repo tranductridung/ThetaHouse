@@ -6,12 +6,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DiscountModule } from 'src/discount/discount.module';
 import { AppointmentModule } from 'src/appointment/appointment.module';
 import { EnrollmentModule } from 'src/enrollment/enrollment.module';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Item]),
     DiscountModule,
     EnrollmentModule,
+    AuthorizationModule,
     forwardRef(() => AppointmentModule),
   ],
   controllers: [ItemController],

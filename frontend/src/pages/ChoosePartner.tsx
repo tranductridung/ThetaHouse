@@ -35,9 +35,18 @@ const ChoosePartner = ({ type, handleChoosePartner }: ChoosePartnerProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("order");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div>
       <DataTable

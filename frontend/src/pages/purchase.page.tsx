@@ -9,9 +9,14 @@ import { useSourceActions } from "@/hooks/useSourceAction";
 import PageTitle from "@/components/Title";
 import { toast } from "sonner";
 import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type PurchaseProps = { supplierId?: number; isUseTitle?: boolean };
 const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<number>();
 
@@ -68,9 +73,18 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("purchase");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Purchase"></PageTitle>}

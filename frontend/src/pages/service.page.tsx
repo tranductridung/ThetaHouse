@@ -12,11 +12,16 @@ import { DataTable } from "@/components/data-table";
 import ServiceModal from "@/components/modals/service.modal";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import { serviceColumns } from "@/components/columns/service.column";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type ServiceProps = {
   isUseTitle?: boolean;
 };
 const Service = ({ isUseTitle }: ServiceProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<ServiceType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -85,9 +90,18 @@ const Service = ({ isUseTitle }: ServiceProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("service");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Service"></PageTitle>}

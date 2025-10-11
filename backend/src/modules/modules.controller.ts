@@ -7,43 +7,48 @@ import {
   Param,
   Delete,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ModulesService } from './modules.service';
-import { UserRole } from 'src/common/enums/enum';
-import { Roles } from 'src/auth/roles.decorator';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('modules')
 export class ModulesController {
   constructor(private readonly moduleService: ModulesService) {}
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:create')
   @Post()
   async create(@Body() createModuleDto: CreateModuleDto) {
     const module = await this.moduleService.create(createModuleDto);
     return { module };
   }
 
+  @RequirePermissions('module:read')
   @Get()
   async findAllActive(@Query() paginationDto: PaginationDto) {
     return await this.moduleService.findAllActive(paginationDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:read')
   @Get('all')
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.moduleService.findAll(paginationDto);
   }
 
+  @RequirePermissions('module:read')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const module = await this.moduleService.findOne(+id);
     return { module };
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:update')
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -53,19 +58,19 @@ export class ModulesController {
     return { module };
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.moduleService.remove(+id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:update')
   @Patch(':id/toggle-status')
   async toggleStatus(@Param('id') id: string) {
     return await this.moduleService.toggleStatus(+id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('module:update')
   @Patch(':id/restore')
   async restore(@Param('id') id: string) {
     return await this.moduleService.restore(+id);

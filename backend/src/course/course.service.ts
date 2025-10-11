@@ -343,12 +343,10 @@ export class CourseService {
     });
 
     if (!staff) throw new BadRequestException('Staff is not belong to course!');
-    console.log(staff);
 
     staff.role = courseRole;
     await this.courseStaffRepo.save(staff);
 
-    console.log(staff);
     return { message: `Role is set to ${courseRole}` };
   }
 }

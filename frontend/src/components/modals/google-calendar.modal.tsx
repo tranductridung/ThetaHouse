@@ -63,22 +63,22 @@ const GoogleCalendarDialog = ({
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleConnect = async () => {
+    setIsConnecting(true);
     try {
-      setIsConnecting(true);
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
         toast.error("You need to login to connect Google Calendar");
+        setIsConnecting(false);
         return;
       }
 
-      // Redirect to connect google calendar endpoint
-      const connectUrl = `${backendUrl}/api/v1/google-calendar/connect?token=${encodeURIComponent(
+      const connectUrl = `${backendUrl}/google-calendar/connect?token=${encodeURIComponent(
         accessToken
       )}`;
       window.location.href = connectUrl;
+      setIsConnecting(true);
     } catch (error) {
       handleAxiosError(error);
-    } finally {
       setIsConnecting(false);
     }
   };

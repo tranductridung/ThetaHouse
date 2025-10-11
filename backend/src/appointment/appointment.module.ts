@@ -9,6 +9,7 @@ import { UserModule } from 'src/user/user.module';
 import { RoomModule } from 'src/room/room.module';
 import { ModulesModule } from 'src/modules/modules.module';
 import { GoogleCalendarModule } from 'src/google-calendar/google-calendar.module';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { GoogleCalendarModule } from 'src/google-calendar/google-calendar.module
     RoomModule,
     ModulesModule,
     GoogleCalendarModule,
+    AuthorizationModule,
     forwardRef(() => PartnerModule),
     forwardRef(() => ItemModule),
   ],

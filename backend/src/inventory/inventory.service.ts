@@ -108,6 +108,14 @@ export class InventoryService {
       where: { id: createItemInventoryDto.productId },
     });
 
+    // Update average price of product if action is import
+    if (action === InventoryAction.IMPORT) {
+      product.avgCost = Number(
+        (product.quantity * product.avgCost + finalQuantity * item.unitPrice) /
+          (product.quantity + finalQuantity),
+      );
+    }
+
     // Updated stock in product
     switch (createItemInventoryDto.action) {
       case InventoryAction.EXPORT:

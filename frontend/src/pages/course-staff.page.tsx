@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { courseStaffColumns } from "@/components/columns/courst-staff.column";
 import type { CourseStaffType } from "@/components/schemas/course.schema";
 import PageTitle from "@/components/Title";
-// import CourseStaffForm from "@/components/forms/CourseStaffForm";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -17,6 +18,9 @@ export type FormManagerType = {
 type CourseStaffProps = { courseId?: number; isUseTitle?: boolean };
 
 const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
+  const { fetchPermissions } = useAuth();
+  const { setLoading } = useLoading();
+
   const [data, setData] = useState<CourseStaffType[]>([]);
   // const [formManager, setFormManager] = useState<FormManagerType>({
   //   isShow: false,
@@ -81,9 +85,18 @@ const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("course");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   console.log("data", data);
   return (
     <div className="p-4">

@@ -5,12 +5,17 @@ import { paymentColumns } from "@/components/columns/payment.column";
 import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
 import PageTitle from "@/components/Title";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type PaymentProps = {
   isUseTitle?: boolean;
 };
 
 const Payment = ({ isUseTitle = true }: PaymentProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<PaymentType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -29,7 +34,17 @@ const Payment = ({ isUseTitle = true }: PaymentProps) => {
   };
 
   useEffect(() => {
-    fetchData();
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("payment");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, [pageIndex, pageSize]);
 
   return (

@@ -25,7 +25,7 @@ export class Product {
   unit: ProductUnit;
 
   // Base quantity: so luong co so
-  // VD: 1 cai chuong nang 10kg thi 10 la so luong co so
+  // Ex: Weight of bell = 10kg => useBaseQuantityPricing = 10
   @Column()
   useBaseQuantityPricing: boolean;
 
@@ -69,6 +69,13 @@ export class Product {
     transformer: new ColumnNumericTransformer(),
   })
   defaultPurchasePrice: number;
+
+  @Column('decimal', {
+    precision: 12,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
+  avgCost: number;
 
   @Column({ default: 0 })
   quantity: number;

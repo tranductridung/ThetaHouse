@@ -131,7 +131,6 @@ export class TransactionService {
       },
       relations: ['healer'],
     });
-    console.log('2');
 
     if (transactionExist)
       throw new BadRequestException(

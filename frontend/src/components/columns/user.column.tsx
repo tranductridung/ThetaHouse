@@ -25,15 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
+import type { UserAuthContextType } from "@/auth/AuthContext";
 
 type UserProps = {
   toggleStatus: (id: number) => void;
   handleChangeRole: (id: number, role: UserRoleConst) => void;
+  user: UserAuthContextType | null;
 };
 
 export const userColumns = ({
   toggleStatus,
   handleChangeRole,
+  user,
 }: UserProps): ColumnDef<UserType>[] => [
   {
     accessorKey: "fullName",
@@ -124,6 +127,7 @@ export const userColumns = ({
       return (
         <Select
           value={currentRole}
+          disabled={user?.email === row.original.email}
           onValueChange={(newRole) => {
             handleChangeRole(userId, newRole as UserRoleConst);
           }}
@@ -143,6 +147,8 @@ export const userColumns = ({
   {
     id: "actions",
     cell: ({ row }) => {
+      if (user?.email === row.original.email) return null;
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

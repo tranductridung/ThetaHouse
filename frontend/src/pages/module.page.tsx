@@ -12,10 +12,15 @@ import { handleAxiosError } from "@/lib/utils";
 import PageTitle from "@/components/Title";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import ModuleModal from "@/components/modals/module.modal";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type ModuleProps = { isUseTitle?: boolean };
 
 const Module = ({ isUseTitle = true }: ModuleProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<ModuleType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -85,9 +90,18 @@ const Module = ({ isUseTitle = true }: ModuleProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("module");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Module"></PageTitle>}

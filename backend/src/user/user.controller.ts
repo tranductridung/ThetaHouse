@@ -1,53 +1,53 @@
 import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Param,
-  ParseIntPipe,
-  Patch,
-  Put,
-  Query,
   Req,
+  Body,
+  Get,
+  Query,
+  Param,
+  Patch,
   UseGuards,
+  Controller,
+  ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { UserService } from './user.service';
-import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { UserRole, UserStatus } from 'src/common/enums/enum';
+import { UserStatus } from 'src/common/enums/enum';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDTO } from './dto/change-pass.dto';
-import { Request } from 'express';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { UserPayload } from 'src/auth/interfaces/user-payload.interface';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, RolesGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @RequirePermissions('user:read')
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
-    console.log('asdflkasd;flk');
     return await this.userService.findAll(paginationDto);
   }
 
-  @Patch(':id/change-role')
-  @Roles(UserRole.ADMIN)
-  async changeRole(
-    @Req() req: Request,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { role: UserRole },
-  ) {
-    const currentUser = req?.user;
-    if (id === currentUser?.id)
-      throw new BadRequestException('Cannot change role by yourself!');
+  // @Patch(':id/change-role')
+  // @RequirePermissions(UserRole.ADMIN)
+  // async changeRole(
+  //   @Req() req: Request,
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() body: { role: UserRole },
+  // ) {
+  //   const currentUser = req?.user;
+  //   if (id === currentUser?.id)
+  //     throw new BadRequestException('Cannot change role by yourself!');
 
-    return await this.userService.changeRole(id, body.role);
-  }
+  //   return await this.userService.changeRole(id, body.role);
+  // }
 
+  @RequirePermissions('user:update')
   @Patch(':id/change-status')
-  @Roles(UserRole.ADMIN)
   async changeStatus(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
@@ -60,8 +60,8 @@ export class UserController {
     return await this.userService.changeStatus(id, body.status);
   }
 
+  @RequirePermissions('user:update')
   @Patch(':id/toggle-status')
-  @Roles(UserRole.ADMIN)
   async toggleStatus(
     @Req() req: Request,
     @Param('id', ParseIntPipe) id: number,
@@ -73,6 +73,7 @@ export class UserController {
     return await this.userService.toggleStatus(id);
   }
 
+  @RequirePermissions('user:read')
   @Get('me')
   getUserInfor(@Req() req: Request) {
     return {
@@ -80,11 +81,12 @@ export class UserController {
         id: req?.user?.id,
         email: req?.user?.email,
         fullName: req?.user?.fullName,
-        role: req?.user?.role,
+        roles: req?.user?.roles,
       },
     };
   }
 
+  @RequirePermissions('user:read')
   @Get('me/profile')
   async getProfile(@Req() req: Request) {
     const userId = Number(req?.user?.id);
@@ -92,18 +94,21 @@ export class UserController {
     return { user };
   }
 
-  @Put('me')
+  @RequirePermissions('user:update')
+  @Patch('me')
   async updateProfile(@Req() req: Request, @Body() data: UpdateUserDto) {
     const user = await this.userService.updateUser(Number(req?.user?.id), data);
     return { user };
   }
 
+  @RequirePermissions('user:update')
   @Patch('me/password')
   async changePassword(@Req() req: Request, @Body() data: ChangePasswordDTO) {
     return await this.userService.changePassword(data, Number(req?.user?.id));
   }
 
-  @Get('/:healerId/appointments')
+  @RequirePermissions('user:read', 'appointment:read')
+  @Get(':healerId/appointments')
   async findAppointmentByCustomer(
     @Param('healerId') healerId: number,
     @Query() paginationDto: PaginationDto,
@@ -112,5 +117,19 @@ export class UserController {
       healerId,
       paginationDto,
     );
+  }
+
+  @Get('me/permissions')
+  async getUserPermission(
+    @Req() req: Request,
+    @Query('resource') resource?: string,
+  ) {
+    const userId = (req?.user as UserPayload).id;
+    const permissions = await this.userService.getUserPermission(
+      +userId,
+      resource,
+    );
+
+    return permissions;
   }
 }

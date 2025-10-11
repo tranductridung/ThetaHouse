@@ -18,6 +18,7 @@ export const appointmentSchema = baseAppointmentSchema.extend({
   type: z.enum(APPOINTMENT_TYPE),
   category: z.enum(APPOINTMENT_CATEGORY),
   startAt: z.date(),
+  endAt: z.date(),
   room: z.object({
     id: z.number(),
     name: z.string(),

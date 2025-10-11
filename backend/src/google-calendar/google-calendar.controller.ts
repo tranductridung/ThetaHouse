@@ -13,7 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { GoogleCalendarService } from './google-calendar.service';
 import { CreateCalendarDto } from './dtos/create-calendar.dto';
-import { UserOAuthData } from 'src/auth/user-payload.interface';
+import { UserOAuthData } from 'src/auth/interfaces/user-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
@@ -50,9 +50,9 @@ export class GoogleCalendarController {
     }
 
     const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
-    const redirectUri = this.configService.get<string>(
-      'GOOGLE_CALENDAR_CALLBACK_URL',
-    );
+    const backendUrl = this.configService.get<string>('BACKEND_URL');
+    const redirectUri = `${backendUrl}${this.configService.get<string>('GOOGLE_CALENDAR_CALLBACK_URL')}`;
+
     const state = encodeURIComponent(jwtToken);
 
     const scope = encodeURIComponent(
@@ -84,8 +84,9 @@ export class GoogleCalendarController {
 
     // Lưu token Google vào DB nếu cần
     await this.googleCalendarService.saveCalendarTokens(user);
-
-    return res.redirect('http://localhost:5173');
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    return res.redirect(frontendUrl);
   }
 
   @UseGuards(AuthJwtGuard)
@@ -115,7 +116,7 @@ export class GoogleCalendarController {
     } catch (error: any) {
       return {
         success: false,
-        message: error?.message || 'Create event failed!',
+        message: 'Create event failed!',
       };
     }
   }

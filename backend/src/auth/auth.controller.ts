@@ -15,12 +15,14 @@ import { Request, Response } from 'express';
 import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 import { VerifyEmailJwtGuard } from './guards/auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {}
 
   @Post('login')

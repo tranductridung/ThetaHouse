@@ -12,10 +12,15 @@ import { toast } from "sonner";
 import PageTitle from "@/components/Title";
 import { useCreateFormManager } from "@/hooks/use-custom-manager";
 import InventoryModal from "@/components/modals/inventory.modal";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type InventoryProps = { isUseTitle?: boolean };
 
 const Inventory = ({ isUseTitle = true }: InventoryProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<InventoryType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -35,7 +40,6 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
   };
 
   const handleSubmit = async (formData: InventoryDraftType) => {
-    console.log("formDataaaaaaaaaaaaa", formData);
     try {
       const payload: CreateInventoryType = {
         productId: formData.product.id,
@@ -44,8 +48,6 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
         action: formData.action,
         unitPrice: formData.unitPrice,
       };
-
-      console.log("payloadddddddddddddddd", payload);
 
       await api.post("/inventories", payload);
       toast.success("Add new inventory success!");
@@ -57,9 +59,18 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("inventory");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Inventory"></PageTitle>}

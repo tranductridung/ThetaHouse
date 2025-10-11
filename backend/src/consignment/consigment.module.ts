@@ -6,12 +6,14 @@ import { InventoryModule } from 'src/inventory/inventory.module';
 import { Consignment } from './entities/consigment.entity';
 import { ConsignmentController } from './consigment.controller';
 import { ConsignmentService } from './consigment.service';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Consignment]),
     ItemModule,
     TransactionModule,
+    AuthorizationModule,
     forwardRef(() => InventoryModule),
   ],
   controllers: [ConsignmentController],

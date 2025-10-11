@@ -11,11 +11,11 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import api from "@/api/api";
+import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import type { DiscountType } from "../schemas/discount.schema";
-import { formatCurrency } from "@/lib/utils";
 
 export function DiscountComboBox({
   value,

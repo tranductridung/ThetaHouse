@@ -1,21 +1,22 @@
-import { DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { UserService } from './../user/user.service';
 import {
-  ForbiddenException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UserRole, UserStatus } from 'src/common/enums/enum';
-import { CreateUserDTO } from 'src/user/dto/create-user.dto';
-import { TokenService } from 'src/token/token.service';
+import { DataSource } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { UserStatus } from 'src/common/enums/enum';
 import { MailService } from 'src/mail/mail.service';
-import { UserPayload } from './user-payload.interface';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserService } from './../user/user.service';
 import { User } from 'src/user/entities/user.entity';
+import { TokenService } from 'src/token/token.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CreateUserDTO } from 'src/user/dto/create-user.dto';
+import { UserPayload } from './interfaces/user-payload.interface';
+import { AuthorizationService } from './../authorization/authorization.service';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private mailService: MailService,
+    private authorizationService: AuthorizationService,
   ) {}
 
   async login(email: string, password: string) {
@@ -71,12 +73,11 @@ export class AuthService {
           'Account is pending approval. Please contact the administrator to validate your account.',
         );
     }
-
     return {
       id: user.id,
       email: user.email,
       fullName: user.fullName,
-      role: user.role,
+      roles: user.roles,
     };
   }
 
@@ -93,39 +94,45 @@ export class AuthService {
             ...createUserDTO,
             password: hashedPassword,
             status: UserStatus.ACTIVE,
-            role: UserRole.ADMIN,
           }
         : {
             ...createUserDTO,
             password: hashedPassword,
-            role: UserRole.EMPLOYEE,
             status: UserStatus.ACTIVE, // Just in develop
             // status: UserStatus.UNVERIFIED,
           };
 
     const user = await this.userService.create(userData);
+    const environment = this.configService.get<string>('environment');
 
     // Just verify email when account not the first account
-    // Delete comment when in production
-    // if (userCount !== 0) {
-    //   const payload = {
-    //     id: user.id,
-    //     email: user.email,
-    //     fullName: user.fullName,
-    //     role: user.role,
-    //   };
+    if (environment === 'prod' && userCount !== 0) {
+      const backendUrl = this.configService.get<string>('BACKEND_URL');
+      const payload = {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        roles: user.roles,
+      };
 
-    //   const token = this.jwtService.sign(payload, {
-    //     secret: this.configService.get<string>('VERIFY_EMAIL_TOKEN'),
-    //     expiresIn: this.configService.get<string>('VERIFY_EMAIL_TOKEN_EXPIRES'),
-    //   });
+      const token = this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('VERIFY_EMAIL_TOKEN'),
+        expiresIn: this.configService.get<string>('VERIFY_EMAIL_TOKEN_EXPIRES'),
+      });
 
-    //   const verifyLink = `http://localhost:3000/api/v1/users/auth/verify-email?token=${token}`;
+      const verifyLink = `${backendUrl}/users/auth/verify-email?token=${token}`;
 
-    //   await this.mailService.verifyEmail(user.email, verifyLink);
-    // }
+      await this.mailService.verifyEmail(user.email, verifyLink);
+    }
 
     const { password, ...result } = user;
+
+    // Assign role to user
+    if (userCount === 0) {
+      const adminRole =
+        await this.authorizationService.findRoleByName('superadmin');
+      await this.authorizationService.assignRoleToUser(user.id, adminRole.id);
+    }
     return result;
   }
 
@@ -162,6 +169,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findOne(userPayload.id);
+    const userRoles = await this.authorizationService.getUserRoles(user.id);
 
     // Check if token is exist in database
     await this.tokenService.isTokenExist(refreshToken, user.id);
@@ -171,7 +179,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
-        role: user.role,
+        roles: userRoles.roles.map((role) => role.name),
       },
       {
         secret: this.configService.get('ACCESS_TOKEN'),

@@ -1,43 +1,43 @@
-import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/pages/Layout";
-import Login from "@/pages/Auth/login.page";
-import Signup from "@/pages/Auth/signup.page";
-import Dashboard from "@/pages/dashboard.page";
-import Product from "@/pages/product.page";
-import Service from "@/pages/service.page";
-import Appointment from "@/pages/appointment.page";
-import Consignment from "@/pages/consignment.page";
-import Order from "@/pages/order.page";
-import Purchase from "@/pages/purchase.page";
-import Inventory from "@/pages/inventory.page";
-import Module from "@/pages/module.page";
 import Room from "@/pages/room.page";
-import Partner from "@/pages/partner.page";
 import User from "@/pages/user.page";
-import Transaction from "@/pages/transaction.page";
-import Payment from "@/pages/payment.page";
 import Item from "@/pages/item.page";
-import { Toaster } from "./components/ui/sonner";
-import SourcePage from "./pages/source.page";
-import Discount from "./pages/discount.page";
-import OrderDetails from "./pages/order-detail.page";
-import PurchaseDetails from "./pages/purchase-detail.page";
-import ConsignmentDetails from "./pages/consignment-detail.page";
-import CreatePurchase from "./pages/create-purchase.page";
-import CreateOrder from "./pages/create-order.page";
-import CreateConsignment from "./pages/create-consignment.page";
-import PartnerDetail from "./pages/partner-detail.page";
-import NotFound from "./pages/not-found.page";
-import Course from "./pages/course.page";
-import Enrollment from "./pages/enrollment.page";
-import CourseDetail from "./pages/course-detail.page";
-import CourseStaff from "./pages/course-staff.page";
-import Test from "./pages/test.page";
-import ProtectedRoute from "./auth/ProtectedRoute";
-import { AuthProvider } from "./auth/AuthContext";
-import PublicRoute from "./auth/PublicRoute";
-import ResetPassword from "./pages/Auth/reset-password.page";
-import ForgotPassword from "./pages/Auth/forgot-password.page";
+import Order from "@/pages/order.page";
+import Module from "@/pages/module.page";
+import Course from "@/pages/course.page";
+import Product from "@/pages/product.page";
+import Partner from "@/pages/partner.page";
+import Service from "@/pages/service.page";
+import Payment from "@/pages/payment.page";
+import Login from "@/pages/Auth/login.page";
+import Calendar from "@/pages/calendar.page";
+import Discount from "@/pages/discount.page";
+import Purchase from "@/pages/purchase.page";
+import PublicRoute from "@/auth/PublicRoute";
+import SourcePage from "@/pages/source.page";
+import Signup from "@/pages/Auth/signup.page";
+import NotFound from "@/pages/not-found.page";
+import Dashboard from "@/pages/dashboard.page";
+import Inventory from "@/pages/inventory.page";
+import { Toaster } from "@/components/ui/sonner";
+import Enrollment from "@/pages/enrollment.page";
+import { AuthProvider } from "@/auth/AuthContext";
+import ProtectedRoute from "@/auth/ProtectedRoute";
+import Consignment from "@/pages/consignment.page";
+import Transaction from "@/pages/transaction.page";
+import Appointment from "@/pages/appointment.page";
+import CourseStaff from "@/pages/course-staff.page";
+import CreateOrder from "@/pages/create-order.page";
+import OrderDetails from "@/pages/order-detail.page";
+import CourseDetail from "@/pages/course-detail.page";
+import PartnerDetail from "@/pages/partner-detail.page";
+import CreatePurchase from "@/pages/create-purchase.page";
+import PurchaseDetails from "@/pages/purchase-detail.page";
+import { Routes, Route, Navigate } from "react-router-dom";
+import ResetPassword from "@/pages/Auth/reset-password.page";
+import ForgotPassword from "@/pages/Auth/forgot-password.page";
+import CreateConsignment from "@/pages/create-consignment.page";
+import ConsignmentDetails from "@/pages/consignment-detail.page";
 
 const App = () => {
   return (
@@ -46,7 +46,6 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route element={<ProtectedRoute />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="test" element={<Test />} />
 
             <Route path="services" element={<Service />} />
             <Route path="products" element={<Product />} />
@@ -61,6 +60,7 @@ const App = () => {
             <Route path="items" element={<Item />} />
 
             <Route path="appointments" element={<Appointment />} />
+            <Route path="calendars" element={<Calendar />} />
 
             <Route path="finance/payments" element={<Payment />} />
             <Route path="finance/transactions" element={<Transaction />} />
@@ -103,7 +103,6 @@ const App = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-
       <Toaster
         swipeDirections={["left", "top"]}
         richColors

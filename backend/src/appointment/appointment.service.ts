@@ -760,7 +760,7 @@ export class AppointmentService {
       return { appointments, total };
     } else {
       const appointments = await queryBuilder.getMany();
-      return appointments;
+      return { appointments };
     }
   }
 

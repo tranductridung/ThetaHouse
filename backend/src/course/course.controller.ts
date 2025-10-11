@@ -1,5 +1,4 @@
 import {
-  Controller,
   Get,
   Post,
   Body,
@@ -8,37 +7,42 @@ import {
   Delete,
   Query,
   UseGuards,
+  Controller,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
+import { CourseRole } from 'src/common/enums/enum';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { CourseRole, UserRole } from 'src/common/enums/enum';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { CreateCourseStaffDto } from './dto/create-course-staff.dto';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, RolesGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('courses')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
+  @RequirePermissions('course:create')
   @Post()
   create(@Body() createCourseDto: CreateCourseDto) {
     return this.courseService.create(createCourseDto);
   }
 
+  @RequirePermissions('course:read')
   @Get('all')
   findAll(@Query() paginationDto: PaginationDto) {
     return this.courseService.findAll(paginationDto);
   }
 
+  @RequirePermissions('course:read')
   @Get()
   findAllActive(@Query() paginationDto: PaginationDto) {
     return this.courseService.findAllActive(paginationDto);
   }
 
+  @RequirePermissions('course:read', 'enrollment:read')
   @Get(':id/enrollments')
   getEnrollmentsByCourse(
     @Query() paginationDto: PaginationDto,
@@ -47,42 +51,32 @@ export class CourseController {
     return this.courseService.getEnrollmentsByCourse(courseId, paginationDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:read', 'user:read')
   @Get('staff')
   async getAllCourseStaff(@Query() paginationDto: PaginationDto) {
     return await this.courseService.getCourseStaff(undefined, paginationDto);
   }
 
+  @RequirePermissions('course:read')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const course = await this.courseService.findOne(+id);
     return { course };
   }
 
+  @RequirePermissions('course:update', 'course:read')
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
     return this.courseService.update(+id, updateCourseDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:delete', 'course:read')
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.courseService.remove(+id);
   }
 
-  @Roles(UserRole.ADMIN)
-  @Patch(':id/restore')
-  async restore(@Param('id') id: string) {
-    return await this.courseService.restore(+id);
-  }
-
-  @Roles(UserRole.ADMIN)
-  @Patch(':id/toggle-status')
-  async toggleStatus(@Param('id') id: string) {
-    return await this.courseService.toggleStatus(+id);
-  }
-
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:read', 'user:read')
   @Get(':courseId/staff')
   async getCourseStaff(
     @Query() paginationDto: PaginationDto,
@@ -91,7 +85,19 @@ export class CourseController {
     return await this.courseService.getCourseStaff(courseId, paginationDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:update', 'course:read')
+  @Patch(':id/restore')
+  async restore(@Param('id') id: string) {
+    return await this.courseService.restore(+id);
+  }
+
+  @RequirePermissions('course:update', 'course:read')
+  @Patch(':id/toggle-status')
+  async toggleStatus(@Param('id') id: string) {
+    return await this.courseService.toggleStatus(+id);
+  }
+
+  @RequirePermissions('course:update', 'user:read', 'course:read')
   @Post(':courseId/staff')
   async addStaff(
     @Body() body: Pick<CreateCourseStaffDto, 'role' | 'staffId'>,
@@ -104,7 +110,7 @@ export class CourseController {
     return await this.courseService.addStaff(createCourseStaffDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:delete', 'course:read')
   @Delete(':courseId/staff/:staffId')
   async removeStaff(
     @Param('courseId') courseId: string,
@@ -113,7 +119,7 @@ export class CourseController {
     return await this.courseService.removeStaff(+staffId, +courseId);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('course:update', 'course:read')
   @Patch(':courseId/staff/:staffId/change-role')
   async changRole(
     @Param('courseId') courseId: string,

@@ -1,4 +1,3 @@
-import { useForm } from "react-hook-form";
 import {
   Form,
   FormField,
@@ -7,36 +6,34 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import PasswordField from "../PasswordField";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import PasswordField from "../PasswordField";
+import { Input } from "@/components/ui/input";
+import { handleAxiosError } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, type SignupType } from "../schemas/signup.schema";
+import {
+  Dialog,
+  DialogTitle,
+  DialogHeader,
+  DialogContent,
+  DialogDescription,
+} from "../dialog";
 
-const signupSchema = z
-  .object({
-    fullName: z.string(),
-    email: z.string().email({ message: "Email invalid!" }),
-    password: z.string().min(8, { message: "Password at least 8 characters!" }),
-    confirmPassword: z
-      .string()
-      .min(8, { message: "Password at least 8 characters!" }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Password is not match!",
-    path: ["confirmPassword"],
-  });
-
-type SignupFormData = z.infer<typeof signupSchema>;
-
-const SignupForm = () => {
+export const SignupForm = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   const navigate = useNavigate();
+
   const backendUrl =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
-  const form = useForm<SignupFormData>({
+  const form = useForm<SignupType>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       fullName: "",
@@ -46,18 +43,19 @@ const SignupForm = () => {
     },
   });
 
-  const onSubmit = async (data: SignupFormData) => {
+  const onSubmit = async (data: SignupType) => {
+    setIsLoading(true);
     const { confirmPassword, ...payload } = data;
     await axios
       .post(`${backendUrl}/api/v1/auth/signup`, { ...payload })
       .then((response) => {
-        console.log(response);
-        navigate("auth/login");
+        setShowEmailDialog(true);
       })
       .catch((error) => {
-        console.log(error);
+        handleAxiosError(error);
         form.reset();
-      });
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (
@@ -115,15 +113,50 @@ const SignupForm = () => {
             placeholder="Confirm Password"
           ></PasswordField>
 
-          <Button type="submit" className="w-full bg-primary text-white">
-            Sign Up
+          <Button
+            disabled={isLoading}
+            className="w-full bg-primary text-white"
+            type="submit"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Account...
+              </>
+            ) : (
+              <>Sign Up</>
+            )}
           </Button>
+
           <div className="text-center text-sm">
             You have an account?{" "}
             <a href="/auth/login" className="hover:cursor-pointer text-primary">
               Login
             </a>
           </div>
+
+          <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Verify your email</DialogTitle>
+                <DialogDescription>
+                  We've sent a verification link to your email.
+                  <br />
+                  Please check your inbox and click the link to verify your
+                  account.
+                </DialogDescription>
+                <Button
+                  className="bg-primary text-white"
+                  onClick={() => {
+                    setShowEmailDialog(false);
+                    navigate("/auth/login");
+                  }}
+                >
+                  Back to Login
+                </Button>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
         </form>
       </Form>
     </>

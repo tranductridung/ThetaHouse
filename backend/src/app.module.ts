@@ -24,12 +24,13 @@ import { TransactionModule } from './transaction/transaction.module';
 import { PaymentModule } from './payment/payment.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { DashboardModule } from './dashboard/dashboard.module';
-import { ReportsModule } from './reports/reports.module';
 import { CourseModule } from './course/course.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { EncryptionModule } from './encryption/encryption.module';
 import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
 import { ReportModule } from './report/report.module';
+import { AuthorizationModule } from './authorization/authorization.module';
+import { SeedModule } from './seed/seed.module';
 
 config();
 @Module({
@@ -66,14 +67,14 @@ config();
     TransactionModule,
     PaymentModule,
     RevenueModule,
-    ReportsModule,
     DashboardModule,
-    ReportsModule,
     CourseModule,
     EnrollmentModule,
     EncryptionModule,
     GoogleCalendarModule,
     ReportModule,
+    AuthorizationModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

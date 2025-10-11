@@ -1,5 +1,4 @@
-import { PaginationDto } from './../common/dtos/pagination.dto';
-import { ConfigService } from '@nestjs/config';
+import { AuthorizationService } from './../authorization/authorization.service';
 import {
   BadRequestException,
   ConflictException,
@@ -7,16 +6,18 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserStatus } from 'src/common/enums/enum';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDTO } from './dto/change-pass.dto';
-import * as bcrypt from 'bcrypt';
-import { UserRole, UserStatus } from 'src/common/enums/enum';
-import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import { EncryptionService } from 'src/encryption/encryption.service';
+import { Appointment } from 'src/appointment/entities/appointment.entity';
 
 @Injectable()
 export class UserService {
@@ -26,6 +27,7 @@ export class UserService {
     private dataSource: DataSource,
     private readonly configService: ConfigService,
     private readonly encryptionService: EncryptionService,
+    private readonly authorizationService: AuthorizationService,
   ) {}
 
   async findAll(paginationDto?: PaginationDto) {
@@ -58,25 +60,37 @@ export class UserService {
   }
 
   async findByEmail(email: string, isActive?: boolean) {
-    const user = await this.userRepo.findOne({
-      where: { email },
-      select: [
-        'id',
-        'email',
-        'fullName',
-        'password',
-        'role',
-        'status',
-        'calendarRefreshToken',
-      ],
-    });
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'userRole')
+      .leftJoinAndSelect('userRole.role', 'role')
+      .where('user.email = :email', { email })
+      .select([
+        'user.id',
+        'user.email',
+        'user.fullName',
+        'user.password',
+        'user.status',
+        'user.calendarRefreshToken',
+        'userRole',
+        'role.name',
+      ])
+      .getOne();
 
     if (!user) throw new NotFoundException('User not found!');
 
     if (isActive && user.status !== UserStatus.ACTIVE)
       throw new BadRequestException(`User status is ${user.status}!`);
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      password: user.password,
+      status: user.status,
+      calendarRefreshToken: user.calendarRefreshToken,
+      roles: user.userRoles.map((userRole) => userRole.role.name),
+    };
   }
 
   async findOne(id: number, isActive?: boolean, getCalendarToken?: boolean) {
@@ -111,13 +125,12 @@ export class UserService {
 
     if (userExist) throw new ConflictException('Email already used');
 
-    if (userExist) {
-      throw new ConflictException('Email already exist');
-    }
-
     const user = this.userRepo.create(createUserDto);
     await this.userRepo.save(user);
-    return user;
+
+    const userRoles = await this.authorizationService.getUserRoles(user.id);
+
+    return { ...user, roles: userRoles.roles.map((role) => role.name) };
   }
 
   async countUser() {
@@ -141,14 +154,6 @@ export class UserService {
     return { message: `User status is changed to ${user.status}` };
   }
 
-  async changeRole(id: number, role: UserRole) {
-    const user = await this.findOne(id);
-
-    user.role = role;
-    await this.userRepo.save(user);
-    return { message: `User role is changed to ${user.role}` };
-  }
-
   async updateUser(id: number, updateData: UpdateUserDto) {
     const user = await this.findOne(id);
 
@@ -167,7 +172,6 @@ export class UserService {
 
     await this.userRepo.save(user);
 
-    console.log('userrrrr', user);
     const { password, ...result } = user;
     return result;
   }
@@ -282,5 +286,13 @@ export class UserService {
       success: true,
       message: 'Removed calendar tokens successfully!',
     };
+  }
+
+  async getUserPermission(userId: number, resource?: string) {
+    const permissions = await this.authorizationService.getPermissions(
+      userId,
+      resource,
+    );
+    return permissions;
   }
 }

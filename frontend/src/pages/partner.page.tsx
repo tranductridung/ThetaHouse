@@ -1,23 +1,28 @@
-import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
 import type {
   CreatePartnerFormType,
   EditPartnerFormType,
   PartnerType,
 } from "@/components/schemas/partner.schema";
-import { partnerColumns } from "@/components/columns/partner.column";
+import api from "@/api/api";
 import { toast } from "sonner";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import type { PartnerTypeConst } from "@/components/constants/constants";
-import PageTitle from "@/components/Title";
+import { DataTable } from "@/components/data-table";
 import PartnerModal from "@/components/modals/partner.modal";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
+import { partnerColumns } from "@/components/columns/partner.column";
+import type { PartnerTypeConst } from "@/components/constants/constants";
+import { useAuth } from "@/auth/useAuth";
+import { useLoading } from "@/components/contexts/loading.context";
 
 type PartnerProps = { isUseTitle?: boolean };
 
 const Partner = ({ isUseTitle = true }: PartnerProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<PartnerType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -64,9 +69,18 @@ const Partner = ({ isUseTitle = true }: PartnerProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("partner");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Partner"></PageTitle>}

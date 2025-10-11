@@ -3,16 +3,16 @@ import ForgotPasswordForm, {
 } from "@/components/forms/forgot-password.form";
 import {
   AlertDialog,
+  AlertDialogTitle,
   AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogContent,
+  AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
-import { handleAxiosError } from "@/lib/utils";
 import axios from "axios";
 import { useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
 
 export default function ForgotPassword() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -20,7 +20,7 @@ export default function ForgotPassword() {
   const [open, setOpen] = useState(false);
   const handleForgotPassword = async (data: ForgotPasswordFormData) => {
     try {
-      await axios.post(`${backendUrl}/api/v1/auth/forgot-password`, {
+      await axios.post(`${backendUrl}/auth/forgot-password`, {
         email: data.email,
       });
       setOpen(true);

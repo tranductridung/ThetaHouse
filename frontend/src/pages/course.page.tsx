@@ -12,10 +12,15 @@ import { useNavigate } from "react-router-dom";
 import PageTitle from "@/components/Title";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import CourseModal from "@/components/modals/course.modal";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type CourseProps = { isUseTitle?: boolean };
 
 const Course = ({ isUseTitle = true }: CourseProps) => {
+  const { fetchPermissions } = useAuth();
+  const { setLoading } = useLoading();
+
   const [data, setData] = useState<CourseType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -90,9 +95,18 @@ const Course = ({ isUseTitle = true }: CourseProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("course");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Course"></PageTitle>}

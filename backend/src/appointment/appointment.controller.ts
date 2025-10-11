@@ -11,22 +11,26 @@ import {
 } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { CreateTherapyAppointmentDto } from './dto/create-appointment.dto';
 import { CreateConsultationAppointmentDto } from './dto/create-consultation-appointment.dto';
 import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, RolesGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('appointments')
 export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
+
+  @RequirePermissions('appointment:update')
   @Get('toggle')
   toggle() {
     return this.appointmentService.toggle();
   }
 
+  @RequirePermissions('appointment:create')
   @Post('therapy')
   async createTherapyApt(
     @Body() createTherapyAppointmentDto: CreateTherapyAppointmentDto,
@@ -36,6 +40,7 @@ export class AppointmentController {
     );
   }
 
+  @RequirePermissions('appointment:create')
   @Post('consultation')
   async createConsultationApt(
     @Body() createConsultationAppointmentDto: CreateConsultationAppointmentDto,
@@ -45,22 +50,26 @@ export class AppointmentController {
     );
   }
 
+  @RequirePermissions('appointment:read')
   @Get('all')
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.appointmentService.findAll(paginationDto);
   }
 
+  @RequirePermissions('appointment:read')
   @Get('active')
   async findAllActive(@Query() paginationDto: PaginationDto) {
     return await this.appointmentService.findAllActive(paginationDto);
   }
 
+  @RequirePermissions('appointment:read')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const appointment = await this.appointmentService.findOne(+id);
     return { appointment };
   }
 
+  @RequirePermissions('appointment:update')
   @Patch('therapy/:id')
   async updateTherapyApt(
     @Param('id') id: string,
@@ -73,6 +82,7 @@ export class AppointmentController {
     return { appointment };
   }
 
+  @RequirePermissions('appointment:update')
   @Patch('consultation/:id')
   async updateConsultationApt(
     @Param('id') id: string,
@@ -85,11 +95,13 @@ export class AppointmentController {
     return { appointment };
   }
 
+  @RequirePermissions('appointment:delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.appointmentService.remove(+id);
   }
 
+  @RequirePermissions('appointment:update')
   @Post(':id/complete')
   async setCompleteStatus(@Param('id') id: string) {
     await this.appointmentService.setCompleteStatus(+id);

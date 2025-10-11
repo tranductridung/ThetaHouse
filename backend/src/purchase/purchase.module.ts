@@ -7,6 +7,7 @@ import { Item } from 'src/item/entities/item.entity';
 import { ItemModule } from 'src/item/item.module';
 import { TransactionModule } from 'src/transaction/transaction.module';
 import { InventoryModule } from 'src/inventory/inventory.module';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { InventoryModule } from 'src/inventory/inventory.module';
     ItemModule,
     TransactionModule,
     InventoryModule,
+    AuthorizationModule,
   ],
   controllers: [PurchaseController],
   providers: [PurchaseService],

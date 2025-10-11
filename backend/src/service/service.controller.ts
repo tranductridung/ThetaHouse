@@ -1,53 +1,54 @@
 import {
-  Controller,
   Get,
   Post,
   Body,
   Patch,
   Param,
+  Query,
   Delete,
   UseGuards,
-  Query,
+  Controller,
 } from '@nestjs/common';
 import { ServiceService } from './service.service';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
-import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { RolesGuard } from 'src/auth/guards/role.guard';
-import { Roles } from 'src/auth/roles.decorator';
-import { UserRole } from 'src/common/enums/enum';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, RolesGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('services')
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:create')
   @Post()
   async create(@Body() createServiceDto: CreateServiceDto) {
     const service = await this.serviceService.create(createServiceDto);
     return { service };
   }
 
+  @RequirePermissions('service:read')
   @Get()
   async findAllActive(@Query() paginationDto: PaginationDto) {
     return await this.serviceService.findAllActive(paginationDto);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:read')
   @Get('all')
   async findAll(@Query() paginationDto: PaginationDto) {
     return await this.serviceService.findAll(paginationDto);
   }
 
+  @RequirePermissions('service:read')
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const service = await this.serviceService.findOne(+id);
     return { service };
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:update')
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -57,19 +58,19 @@ export class ServiceController {
     return { service };
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.serviceService.remove(+id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:update')
   @Patch(':id/toggle-status')
   async toggleStatus(@Param('id') id: string) {
     return await this.serviceService.toggleStatus(+id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @RequirePermissions('service:update')
   @Patch(':id/restore')
   async restore(@Param('id') id: string) {
     return await this.serviceService.restore(+id);

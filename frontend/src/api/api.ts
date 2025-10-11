@@ -3,7 +3,7 @@ import axios from "axios";
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const api = axios.create({
-  baseURL: `${backendUrl}/api/v1`,
+  baseURL: `${backendUrl}`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -33,7 +33,7 @@ api.interceptors.response.use(
 
       try {
         const responses = await axios.post(
-          `${backendUrl}/api/v1/auth/refresh`,
+          `${backendUrl}/auth/refresh`,
           {},
           { withCredentials: true }
         );

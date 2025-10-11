@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Enrollment } from './entities/enrollment.entity';
 import { CourseModule } from 'src/course/course.module';
 import { PartnerModule } from 'src/partner/partner.module';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Enrollment]),
     CourseModule,
     PartnerModule,
+    AuthorizationModule,
   ],
   controllers: [EnrollmentController],
   providers: [EnrollmentService],

@@ -32,12 +32,10 @@ export function NavUser() {
   const [showGoogleCalendar, setShowGoogleCalendar] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Early return if user is not available
   if (!user) {
     return null;
   }
 
-  // Function to get initials from fullName
   const getInitials = (fullName: string) => {
     if (!fullName) return "U";
     const nameParts = fullName.split(" ");
@@ -72,54 +70,62 @@ export function NavUser() {
                   setDropdownOpen(!dropdownOpen);
                 }}
               >
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg">
+                <Avatar className="h-9 w-9 rounded-full border border-gray-300 shadow-sm">
+                  <AvatarFallback className="rounded-full bg-blue-100 text-blue-700 font-bold text-lg">
                     {getInitials(user?.fullName)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.fullName}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                <div className="flex flex-col flex-1 min-w-0 ml-3">
+                  <span className="truncate font-semibold text-base leading-tight">
+                    {user.fullName}
+                  </span>
+                  <span className="truncate text-xs text-gray-500">
+                    {user.email}
+                  </span>
                 </div>
-                <ChevronsUpDown className="ml-auto size-4" />
+                <ChevronsUpDown className="ml-auto size-5 text-gray-400" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               ref={dropdownRef}
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              className="min-w-[220px] max-w-xs rounded-xl shadow-lg p-2"
               side={isMobile ? "bottom" : "right"}
               align="end"
               sideOffset={4}
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">
+                <div className="flex items-center gap-3 px-2 py-2 text-left text-sm">
+                  <Avatar className="h-9 w-9 rounded-full border border-gray-300 shadow-sm">
+                    <AvatarFallback className="rounded-full bg-blue-100 text-blue-700 font-bold text-lg">
                       {getInitials(user.fullName)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate font-semibold text-base leading-tight">
                       {user.fullName}
                     </span>
-                    <span className="truncate text-xs">{user.email}</span>
+                    <span className="truncate text-xs text-gray-500">
+                      {user.email}
+                    </span>
                   </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
+                  className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-blue-50 transition"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     openUserProfile();
                   }}
                 >
-                  <BadgeCheck />
-                  Account
+                  <BadgeCheck className="text-blue-600" />
+                  <span className="font-medium">Account</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-blue-50 transition"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -127,20 +133,21 @@ export function NavUser() {
                     setShowGoogleCalendar(true);
                   }}
                 >
-                  <Calendar />
-                  <span>Google Calendar</span>
+                  <Calendar className="text-green-600" />
+                  <span className="font-medium">Google Calendar</span>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
+                className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-red-50 transition"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   logout();
                 }}
               >
-                <LogOut />
-                Log out
+                <LogOut className="text-red-600" />
+                <span className="font-medium">Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -158,14 +165,14 @@ export function NavUser() {
         }}
       >
         <DialogContent
-          className="h-[95%] overflow-hidden"
+          className="h-[95%] max-w-md w-full overflow-hidden p-0"
           onEscapeKeyDown={closeUserProfile}
           onInteractOutside={(e) => {
             e.preventDefault();
             closeUserProfile();
           }}
         >
-          <div className="overflow-y-auto">
+          <div className="overflow-y-auto h-full w-full">
             <UserProfile />
           </div>
         </DialogContent>

@@ -15,6 +15,8 @@ import type {
   ConsignmentTypeConst,
   PartnerTypeConst,
 } from "@/components/constants/constants";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 type ConsignmentProps = {
   partnerId?: number | undefined;
@@ -26,6 +28,9 @@ const Consignment = ({
   partnerType,
   isUseTitle = true,
 }: ConsignmentProps) => {
+  const { fetchPermissions } = useAuth();
+  const { setLoading } = useLoading();
+
   const [data, setData] = useState<ConsignmentType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -70,9 +75,18 @@ const Consignment = ({
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("consignment");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   const handleCancel = async (id?: number) => {
     if (typeof id !== "number") return;
 

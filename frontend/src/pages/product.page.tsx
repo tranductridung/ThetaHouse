@@ -12,13 +12,17 @@ import { toast } from "sonner";
 import PageTitle from "@/components/Title";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import ProductModal from "@/components/modals/product.modal";
+import { useAuth } from "@/auth/useAuth";
+import { useLoading } from "@/components/contexts/loading.context";
 
 type ProductProps = {
   isUseTitle?: boolean;
 };
 const Product = ({ isUseTitle = true }: ProductProps) => {
-  const [data, setData] = useState<ProductType[]>([]);
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
 
+  const [data, setData] = useState<ProductType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -65,6 +69,7 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
         );
 
         await api.patch(`/products/${formManager.data.id}`, payload);
+        console.log("payloadddddd", payload);
         toast.success("Edit product success!");
       }
 
@@ -107,7 +112,17 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
   };
 
   useEffect(() => {
-    fetchData();
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("product");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, [pageIndex, pageSize]);
 
   return (

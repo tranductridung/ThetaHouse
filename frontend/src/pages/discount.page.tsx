@@ -12,10 +12,15 @@ import { toast } from "sonner";
 import PageTitle from "@/components/Title";
 import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import DiscountModal from "@/components/modals/discount.modal";
+import { useAuth } from "@/auth/useAuth";
+import { useLoading } from "@/components/contexts/loading.context";
 
 type DiscountProps = { isUseTitle?: boolean };
 
 const Discount = ({ isUseTitle = true }: DiscountProps) => {
+  const { fetchPermissions } = useAuth();
+  const { setLoading } = useLoading();
+
   const [data, setData] = useState<DiscountType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -84,9 +89,18 @@ const Discount = ({ isUseTitle = true }: DiscountProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("discount");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Discount"></PageTitle>}

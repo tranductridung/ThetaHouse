@@ -12,6 +12,8 @@ import AppointmentForm from "@/components/forms/appointment.form";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { appointmentColumns } from "@/components/columns/appointment.column";
 import type { AppointmentCategoryConst } from "@/components/constants/constants";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -30,6 +32,9 @@ const Appointment = ({
   appointmentCategory,
   isUseTitle = true,
 }: AppointmentProps) => {
+  const { fetchPermissions } = useAuth();
+  const { setLoading } = useLoading();
+
   const [data, setData] = useState<AppointmentType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -91,9 +96,18 @@ const Appointment = ({
   };
 
   useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize]);
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("appointment");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    run();
+  }, [pageIndex, pageSize]);
   const {
     handleCreateAppointment,
     handleSubmitEdit,

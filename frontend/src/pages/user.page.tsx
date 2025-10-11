@@ -9,12 +9,17 @@ import type { UserRoleConst } from "@/components/constants/constants";
 import { toast } from "sonner";
 import { handleAxiosError } from "@/lib/utils";
 import PageTitle from "@/components/Title";
+import { useAuth } from "@/auth/useAuth";
+import { useLoading } from "@/components/contexts/loading.context";
 
 type UserProps = {
   isUseTitle?: boolean;
 };
 
 const User = ({ isUseTitle = true }: UserProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+
   const [data, setData] = useState<UserType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -55,8 +60,19 @@ const User = ({ isUseTitle = true }: UserProps) => {
   };
 
   useEffect(() => {
-    fetchData();
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("user");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, [pageIndex, pageSize]);
+  const { user } = useAuth();
 
   return (
     <div className="p-4">
@@ -66,6 +82,7 @@ const User = ({ isUseTitle = true }: UserProps) => {
         columns={userColumns({
           toggleStatus,
           handleChangeRole,
+          user,
         })}
         data={data}
         total={total}

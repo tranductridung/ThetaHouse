@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { RolesGuard } from './guards/role.guard';
 import { MailModule } from 'src/mail/mail.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
@@ -10,9 +9,17 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { VerifyJwtStrategy } from './strategies/verify-email-jwt.strategy';
 import { GoogleCalendarStrategy } from '../google-calendar/strategies/google-calendar.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
+import { PermissionsGuard } from '../authorization/guards/permission.guard';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
-  imports: [JwtModule.register({}), UserModule, TokenModule, MailModule],
+  imports: [
+    JwtModule.register({}),
+    UserModule,
+    TokenModule,
+    MailModule,
+    AuthorizationModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -20,8 +27,8 @@ import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
     RefreshJwtStrategy,
     GoogleCalendarStrategy,
     VerifyJwtStrategy,
-    RolesGuard,
+    PermissionsGuard,
   ],
-  exports: [AuthService, RolesGuard, VerifyJwtStrategy],
+  exports: [AuthService, PermissionsGuard, VerifyJwtStrategy],
 })
 export class AuthModule {}

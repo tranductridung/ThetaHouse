@@ -10,6 +10,7 @@ import { InventoryModule } from 'src/inventory/inventory.module';
 import { TransactionModule } from 'src/transaction/transaction.module';
 import { OrderService } from './order.service';
 import { EnrollmentModule } from 'src/enrollment/enrollment.module';
+import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EnrollmentModule } from 'src/enrollment/enrollment.module';
     InventoryModule,
     TransactionModule,
     EnrollmentModule,
+    AuthorizationModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

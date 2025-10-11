@@ -11,6 +11,8 @@ import PageTitle from "@/components/Title";
 import type { AddPayerType } from "@/components/schemas/add-payer.schema";
 import AddPayerModal from "@/components/modals/add-payer.modal";
 import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -24,11 +26,14 @@ type OrderProps = {
 };
 
 const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
+  const navigate = useNavigate();
+
   const [data, setData] = useState<OrderType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const navigate = useNavigate();
 
   const [showPayerDialog, setShowPayerDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -44,12 +49,23 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
       setData(response.data.orders);
       setTotal(response.data.total);
     } catch (error) {
+      setLoading(false);
       handleAxiosError(error);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions("order");
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, [pageIndex, pageSize]);
 
   const onAdd = () => {

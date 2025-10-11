@@ -1,10 +1,12 @@
-import { IsEnum, IsOptional } from 'class-validator';
-import { UserRole, UserStatus } from 'src/common/enums/enum';
+import { Type } from 'class-transformer';
+import { IsEnum, IsInt, IsOptional } from 'class-validator';
+import { UserStatus } from 'src/common/enums/enum';
 
 export class UpdateStatusRoleDTO {
-  @IsEnum(UserRole)
+  @Type(() => Number)
+  @IsInt()
   @IsOptional()
-  role?: UserRole;
+  roleId?: number;
 
   @IsEnum(UserStatus)
   @IsOptional()

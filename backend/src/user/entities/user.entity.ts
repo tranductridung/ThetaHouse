@@ -7,18 +7,18 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { UserStatus, UserRole, SexType } from '../../common/enums/enum';
 import { IsEnum } from 'class-validator';
-import { Inventory } from 'src/inventory/entities/inventory.entity';
-import { Order } from 'src/order/entities/order.entity';
-import { Appointment } from 'src/appointment/entities/appointment.entity';
-import { Purchase } from 'src/purchase/entities/purchase.entity';
-import { Payment } from 'src/payment/entities/payment.entity';
-import { Consignment } from 'src/consignment/entities/consigment.entity';
-import { CourseStaff } from '../../course/entities/course-staff.entity';
 import { Item } from 'src/item/entities/item.entity';
+import { Order } from 'src/order/entities/order.entity';
 import { Token } from 'src/token/entities/token.entity';
-
+import { Payment } from 'src/payment/entities/payment.entity';
+import { UserStatus, SexType } from '../../common/enums/enum';
+import { Purchase } from 'src/purchase/entities/purchase.entity';
+import { Inventory } from 'src/inventory/entities/inventory.entity';
+import { UserRole } from 'src/authorization/entities/user-role.entity';
+import { CourseStaff } from '../../course/entities/course-staff.entity';
+import { Consignment } from 'src/consignment/entities/consigment.entity';
+import { Appointment } from 'src/appointment/entities/appointment.entity';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
@@ -48,10 +48,6 @@ export class User {
 
   @Column({ type: 'text', nullable: true, select: false })
   calendarRefreshToken?: string | null;
-
-  @Column({ type: 'enum', enum: UserRole, default: [UserRole.EMPLOYEE] })
-  @IsEnum(UserRole)
-  role: UserRole;
 
   @Column({ type: 'enum', enum: SexType, default: SexType.UNDEFINED })
   sex: SexType;
@@ -97,4 +93,7 @@ export class User {
 
   @OneToMany(() => Item, (items) => items.creator)
   items: Item[];
+
+  @OneToMany(() => UserRole, (ur) => ur.user)
+  userRoles: UserRole[];
 }

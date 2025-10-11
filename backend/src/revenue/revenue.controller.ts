@@ -1,6 +1,8 @@
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { RevenueService } from './revenue.service';
-import { Controller, Get, Query } from '@nestjs/common';
-
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('revenues')
 export class RevenueController {
   constructor(private readonly revenueService: RevenueService) {}
