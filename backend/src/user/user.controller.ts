@@ -90,7 +90,12 @@ export class UserController {
   @Get('me/profile')
   async getProfile(@Req() req: Request) {
     const userId = Number(req?.user?.id);
-    const user = await this.userService.findOne(userId);
+    const user = await this.userService.findOne(
+      userId,
+      undefined,
+      undefined,
+      true,
+    );
     return { user };
   }
 

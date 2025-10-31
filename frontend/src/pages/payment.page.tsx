@@ -1,12 +1,13 @@
 import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import type { PaymentType } from "@/components/schemas/payment.schema";
-import { paymentColumns } from "@/components/columns/payment.column";
+import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
 import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
-import PageTitle from "@/components/Title";
+import { DataTable } from "@/components/data-table";
 import { useLoading } from "@/components/contexts/loading.context";
-import { useAuth } from "@/auth/useAuth";
+import { paymentColumns } from "@/components/columns/payment.column";
+import type { PaymentType } from "@/components/schemas/payment.schema";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type PaymentProps = {
   isUseTitle?: boolean;
@@ -37,7 +38,7 @@ const Payment = ({ isUseTitle = true }: PaymentProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("payment");
+        await fetchPermissions(["payment"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -50,17 +51,18 @@ const Payment = ({ isUseTitle = true }: PaymentProps) => {
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Payment"></PageTitle>}
-
-      <DataTable
-        columns={paymentColumns}
-        data={data}
-        onAdd={undefined}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="payment:read">
+        <DataTable
+          columns={paymentColumns}
+          data={data}
+          onAdd={undefined}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
+      </RequirePermission>
     </div>
   );
 };

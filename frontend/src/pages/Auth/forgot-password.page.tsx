@@ -1,6 +1,3 @@
-import ForgotPasswordForm, {
-  type ForgotPasswordFormData,
-} from "@/components/forms/forgot-password.form";
 import {
   AlertDialog,
   AlertDialogTitle,
@@ -10,6 +7,9 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
+import ForgotPasswordForm, {
+  type ForgotPasswordFormData,
+} from "@/components/forms/forgot-password.form";
 import axios from "axios";
 import { useState } from "react";
 import { handleAxiosError } from "@/lib/utils";

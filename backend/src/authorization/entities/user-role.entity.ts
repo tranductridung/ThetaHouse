@@ -1,12 +1,12 @@
 import {
   Entity,
-  ManyToOne,
   Unique,
+  ManyToOne,
   JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from './role.entity';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '@/src/user/entities/user.entity';
 
 @Entity('users_roles')
 @Unique(['role', 'user'])

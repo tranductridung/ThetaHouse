@@ -1,19 +1,21 @@
 import type {
-  AppointmentDraftType,
   AppointmentType,
+  AppointmentDraftType,
 } from "@/components/schemas/appointment.schema";
 import api from "@/api/api";
+import { useAuth } from "@/auth/useAuth";
 import PageTitle from "@/components/Title";
 import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { useAptAction } from "@/hooks/useAptAction";
 import AppointmentForm from "@/components/forms/appointment.form";
+import { useLoading } from "@/components/contexts/loading.context";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { RequirePermission } from "@/components/commons/require-permission";
 import { appointmentColumns } from "@/components/columns/appointment.column";
 import type { AppointmentCategoryConst } from "@/components/constants/constants";
-import { useLoading } from "@/components/contexts/loading.context";
-import { useAuth } from "@/auth/useAuth";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -47,30 +49,38 @@ const Appointment = ({
   });
 
   const handleSubmit = async (formData: AppointmentDraftType) => {
-    let isSuccess: boolean = false;
-    if (
-      formManager.type === "edit" ||
-      formManager.type === "editConsultation"
-    ) {
-      isSuccess = await handleSubmitEdit(formData, formManager!.data!.id!);
-    } else if (
-      formManager.type === "addFree" ||
-      formManager.type === "consultation"
-    ) {
-      isSuccess = await handleCreateAppointment(
-        formData,
-        formManager.type,
-        undefined,
-        customerId
-      );
-    }
+    setLoading(true);
 
-    if (isSuccess) {
-      setFormManager({
-        isShow: false,
-        type: "add",
-        data: null,
-      });
+    try {
+      let isSuccess: boolean = false;
+      if (
+        formManager.type === "edit" ||
+        formManager.type === "editConsultation"
+      ) {
+        isSuccess = await handleSubmitEdit(formData, formManager!.data!.id!);
+      } else if (
+        formManager.type === "addFree" ||
+        formManager.type === "consultation"
+      ) {
+        isSuccess = await handleCreateAppointment(
+          formData,
+          formManager.type,
+          undefined,
+          customerId
+        );
+      }
+
+      if (isSuccess) {
+        setFormManager({
+          isShow: false,
+          type: "add",
+          data: null,
+        });
+      }
+    } catch (error) {
+      handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,23 +93,27 @@ const Appointment = ({
   };
 
   const fetchData = async () => {
-    let url;
-    if (customerId) {
-      url = appointmentCategory
-        ? `/partners/customers/${customerId}/appointments/${appointmentCategory}?page=${pageIndex}&limit=${pageSize}`
-        : `/partners/customers/${customerId}/appointments?page=${pageIndex}&limit=${pageSize}`;
-    } else url = `/appointments/all?page=${pageIndex}&limit=${pageSize}`;
+    try {
+      let url;
+      if (customerId) {
+        url = appointmentCategory
+          ? `/partners/customers/${customerId}/appointments/${appointmentCategory}?page=${pageIndex}&limit=${pageSize}`
+          : `/partners/customers/${customerId}/appointments?page=${pageIndex}&limit=${pageSize}`;
+      } else url = `/appointments/all?page=${pageIndex}&limit=${pageSize}`;
 
-    const response = await api.get(url);
-    setData(response.data.appointments);
-    setTotal(response.data.total);
+      const response = await api.get(url);
+      setData(response.data.appointments);
+      setTotal(response.data.total);
+    } catch (error) {
+      handleAxiosError(error);
+    }
   };
 
   useEffect(() => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("appointment");
+        await fetchPermissions(["appointment"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -108,6 +122,7 @@ const Appointment = ({
 
     run();
   }, [pageIndex, pageSize]);
+
   const {
     handleCreateAppointment,
     handleSubmitEdit,
@@ -133,33 +148,40 @@ const Appointment = ({
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Appointment"></PageTitle>}
+      <RequirePermission permission="appointment:create">
+        {customerId && appointmentCategory === "Consultation" && (
+          <Button
+            type="button"
+            onClick={onCreateConsultation}
+            className="w-fit"
+          >
+            Book Consultation Appointment
+          </Button>
+        )}
 
-      {customerId && appointmentCategory === "Consultation" && (
-        <Button type="button" onClick={onCreateConsultation} className="w-fit">
-          Book Consultation Appointment
-        </Button>
-      )}
+        {customerId && appointmentCategory === "Therapy" && (
+          <Button type="button" onClick={onCreateFree} className="w-fit">
+            Book Free Appointment
+          </Button>
+        )}
+      </RequirePermission>
 
-      {customerId && appointmentCategory === "Therapy" && (
-        <Button type="button" onClick={onCreateFree} className="w-fit">
-          Book Free Appointment
-        </Button>
-      )}
-
-      <DataTable
-        onAdd={undefined}
-        columns={appointmentColumns({
-          onEdit,
-          handleSetComplete,
-          onRemove: removeAppointment,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="appointment:read">
+        <DataTable
+          onAdd={undefined}
+          columns={appointmentColumns({
+            onEdit,
+            handleSetComplete,
+            onRemove: removeAppointment,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
+      </RequirePermission>
 
       <Dialog
         open={formManager.isShow}

@@ -2,15 +2,15 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
-import type { OrderType } from "../schemas/source.schema";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { OrderType } from "../schemas/source.schema";
+import { ActionItem } from "../commons/action-item.helper";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type OrderProps = {
@@ -119,31 +119,34 @@ export const orderColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="order:read"
               onClick={() => {
                 onDetail(row.original.id);
               }}
             >
               View Order
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Cancelled" && (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission="order:export"
                   onClick={() => {
                     handleExport(row.original.id);
                   }}
                 >
                   Export order
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="order:cancel"
                   onClick={() => {
                     onCancel(row.original.id);
                   }}
                 >
                   Cancel
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             )}
           </DropdownMenuContent>

@@ -2,16 +2,16 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
 import { format } from "date-fns";
-import type { PartnerTypeConst } from "../constants/constants";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 import type { PartnerType } from "../schemas/partner.schema";
+import type { PartnerTypeConst } from "../constants/constants";
 
 type PartnerProps = {
   onEdit: (partner: PartnerType) => void;
@@ -117,21 +117,23 @@ export const partnerColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="partner:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
-            <DropdownMenuItem
+            <ActionItem
+              permission="partner:read"
               onClick={() => {
                 onDetail(row.original.id, row.original.type);
               }}
             >
               Detail
-            </DropdownMenuItem>
+            </ActionItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

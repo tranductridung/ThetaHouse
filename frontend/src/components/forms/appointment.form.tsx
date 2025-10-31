@@ -21,17 +21,17 @@ import {
   type AppointmentDraftType,
   appointmentDraftSchema,
 } from "../schemas/appointment.schema";
-import { useForm } from "react-hook-form";
 import { format } from "date-fns";
+import { Input } from "../ui/input";
+import { useForm } from "react-hook-form";
+import { Calendar } from "../ui/calendar";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "../ui/calendar";
-import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
-import { Input } from "../ui/input";
-import { RoomComboBox } from "../comboBoxs/room.comboBox";
 import { UserComboBox } from "../comboBoxs/user.comboBox";
+import { RoomComboBox } from "../comboBoxs/room.comboBox";
 import { MultiModuleComboBox } from "../comboBoxs/module.comboBox";
+import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 
 type AppointmentProps = {
   type: "add" | "edit" | "addFree" | "consultation" | "editConsultation";
@@ -71,9 +71,7 @@ const AppointmentForm = ({
     <>
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit, (error) => {
-            console.log("error neeeeeeeeeee", error);
-          })}
+          onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6 overflow-y-auto "
         >
           <div className="flex flex-col items-center gap-2 text-center">
@@ -234,7 +232,6 @@ const AppointmentForm = ({
               </FormItem>
             )}
           />
-
           {type !== "consultation" && (
             <>
               {/* Room */}
@@ -247,7 +244,9 @@ const AppointmentForm = ({
                     <FormControl className="font-normal">
                       <RoomComboBox
                         value={field.value}
-                        onChange={(room) => field.onChange(room)}
+                        onChange={(room) =>
+                          field.onChange(room ? room : undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />

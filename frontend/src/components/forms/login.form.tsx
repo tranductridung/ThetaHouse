@@ -16,6 +16,7 @@ import * as z from "zod";
 import PasswordField from "../PasswordField";
 import { useAuth } from "@/auth/useAuth";
 import { useNavigate } from "react-router-dom";
+import { handleAxiosError } from "@/lib/utils";
 const loginSchema = z.object({
   email: z.string().email({ message: "Email invalid!" }),
   password: z.string(),
@@ -43,6 +44,7 @@ const LoginForm = () => {
     try {
       await login(data.email, data.password);
     } catch (error) {
+      handleAxiosError(error);
       form.reset();
     }
   };

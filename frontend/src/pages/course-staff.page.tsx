@@ -1,13 +1,14 @@
 import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
+import { toast } from "sonner";
+import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
 import { useEffect, useState } from "react";
 import { handleAxiosError } from "@/lib/utils";
-import { toast } from "sonner";
-import { courseStaffColumns } from "@/components/columns/courst-staff.column";
-import type { CourseStaffType } from "@/components/schemas/course.schema";
-import PageTitle from "@/components/Title";
+import { DataTable } from "@/components/data-table";
 import { useLoading } from "@/components/contexts/loading.context";
-import { useAuth } from "@/auth/useAuth";
+import type { CourseStaffType } from "@/components/schemas/course.schema";
+import { RequirePermission } from "@/components/commons/require-permission";
+import { courseStaffColumns } from "@/components/columns/courst-staff.column";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -76,11 +77,14 @@ const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
 
   const handleDelete = async (courseId: number, staffId: number) => {
     try {
+      setLoading(true);
       await api.delete(`/courses/${courseId}/staff/${staffId}`);
       fetchData();
       toast.success("Staff is deleted!");
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +92,7 @@ const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("course");
+        await fetchPermissions(["course"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -97,24 +101,25 @@ const CourseStaff = ({ courseId, isUseTitle = true }: CourseStaffProps) => {
 
     run();
   }, [pageIndex, pageSize]);
-  console.log("data", data);
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Course Staff"></PageTitle>}
-
-      <DataTable
-        onAdd={undefined}
-        columns={courseStaffColumns({
-          handleDelete,
-          onEdit,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="course:read">
+        <DataTable
+          onAdd={undefined}
+          columns={courseStaffColumns({
+            handleDelete,
+            onEdit,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
+      </RequirePermission>
       {/* 
       <Dialog
         open={formManager.isShow}

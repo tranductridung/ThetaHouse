@@ -1,16 +1,3 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/auth/useAuth";
-import UserProfileForm from "./forms/user-profile.form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Phone,
   MapPin,
@@ -23,15 +10,30 @@ import {
   Mail,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
-import api from "@/api/api";
-import { handleAxiosError } from "@/lib/utils";
-import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type {
   changePwdFormType,
   EditUserFormType,
   UserType,
 } from "./schemas/user.schema";
+
+import { toast } from "sonner";
+import api from "@/api/api";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/auth/useAuth";
+import { useEffect, useState } from "react";
+import UserProfileForm from "./forms/user-profile.form";
+import { handleAxiosError } from "@/lib/utils";
+import { Button } from "./ui/button";
+
 import ChangePasswordForm from "./forms/change-password.form";
 
 const UserProfile = () => {
@@ -48,6 +50,7 @@ const UserProfile = () => {
       setIsLoading(true);
       const response = await api.get(`users/me/profile`);
       setProfileData(response.data.user);
+      console.log(response.data);
     } catch (error) {
       handleAxiosError(error);
     } finally {
@@ -134,9 +137,9 @@ const UserProfile = () => {
 
   const getRoleColor = (role: string) => {
     switch (role?.toLowerCase()) {
-      case "admin":
+      case "superadmin":
         return "bg-red-100 text-red-800 border-red-200";
-      case "manager":
+      case "admin":
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "employee":
         return "bg-green-100 text-green-800 border-green-200";
@@ -244,11 +247,12 @@ const UserProfile = () => {
               <div className="flex flex-wrap gap-2 justify-center">
                 <Badge
                   className={`${getRoleColor(
-                    profileData.role
+                    profileData.userRoles[0].role.name
                   )} border-2 px-3 py-1 text-xs font-medium shadow-sm`}
                 >
                   <Shield className="w-3 h-3 mr-1" />
-                  {profileData.role}
+                  {profileData?.userRoles[0].role.name[0].toUpperCase() +
+                    profileData?.userRoles[0].role.name.slice(1).toLowerCase()}
                 </Badge>
                 <Badge
                   className={`${getStatusColor(

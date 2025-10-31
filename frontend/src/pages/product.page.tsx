@@ -1,19 +1,20 @@
-import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
 import type {
   CreateProductFormType,
   EditProductFormType,
   ProductType,
 } from "@/components/schemas/product.schema";
-import { productColumns } from "@/components/columns/product.column";
-import { handleAxiosError, omitFields } from "@/lib/utils";
+import api from "@/api/api";
 import { toast } from "sonner";
-import PageTitle from "@/components/Title";
-import { useCombineFormManager } from "@/hooks/use-custom-manager";
-import ProductModal from "@/components/modals/product.modal";
 import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { DataTable } from "@/components/data-table";
+import { handleAxiosError, omitFields } from "@/lib/utils";
+import ProductModal from "@/components/modals/product.modal";
+import { useCombineFormManager } from "@/hooks/use-custom-manager";
 import { useLoading } from "@/components/contexts/loading.context";
+import { productColumns } from "@/components/columns/product.column";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type ProductProps = {
   isUseTitle?: boolean;
@@ -46,6 +47,7 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
     formData: CreateProductFormType | EditProductFormType
   ) => {
     try {
+      setLoading(true);
       if (formManager.type === "add") {
         await api.post("/products", formData);
         toast.success("Add product success!");
@@ -77,37 +79,49 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
       onClose();
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
+      setLoading(true);
       await api.delete(`/products/${id}`);
       fetchData();
       toast.success("Product is deleted!");
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleRestore = async (id: number) => {
     try {
+      setLoading(true);
+
       await api.patch(`/products/${id}/restore`);
       fetchData();
       toast.success("Product is restored!");
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleToggle = async (id: number) => {
     try {
+      setLoading(true);
       const response = await api.patch(`/products/${id}/toggle-status`);
       fetchData();
 
       toast.success(response.data.message);
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,7 +129,7 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("product");
+        await fetchPermissions(["product"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -128,22 +142,24 @@ const Product = ({ isUseTitle = true }: ProductProps) => {
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Product"></PageTitle>}
-
-      <DataTable
-        onAdd={onAdd}
-        columns={productColumns({
-          handleDelete,
-          handleRestore,
-          handleToggle,
-          onEdit,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="product:read">
+        <DataTable
+          onAdd={onAdd}
+          columns={productColumns({
+            handleDelete,
+            handleRestore,
+            handleToggle,
+            onEdit,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"product:create"}
+        />
+      </RequirePermission>
 
       <ProductModal
         formManager={formManager}

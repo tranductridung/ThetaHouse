@@ -16,7 +16,7 @@ import Purchase from "@/pages/purchase.page";
 import PublicRoute from "@/auth/PublicRoute";
 import SourcePage from "@/pages/source.page";
 import Signup from "@/pages/Auth/signup.page";
-import NotFound from "@/pages/not-found.page";
+import NotFound from "@/pages/error-pages/not-found.page";
 import Dashboard from "@/pages/dashboard.page";
 import Inventory from "@/pages/inventory.page";
 import { Toaster } from "@/components/ui/sonner";
@@ -28,11 +28,13 @@ import Transaction from "@/pages/transaction.page";
 import Appointment from "@/pages/appointment.page";
 import CourseStaff from "@/pages/course-staff.page";
 import CreateOrder from "@/pages/create-order.page";
+import RolePermission from "./pages/role-permission";
 import OrderDetails from "@/pages/order-detail.page";
 import CourseDetail from "@/pages/course-detail.page";
 import PartnerDetail from "@/pages/partner-detail.page";
 import CreatePurchase from "@/pages/create-purchase.page";
 import PurchaseDetails from "@/pages/purchase-detail.page";
+import Forbidden from "@/pages/error-pages/forbidden.page";
 import { Routes, Route, Navigate } from "react-router-dom";
 import ResetPassword from "@/pages/Auth/reset-password.page";
 import ForgotPassword from "@/pages/Auth/forgot-password.page";
@@ -47,44 +49,49 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
 
-            <Route path="services" element={<Service />} />
-            <Route path="products" element={<Product />} />
             <Route path="courses" element={<Course />} />
             <Route path="courses/staff" element={<CourseStaff />} />
             <Route path="courses/:id" element={<CourseDetail />} />
-            <Route path="enrollments" element={<Enrollment />} />
-            <Route path="partners" element={<Partner />} />
+
+            <Route path="items" element={<Item />} />
             <Route path="users" element={<User />} />
+            <Route path="services" element={<Service />} />
+            <Route path="products" element={<Product />} />
+            <Route path="calendars" element={<Calendar />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="items" element={<Item />} />
-
+            <Route path="enrollments" element={<Enrollment />} />
             <Route path="appointments" element={<Appointment />} />
-            <Route path="calendars" element={<Calendar />} />
 
             <Route path="finance/payments" element={<Payment />} />
             <Route path="finance/transactions" element={<Transaction />} />
 
-            <Route path="resources/modules" element={<Module />} />
             <Route path="resources/rooms" element={<Room />} />
+            <Route path="resources/modules" element={<Module />} />
             <Route path="resources/discounts" element={<Discount />} />
 
+            <Route
+              path="settings/roles-permissions"
+              element={<RolePermission />}
+            />
+
+            <Route path="partners" element={<Partner />} />
             <Route
               path="partners/:partnerType/:id"
               element={<PartnerDetail />}
             />
 
             <Route path="sources" element={<SourcePage />}>
-              <Route path="purchases" element={<Purchase />} />
               <Route path="orders" element={<Order />} />
+              <Route path="purchases" element={<Purchase />} />
               <Route path="consignments" element={<Consignment />} />
 
               <Route path="orders/:id" element={<OrderDetails />} />
               <Route path="purchases/:id" element={<PurchaseDetails />} />
               <Route path="consignments/:id" element={<ConsignmentDetails />} />
 
-              <Route path="purchases/create" element={<CreatePurchase />} />
               <Route path="orders/create" element={<CreateOrder />} />
+              <Route path="purchases/create" element={<CreatePurchase />} />
               <Route
                 path="consignments/create"
                 element={<CreateConsignment />}
@@ -100,6 +107,8 @@ const App = () => {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
         </Route>
+
+        <Route path="/errors/forbidden" element={<Forbidden />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>

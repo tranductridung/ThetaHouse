@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreatePermissionDto {
   @IsString()
@@ -6,4 +6,8 @@ export class CreatePermissionDto {
 
   @IsString()
   resource: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

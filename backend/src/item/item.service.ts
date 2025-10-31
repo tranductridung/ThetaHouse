@@ -28,16 +28,16 @@ import {
 import { Item } from './entities/item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateItemDto } from './dto/create-item.dto';
+import { User } from 'src/user/entities/user.entity';
 import { loadItemable } from './helpers/itemable.helper';
 import { SnapshotType } from 'src/common/types/item.types';
 import { Service } from 'src/service/entities/service.entity';
 import { DiscountService } from 'src/discount/discount.service';
+import { EnrollmentService } from 'src/enrollment/enrollment.service';
 import { loadEntitySource, loadSource } from './helpers/source.helper';
 import { AppointmentService } from 'src/appointment/appointment.service';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
-import { EnrollmentService } from 'src/enrollment/enrollment.service';
-import { User } from 'src/user/entities/user.entity';
 @Injectable()
 export class ItemService {
   constructor(

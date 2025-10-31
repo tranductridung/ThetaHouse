@@ -1,8 +1,8 @@
 "use client";
 
-import type { DiscountType } from "../schemas/discount.schema";
-import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { DiscountType } from "../schemas/discount.schema";
 
 type AddDiscountProps = {
   handleAddDiscount: (discount: DiscountType, itemId?: number) => void;

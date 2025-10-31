@@ -18,6 +18,7 @@ import { ChangePasswordDTO } from './dto/change-pass.dto';
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import { EncryptionService } from 'src/encryption/encryption.service';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
+import { SaveGoogleTokensDto } from './dto/save-google-tokens.dto';
 
 @Injectable()
 export class UserService {
@@ -33,6 +34,9 @@ export class UserService {
   async findAll(paginationDto?: PaginationDto) {
     const queryBuilder = this.userRepo
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.userRoles', 'ur')
+      .leftJoinAndSelect('ur.role', 'role')
+      .addSelect(['user.createdAt'])
       .orderBy('user.createdAt', 'DESC');
 
     if (
@@ -71,7 +75,7 @@ export class UserService {
         'user.fullName',
         'user.password',
         'user.status',
-        'user.calendarRefreshToken',
+        'user.googleRefreshToken',
         'userRole',
         'role.name',
       ])
@@ -88,20 +92,31 @@ export class UserService {
       fullName: user.fullName,
       password: user.password,
       status: user.status,
-      calendarRefreshToken: user.calendarRefreshToken,
+      googleRefreshToken: user.googleRefreshToken,
       roles: user.userRoles.map((userRole) => userRole.role.name),
     };
   }
 
-  async findOne(id: number, isActive?: boolean, getCalendarToken?: boolean) {
-    const queryBuilder = this.userRepo
-      .createQueryBuilder('user')
-      .where('user.id = :id', { id });
+  async findOne(
+    id: number,
+    isActive?: boolean,
+    getCalendarToken?: boolean,
+    getUserRoles?: boolean,
+  ) {
+    const queryBuilder = this.userRepo.createQueryBuilder('user');
+
+    if (getUserRoles) {
+      queryBuilder
+        .leftJoinAndSelect('user.userRoles', 'ur')
+        .leftJoinAndSelect('ur.role', 'role');
+    }
+
+    queryBuilder.where('user.id = :id', { id });
 
     if (getCalendarToken) {
       queryBuilder.addSelect([
-        'user.calendarAccessToken',
-        'user.calendarRefreshToken',
+        'user.googleAccessToken',
+        'user.googleRefreshToken',
       ]);
     }
 
@@ -154,21 +169,33 @@ export class UserService {
     return { message: `User status is changed to ${user.status}` };
   }
 
-  async updateUser(id: number, updateData: UpdateUserDto) {
+  async saveGoogleTokens(
+    userId: number,
+    saveGoogleTokensDto: SaveGoogleTokensDto,
+  ) {
+    const user = await this.findOne(userId, true);
+
+    if (saveGoogleTokensDto.googleAccessToken) {
+      user.googleAccessToken = this.encryptionService.encrypt(
+        saveGoogleTokensDto.googleAccessToken,
+      );
+    }
+
+    if (saveGoogleTokensDto.googleRefreshToken) {
+      user.googleRefreshToken = this.encryptionService.encrypt(
+        saveGoogleTokensDto.googleRefreshToken,
+      );
+    }
+    await this.userRepo.save(user);
+
+    const { password, ...result } = user;
+    return result;
+  }
+
+  async updateUser(id: number, updateUserDto: UpdateUserDto) {
     const user = await this.findOne(id);
 
-    this.userRepo.merge(user, updateData);
-    if (updateData.accessToken) {
-      user.calendarAccessToken = this.encryptionService.encrypt(
-        updateData.accessToken,
-      );
-    }
-
-    if (updateData.refreshToken) {
-      user.calendarRefreshToken = this.encryptionService.encrypt(
-        updateData.refreshToken,
-      );
-    }
+    this.userRepo.merge(user, updateUserDto);
 
     await this.userRepo.save(user);
 
@@ -278,8 +305,8 @@ export class UserService {
 
   async removeCalendarToken(userId: number) {
     await this.userRepo.update(userId, {
-      calendarAccessToken: null,
-      calendarRefreshToken: null,
+      googleAccessToken: null,
+      googleRefreshToken: null,
     });
 
     return {

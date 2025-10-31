@@ -1,5 +1,4 @@
 import {
-  Controller,
   Get,
   Post,
   Body,
@@ -8,15 +7,17 @@ import {
   Delete,
   Query,
   UseGuards,
+  Controller,
 } from '@nestjs/common';
 import { PartnerService } from './partner.service';
+import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
-import { AppointmentCategory, PartnerType } from 'src/common/enums/enum';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
-import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
+import { AppointmentCategory, PartnerType } from 'src/common/enums/enum';
 import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
 import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
+
 @UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('partners')
 export class PartnerController {

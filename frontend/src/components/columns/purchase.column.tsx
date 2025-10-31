@@ -2,15 +2,15 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
-import type { PurchaseType } from "../schemas/source.schema";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
+import type { PurchaseType } from "../schemas/source.schema";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
 
 type PurchaseProps = {
@@ -109,33 +109,34 @@ export const purchaseColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="purchase:read"
               onClick={() => {
-                console.log(row.original);
-
                 onDetail(row.original.id);
               }}
             >
               View Purchase
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Cancelled" && (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission="purchase:import"
                   onClick={() => {
                     onImport(row.original.id);
                   }}
                 >
                   Import Purchase
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="purchase:cancel"
                   onClick={() => {
                     onCancel(row.original.id);
                   }}
                 >
                   Cancel
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             )}
           </DropdownMenuContent>

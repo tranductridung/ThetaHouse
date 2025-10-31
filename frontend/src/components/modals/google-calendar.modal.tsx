@@ -27,6 +27,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { handleAxiosError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 
 interface GoogleCalendarDialogProps {
   isOpen: boolean;
@@ -44,9 +45,13 @@ const GoogleCalendarDialog = ({
 
   const checkConnectionStatus = async () => {
     try {
+      console.log("11111111111111111111");
       setIsLoading(true);
+      console.log("22222222222222");
       const response = await api.get("google-calendar/status");
+      console.log("Google Calendar status response:", response);
       setIsConnected(response.data.connected);
+      console.log("33333333333333");
     } catch (error) {
       setIsConnected(false);
     } finally {
@@ -65,20 +70,28 @@ const GoogleCalendarDialog = ({
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      const accessToken = localStorage.getItem("accessToken");
+      const responses = await axios.post(
+        `${backendUrl}/auth/refresh`,
+        {},
+        { withCredentials: true }
+      );
+      const accessToken = responses.data.accessToken;
+      localStorage.setItem("accessToken", accessToken);
+
       if (!accessToken) {
         toast.error("You need to login to connect Google Calendar");
         setIsConnecting(false);
         return;
       }
 
-      const connectUrl = `${backendUrl}/google-calendar/connect?token=${encodeURIComponent(
+      const connectUrl = `${backendUrl}/google-calendar/connect?accessToken=${encodeURIComponent(
         accessToken
       )}`;
+      console.log(connectUrl);
       window.location.href = connectUrl;
-      setIsConnecting(true);
     } catch (error) {
       handleAxiosError(error);
+    } finally {
       setIsConnecting(false);
     }
   };

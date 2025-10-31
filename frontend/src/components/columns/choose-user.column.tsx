@@ -1,7 +1,7 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { UserType } from "../schemas/user.schema";
 
 type ChooseUserProps = {

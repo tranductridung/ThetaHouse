@@ -1,19 +1,20 @@
-import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
-import { handleAxiosError } from "@/lib/utils";
 import type {
   CreateInventoryType,
   InventoryDraftType,
   InventoryType,
 } from "@/components/schemas/inventory.schema";
-import { inventoryColumns } from "@/components/columns/inventory.column";
+import api from "@/api/api";
 import { toast } from "sonner";
-import PageTitle from "@/components/Title";
-import { useCreateFormManager } from "@/hooks/use-custom-manager";
-import InventoryModal from "@/components/modals/inventory.modal";
-import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
+import InventoryModal from "@/components/modals/inventory.modal";
+import { useCreateFormManager } from "@/hooks/use-custom-manager";
+import { useLoading } from "@/components/contexts/loading.context";
+import { inventoryColumns } from "@/components/columns/inventory.column";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type InventoryProps = { isUseTitle?: boolean };
 
@@ -41,6 +42,7 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
 
   const handleSubmit = async (formData: InventoryDraftType) => {
     try {
+      setLoading(true);
       const payload: CreateInventoryType = {
         productId: formData.product.id,
         quantity: formData.quantity,
@@ -55,6 +57,8 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
       onClose();
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +66,7 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("inventory");
+        await fetchPermissions(["inventory"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -71,21 +75,23 @@ const Inventory = ({ isUseTitle = true }: InventoryProps) => {
 
     run();
   }, [pageIndex, pageSize]);
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Inventory"></PageTitle>}
-
-      <DataTable
-        onAdd={onAdd}
-        columns={inventoryColumns()}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
-
+      <RequirePermission permission="inventory:read">
+        <DataTable
+          onAdd={onAdd}
+          columns={inventoryColumns()}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"inventory:create"}
+        />
+      </RequirePermission>
       <InventoryModal
         formManager={formManager}
         onClose={onClose}

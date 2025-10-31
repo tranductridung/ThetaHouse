@@ -1,4 +1,11 @@
 import {
+  Dialog,
+  DialogTitle,
+  DialogHeader,
+  DialogContent,
+  DialogDescription,
+} from "../dialog";
+import {
   Form,
   FormField,
   FormItem,
@@ -17,13 +24,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, type SignupType } from "../schemas/signup.schema";
-import {
-  Dialog,
-  DialogTitle,
-  DialogHeader,
-  DialogContent,
-  DialogDescription,
-} from "../dialog";
 
 export const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,7 @@ export const SignupForm = () => {
     setIsLoading(true);
     const { confirmPassword, ...payload } = data;
     await axios
-      .post(`${backendUrl}/api/v1/auth/signup`, { ...payload })
+      .post(`${backendUrl}/auth/signup`, { ...payload })
       .then((response) => {
         setShowEmailDialog(true);
       })

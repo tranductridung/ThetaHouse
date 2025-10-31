@@ -1,36 +1,35 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { TokenModule } from './token/token.module';
 import { config } from 'dotenv';
+import { Module } from '@nestjs/common';
+import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from './mail/mail.module';
-import { ProductModule } from './product/product.module';
-import { InventoryModule } from './inventory/inventory.module';
-import { ServiceModule } from './service/service.module';
-import { ConsigmentModule } from './consignment/consigment.module';
-import { OrderModule } from './order/order.module';
-import { PurchaseModule } from './purchase/purchase.module';
-import { PartnerModule } from './partner/partner.module';
-import { DiscountModule } from './discount/discount.module';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 import { ItemModule } from './item/item.module';
-import { AppointmentModule } from './appointment/appointment.module';
 import { RoomModule } from './room/room.module';
-import { ModulesModule } from './modules/modules.module';
-import { TransactionModule } from './transaction/transaction.module';
-import { PaymentModule } from './payment/payment.module';
-import { RevenueModule } from './revenue/revenue.module';
-import { DashboardModule } from './dashboard/dashboard.module';
+import { AppController } from './app.controller';
+import { TokenModule } from './token/token.module';
+import { OrderModule } from './order/order.module';
 import { CourseModule } from './course/course.module';
+import { ReportModule } from './report/report.module';
+import { ModulesModule } from './modules/modules.module';
+import { PaymentModule } from './payment/payment.module';
+import { ProductModule } from './product/product.module';
+import { ServiceModule } from './service/service.module';
+import { PartnerModule } from './partner/partner.module';
+import { RevenueModule } from './revenue/revenue.module';
+import { PurchaseModule } from './purchase/purchase.module';
+import { DiscountModule } from './discount/discount.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { EncryptionModule } from './encryption/encryption.module';
-import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
-import { ReportModule } from './report/report.module';
+import { ConsigmentModule } from './consignment/consigment.module';
+import { AppointmentModule } from './appointment/appointment.module';
+import { TransactionModule } from './transaction/transaction.module';
 import { AuthorizationModule } from './authorization/authorization.module';
-import { SeedModule } from './seed/seed.module';
+import { GoogleCalendarModule } from './google-calendar/google-calendar.module';
 
 config();
 @Module({
@@ -74,7 +73,6 @@ config();
     GoogleCalendarModule,
     ReportModule,
     AuthorizationModule,
-    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

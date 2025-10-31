@@ -1,27 +1,26 @@
-import * as React from "react";
 import {
   BoxIcon,
+  UsersIcon,
+  SettingsIcon,
   BuildingIcon,
   CalendarIcon,
+  WarehouseIcon,
   DollarSignIcon,
+  ShoppingCartIcon,
   GalleryVerticalEnd,
   LayoutDashboardIcon,
-  SettingsIcon,
-  ShoppingCartIcon,
-  UsersIcon,
-  WarehouseIcon,
 } from "lucide-react";
-
+import {
+  Sidebar,
+  SidebarRail,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarContent,
+} from "@/components/ui/sidebar";
+import * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-} from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = {
@@ -35,7 +34,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: LayoutDashboardIcon,
         isActive: true,
       },
-
       {
         title: "Solutions",
         url: "/",
@@ -47,16 +45,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: "Enrollments", url: "/enrollments" },
         ],
       },
-
       {
         title: "Inventory",
         url: "/inventory",
         icon: WarehouseIcon,
-        items: [
-          { title: "Stock Levels", url: "/inventory" },
-          { title: "Incoming Stock", url: "/inventory/incoming" },
-          { title: "Outgoing Stock", url: "/inventory/outgoing" },
-        ],
       },
       {
         title: "Source",
@@ -118,8 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/settings",
         icon: SettingsIcon,
         items: [
-          { title: "Roles & Permissions", url: "/settings/roles" },
-          { title: "General", url: "/settings/general" },
+          { title: "Roles & Permissions", url: "/settings/roles-permissions" },
         ],
       },
     ],

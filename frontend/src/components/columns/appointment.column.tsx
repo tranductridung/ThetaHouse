@@ -2,17 +2,17 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
-import type { AppointmentType } from "../schemas/appointment.schema";
 import { format } from "date-fns";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 import { getAppointmentStatusIcon } from "../styles/SourceStatus";
+import type { AppointmentType } from "../schemas/appointment.schema";
 
 type AppointmentProps = {
   onEdit: (product: AppointmentType) => void;
@@ -154,33 +154,36 @@ export const appointmentColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="appointment:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Completed" &&
               row.original.status !== "Cancelled" && (
-                <DropdownMenuItem
+                <ActionItem
+                  permission="appointment:update"
                   onClick={() => {
                     handleSetComplete(row.original.id);
                   }}
                 >
                   Mark as Completed
-                </DropdownMenuItem>
+                </ActionItem>
               )}
 
             {row.original.status !== "Cancelled" && (
-              <DropdownMenuItem
+              <ActionItem
+                permission="appointment:delete"
                 onClick={() => {
                   onRemove(row.original.id);
                 }}
               >
                 Remove
-              </DropdownMenuItem>
+              </ActionItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

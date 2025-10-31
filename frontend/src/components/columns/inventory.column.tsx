@@ -1,9 +1,9 @@
 "use client";
 
+import { Badge } from "../ui/badge";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import type { InventoryType } from "../schemas/inventory.schema";
-import { Badge } from "../ui/badge";
 
 const actionStyle = {
   Import: <ChevronsUp className="text-green-500 dark:text-green-400" />,
@@ -78,7 +78,7 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
       const value = getValue() as string | undefined;
       if (!value) return null;
 
-      const truncated = value.length > 15 ? value.slice(0, 15) + "..." : value;
+      const truncated = value.length > 30 ? value.slice(0, 30) + "..." : value;
 
       return (
         <div>
@@ -87,12 +87,6 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
           </h1>
         </div>
       );
-    },
-  },
-  {
-    id: "actions",
-    cell: () => {
-      return <div className="h-8 w-8"></div>;
     },
   },
 ];

@@ -1,5 +1,5 @@
-import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./useAuth";
+import { Navigate, Outlet } from "react-router-dom";
 
 interface Props {
   role?: string;
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ role }: Props) => {
     return <Navigate to="/auth/login" />;
   }
   // Check role if specified
-  if (role && user.role !== role) {
+  if (role && !user?.roles.includes(role)) {
     return <p>Access denied</p>;
   }
 

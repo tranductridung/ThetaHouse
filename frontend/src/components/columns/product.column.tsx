@@ -2,19 +2,19 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
 } from "lucide-react";
-import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 import type { ProductType } from "../schemas/product.schema";
 
 type ProductProps = {
@@ -156,40 +156,44 @@ export const productColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="product:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Deleted" ? (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission="product:delete"
                   onClick={() => {
                     handleDelete(row.original.id);
                   }}
                 >
                   Delete
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="product:update"
                   onClick={() => {
                     handleToggle(row.original.id);
                   }}
                 >
                   {row.original.status !== "Active" ? "Enable" : "Disable"}
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             ) : (
-              <DropdownMenuItem
+              <ActionItem
+                permission="product:update"
                 onClick={() => {
                   handleRestore(row.original.id);
                 }}
               >
                 Restore
-              </DropdownMenuItem>
+              </ActionItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

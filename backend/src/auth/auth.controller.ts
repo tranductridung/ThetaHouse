@@ -1,21 +1,21 @@
-import { ConfigService } from '@nestjs/config';
 import {
   Body,
-  Controller,
   Get,
   Post,
   Query,
   Req,
   Res,
   UseGuards,
+  Controller,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
 import { LoginDTO } from './dto/login.dto';
 import { Request, Response } from 'express';
-import { CreateUserDTO } from 'src/user/dto/create-user.dto';
+import { AuthService } from './auth.service';
+import { ConfigService } from '@nestjs/config';
+import { UserService } from 'src/user/user.service';
 import { VerifyEmailJwtGuard } from './guards/auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { UserService } from 'src/user/user.service';
+import { CreateUserDTO } from 'src/user/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {

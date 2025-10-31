@@ -1,18 +1,21 @@
 "use client";
 
+import type {
+  SourceTypeConst,
+  TransactionTypeConst,
+} from "../constants/constants";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
-import type { TransactionType } from "../schemas/transaction.schema";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
+import type { TransactionType } from "../schemas/transaction.schema";
 import { getTransactionStatusIcon } from "../styles/TransactionStatus";
-import type { SourceTypeConst, TransactionTypeConst } from "../constants/constants";
 
 type TransactionProps = {
   onAddPayment: (
@@ -107,7 +110,8 @@ export const transactionColumns = ({
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
+              <ActionItem
+                permission="payment:create"
                 onClick={() =>
                   onAddPayment(
                     row.original.id,
@@ -117,7 +121,7 @@ export const transactionColumns = ({
                 }
               >
                 Add Payment
-              </DropdownMenuItem>
+              </ActionItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );

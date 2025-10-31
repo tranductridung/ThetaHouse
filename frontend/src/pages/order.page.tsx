@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
-import type { OrderType } from "@/components/schemas/source.schema";
-import { orderColumns } from "@/components/columns/order.column";
 import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useNavigate } from "react-router-dom";
-import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
-import { useSourceActions } from "@/hooks/useSourceAction";
-import PageTitle from "@/components/Title";
-import type { AddPayerType } from "@/components/schemas/add-payer.schema";
-import AddPayerModal from "@/components/modals/add-payer.modal";
-import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
-import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { DataTable } from "@/components/data-table";
+import { useSourceActions } from "@/hooks/useSourceAction";
+import AddPayerModal from "@/components/modals/add-payer.modal";
+import { orderColumns } from "@/components/columns/order.column";
+import { useLoading } from "@/components/contexts/loading.context";
+import type { OrderType } from "@/components/schemas/source.schema";
+import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
+import type { AddPayerType } from "@/components/schemas/add-payer.schema";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -58,7 +59,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("order");
+        await fetchPermissions(["order"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -79,7 +80,12 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
   const { handleExportImport } = useSourceActions(fetchData);
 
   const handleExport = async (id: number) => {
-    handleExportImport(id, "Order");
+    try {
+      setLoading(true);
+      await handleExportImport(id, "Order");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onCancel = (id: number) => {
@@ -91,6 +97,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
     if (typeof id !== "number" || !payerId) return;
 
     try {
+      setLoading(true);
       await api.post(`orders/${id}/cancel`, { payerId });
       fetchData();
       toast.success("Order is cancelled!");
@@ -100,6 +107,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
       setShowConfirmDialog(false);
       setSelectedOrderId(undefined);
       setPayerId(null);
+      setLoading(false);
     }
   };
 
@@ -112,22 +120,23 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Order" />}
-
-      <DataTable
-        onAdd={onAdd}
-        columns={orderColumns({
-          onDetail,
-          handleExport,
-          onCancel,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
-
+      <RequirePermission permission="order:read">
+        <DataTable
+          onAdd={onAdd}
+          columns={orderColumns({
+            onDetail,
+            handleExport,
+            onCancel,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"order:create"}
+        />
+      </RequirePermission>
       <AddPayerModal
         type={"order"}
         onSubmitAddPayer={onSubmitAddPayer}

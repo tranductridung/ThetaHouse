@@ -1,23 +1,22 @@
 "use client";
-
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
+  useSidebar,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
-import { useState, useRef } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuGroup,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import UserProfile from "./user-profile";
 import { useAuth } from "@/auth/useAuth";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import GoogleCalendarDialog from "./modals/google-calendar.modal";

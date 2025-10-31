@@ -19,6 +19,7 @@ import type { PaymentDraftType } from "@/components/schemas/payment.schema";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type TransactionProps = {
   isUseTitle?: boolean;
@@ -47,12 +48,15 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
 
   const handleSubmit = async (formData: CreateTransactionType) => {
     try {
+      setLoading(true);
       await api.post("/transactions", formData);
       fetchData();
       toast.success("Add transaction success!");
       onClose();
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +66,7 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("transaction");
+        await fetchPermissions(["transaction"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -92,18 +96,21 @@ const Transaction = ({ isUseTitle = true }: TransactionProps) => {
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Transaction"></PageTitle>}
-      <DataTable
-        columns={transactionColumns({
-          onAddPayment,
-        })}
-        data={data}
-        onAdd={onAdd}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="transaction:read">
+        <DataTable
+          columns={transactionColumns({
+            onAddPayment,
+          })}
+          data={data}
+          onAdd={onAdd}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"transaction:create"}
+        />
+      </RequirePermission>
 
       {/* Transaction modal */}
       <TransactionModal

@@ -1,7 +1,7 @@
 import {
+  Injectable,
   CanActivate,
   ExecutionContext,
-  Injectable,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -23,7 +23,9 @@ export class SuperAdminGuard implements CanActivate {
 
     const { roles } = await this.authorizationService.getUserRoles(user.id);
 
-    const isSuperadmin = roles.some((role) => role.name === SUPERADMIN);
+    const isSuperadmin = roles.some(
+      (role) => role.name.toLowerCase() === SUPERADMIN,
+    );
 
     if (!isSuperadmin)
       throw new ForbiddenException('Only superadmin can access this resource');

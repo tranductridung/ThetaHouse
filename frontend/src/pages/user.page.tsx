@@ -1,16 +1,17 @@
 "use client";
 
 import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
-import type { UserType } from "@/components/schemas/user.schema";
-import { userColumns } from "@/components/columns/user.column";
-import type { UserRoleConst } from "@/components/constants/constants";
 import { toast } from "sonner";
-import { handleAxiosError } from "@/lib/utils";
-import PageTitle from "@/components/Title";
 import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
+import { userColumns } from "@/components/columns/user.column";
+import type { UserType } from "@/components/schemas/user.schema";
+import type { RoleType } from "@/components/schemas/role.schema";
 import { useLoading } from "@/components/contexts/loading.context";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type UserProps = {
   isUseTitle?: boolean;
@@ -18,9 +19,10 @@ type UserProps = {
 
 const User = ({ isUseTitle = true }: UserProps) => {
   const { setLoading } = useLoading();
-  const { fetchPermissions } = useAuth();
+  const { fetchPermissions, user } = useAuth();
 
   const [data, setData] = useState<UserType[]>([]);
+  const [roleList, setRoleList] = useState<RoleType[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -48,14 +50,19 @@ const User = ({ isUseTitle = true }: UserProps) => {
     }
   };
 
-  const handleChangeRole = async (id: number, role: UserRoleConst) => {
+  const handleChangeRole = async (userId: number, roleId: number) => {
     try {
-      const response = await api.patch(`users/${id}/change-role`, { role });
+      setLoading(true);
+      await api.patch(`/authorization/users/${userId}/roles`, {
+        roleId,
+      });
       fetchData();
 
-      toast.success(response.data.message);
+      toast.success("Update user role success!");
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,7 +70,7 @@ const User = ({ isUseTitle = true }: UserProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("user");
+        await fetchPermissions(["user", "authorization"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -72,25 +79,45 @@ const User = ({ isUseTitle = true }: UserProps) => {
 
     run();
   }, [pageIndex, pageSize]);
-  const { user } = useAuth();
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true);
+        // Just get role list if user has permission to assign role for another user
+        if (user?.permissions?.includes("authorization:create")) {
+          const response = await api.get(`/authorization/roles`);
+          setRoleList(response.data);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
+  }, [user?.permissions]);
 
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="User"></PageTitle>}
 
-      <DataTable
-        columns={userColumns({
-          toggleStatus,
-          handleChangeRole,
-          user,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="user:read">
+        <DataTable
+          columns={userColumns({
+            toggleStatus,
+            handleChangeRole,
+            roleList,
+            user,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"user:create"}
+        />
+      </RequirePermission>
     </div>
   );
 };

@@ -2,14 +2,14 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { MoreHorizontal } from "lucide-react";
 import type { RoomType } from "../schemas/room.schema";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 
 type RoomProps = {
   onEdit: (room: RoomType) => void;
@@ -65,13 +65,14 @@ export const roomColumns = ({ onEdit }: RoomProps): ColumnDef<RoomType>[] => [
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="room:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

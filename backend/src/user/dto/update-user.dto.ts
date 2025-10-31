@@ -1,21 +1,13 @@
-import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { CreateUserDTO } from './create-user.dto';
-import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SexType } from 'src/common/enums/enum';
+import { CreateUserDTO } from './create-user.dto';
+import { OmitType, PartialType } from '@nestjs/mapped-types';
+import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto extends OmitType(PartialType(CreateUserDTO), [
   'password',
   'email',
 ] as const) {
-  @IsString()
-  @IsOptional()
-  accessToken?: string | null;
-
-  @IsString()
-  @IsOptional()
-  refreshToken?: string | null;
-
   @Type(() => Date)
   @IsDate()
   @IsOptional()

@@ -11,8 +11,8 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import api from "@/api/api";
-import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 type UserOption = {
@@ -51,6 +51,7 @@ export function UserComboBox({
         const res = await api.get(
           `/users?page=${page}&limit=${pageSize}&search=${input}`
         );
+        console.log("ressss", res);
         const items: UserOption[] = res.data.users || [];
 
         setUsers((prev) => (page === 0 ? items : [...prev, ...items]));

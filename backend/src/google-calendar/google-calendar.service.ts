@@ -1,25 +1,19 @@
 import axios from 'axios';
 import { google } from 'googleapis';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { UserService } from 'src/user/user.service';
-import { TokenService } from 'src/token/token.service';
-import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { CreateCalendarDto } from './dtos/create-calendar.dto';
-import { UserOAuthData } from 'src/auth/interfaces/user-payload.interface';
 import { EncryptionService } from './../encryption/encryption.service';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-
+import { SaveGoogleTokensDto } from './../user/dto/save-google-tokens.dto';
 @Injectable()
 export class GoogleCalendarService {
   private oauth2Client: OAuth2Client;
 
   constructor(
     private configService: ConfigService,
-    private jwtService: JwtService,
     private userService: UserService,
-    private tokenService: TokenService,
     private encryptionService: EncryptionService,
   ) {
     this.oauth2Client = new google.auth.OAuth2(
@@ -29,36 +23,22 @@ export class GoogleCalendarService {
     );
   }
 
-  async saveCalendarTokens(userData: UserOAuthData) {
-    const payload = {
-      id: userData.id,
-      email: userData.email,
-      fullName: userData.fullName,
-      roles: userData.roles,
+  async saveGoogleTokens(
+    userId: number,
+    googleAccessToken?: string | null,
+    googleRefreshToken?: string | null,
+  ) {
+    const saveGoogleTokensDto: SaveGoogleTokensDto = {
+      googleAccessToken: googleAccessToken,
+      googleRefreshToken: googleRefreshToken,
     };
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('ACCESS_TOKEN'),
-      expiresIn: this.configService.get('ACCESS_TOKEN_EXPIRES'),
-    });
+    const user = await this.userService.saveGoogleTokens(
+      userId,
+      saveGoogleTokensDto,
+    );
 
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('REFRESH_TOKEN'),
-      expiresIn: this.configService.get('REFRESH_TOKEN_EXPIRES'),
-    });
-
-    const updateUserDto: UpdateUserDto = {
-      accessToken: userData.accessToken,
-    };
-
-    if (userData.refreshToken) {
-      updateUserDto.refreshToken = userData.refreshToken;
-    }
-
-    await this.userService.updateUser(userData.id, updateUserDto);
-    await this.tokenService.create(refreshToken, payload.id);
-
-    return { accessToken, refreshToken, user: payload };
+    return user;
   }
 
   setCredentials(accessToken: string, refreshToken: string) {
@@ -104,33 +84,33 @@ export class GoogleCalendarService {
   async getUserTokens(userId: number) {
     const user = await this.userService.findOne(userId, true, true);
 
-    const decryptedAccessToken = user.calendarAccessToken
-      ? this.encryptionService.decrypt(user.calendarAccessToken)
+    const decryptedAccessToken = user.googleAccessToken
+      ? this.encryptionService.decrypt(user.googleAccessToken)
       : undefined;
 
-    const decryptedRefreshToken = user.calendarRefreshToken
-      ? this.encryptionService.decrypt(user.calendarRefreshToken)
+    const decryptedRefreshToken = user.googleRefreshToken
+      ? this.encryptionService.decrypt(user.googleRefreshToken)
       : undefined;
 
     return {
-      accessToken: decryptedAccessToken ?? undefined,
-      refreshToken: decryptedRefreshToken ?? undefined,
+      accessToken: decryptedAccessToken,
+      refreshToken: decryptedRefreshToken,
     };
   }
 
   async checkCalendarConnection(userId: number) {
     try {
       const {
-        accessToken: calendarAccessToken,
+        accessToken: googleAccessToken,
         refreshToken: calendarRefreshToken,
       } = await this.getUserTokens(userId);
 
-      if (!calendarAccessToken || !calendarRefreshToken) {
+      if (!calendarRefreshToken) {
         return { connected: false };
       }
 
       this.oauth2Client.setCredentials({
-        access_token: calendarAccessToken,
+        access_token: googleAccessToken,
         refresh_token: calendarRefreshToken,
       });
 
@@ -169,5 +149,43 @@ export class GoogleCalendarService {
     await this.userService.removeCalendarToken(userId);
 
     return { success: true, message: 'Google calendar is disconnected!' };
+  }
+
+  generateOAuthUrl(jwtToken: string) {
+    const googleScopes = this.configService.get<string>('GOOGLE_SCOPES');
+
+    if (!googleScopes)
+      throw new InternalServerErrorException(
+        'Google OAuth configuration is missing!',
+      );
+
+    const state = encodeURIComponent(jwtToken);
+    const scopes = googleScopes.trim().split(' ');
+
+    const googleOAuthUrl = this.oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'select_account consent',
+      scope: scopes,
+      state,
+    });
+
+    return googleOAuthUrl;
+  }
+
+  async exchangeCodeForTokens(code: string) {
+    const { tokens } = await this.oauth2Client.getToken(code);
+    return tokens;
+  }
+
+  async getGoogleUserInfo(accessToken: string) {
+    const response = await axios.get(
+      'https://openidconnect.googleapis.com/v1/userinfo',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    );
+    return response;
   }
 }

@@ -1,4 +1,5 @@
 import api from "@/api/api";
+import { toast } from "sonner";
 import type {
   ConsignmentTypeConst,
   SourceTypeConst,
@@ -8,7 +9,6 @@ import type {
   PaymentDraftType,
 } from "@/components/schemas/payment.schema";
 import { handleAxiosError } from "@/lib/utils";
-import { toast } from "sonner";
 
 export const useSourceActions = (refetch: () => void) => {
   const handleAddPayment = async (
@@ -54,9 +54,7 @@ export const useSourceActions = (refetch: () => void) => {
         break;
     }
 
-    if (!url) {
-      throw new Error(`Invalid source!`);
-    }
+    if (!url) throw new Error(`Invalid source!`);
 
     try {
       await api.post(url);

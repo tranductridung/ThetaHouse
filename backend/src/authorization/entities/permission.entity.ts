@@ -3,8 +3,10 @@ import {
   Unique,
   Entity,
   OneToMany,
-  UpdateDateColumn,
+  BeforeUpdate,
+  BeforeInsert,
   CreateDateColumn,
+  UpdateDateColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { RolePermission } from './role-permission.entity';
@@ -18,8 +20,22 @@ export class Permission {
   @Column()
   action: string;
 
+  @BeforeInsert()
+  @BeforeUpdate()
+  normalizeAction() {
+    this.action = this.action.toLowerCase();
+  }
+
   @Column()
   resource: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  normalizeResource() {
+    if (this.resource) {
+      this.resource = this.resource.toLowerCase();
+    }
+  }
 
   @Column()
   key: string;

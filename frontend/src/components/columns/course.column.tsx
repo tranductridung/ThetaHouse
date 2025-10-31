@@ -6,17 +6,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import type { CourseType } from "../schemas/course.schema";
 import { format } from "date-fns";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CourseType } from "../schemas/course.schema";
+import { ActionItem } from "../commons/action-item.helper";
 
 type CourseProps = {
   handleDelete: (id: number) => void;
@@ -172,13 +173,12 @@ export const courseColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                onEdit(row.original);
-              }}
+            <ActionItem
+              permission="course:update"
+              onClick={() => onEdit(row.original)}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             <DropdownMenuItem
               onClick={() => {
@@ -190,30 +190,27 @@ export const courseColumns = ({
 
             {row.original.status !== "Deleted" ? (
               <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleDelete(row.original.id);
-                  }}
+                <ActionItem
+                  permission="course:delete"
+                  onClick={() => handleDelete(row.original.id)}
                 >
                   Delete
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleToggle(row.original.id);
-                  }}
+                <ActionItem
+                  permission="course:update"
+                  onClick={() => handleToggle(row.original.id)}
                 >
                   {row.original.status !== "Active" ? "Enable" : "Disable"}
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             ) : (
-              <DropdownMenuItem
-                onClick={() => {
-                  handleRestore(row.original.id);
-                }}
+              <ActionItem
+                permission="course:update"
+                onClick={() => handleRestore(row.original.id)}
               >
                 Restore
-              </DropdownMenuItem>
+              </ActionItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

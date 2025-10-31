@@ -1,12 +1,13 @@
 import api from "@/api/api";
 import { useAuth } from "@/auth/useAuth";
-import { itemColumns } from "@/components/columns/item.column";
-import { useLoading } from "@/components/contexts/loading.context";
-import { DataTable } from "@/components/data-table";
-import type { ItemType } from "@/components/schemas/item.schema";
 import PageTitle from "@/components/Title";
-import { handleAxiosError } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
+import { itemColumns } from "@/components/columns/item.column";
+import type { ItemType } from "@/components/schemas/item.schema";
+import { useLoading } from "@/components/contexts/loading.context";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type ItemProps = { isUseTitle?: boolean };
 
@@ -35,7 +36,7 @@ const Item = ({ isUseTitle = true }: ItemProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("item");
+        await fetchPermissions(["item"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -44,22 +45,24 @@ const Item = ({ isUseTitle = true }: ItemProps) => {
 
     run();
   }, [pageIndex, pageSize]);
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Item"></PageTitle>}
-
-      <DataTable
-        columns={itemColumns({
-          hasAction: false,
-        })}
-        data={data}
-        onAdd={undefined}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="item:read">
+        <DataTable
+          columns={itemColumns({
+            hasAction: false,
+          })}
+          data={data}
+          onAdd={undefined}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+        />
+      </RequirePermission>
     </div>
   );
 };

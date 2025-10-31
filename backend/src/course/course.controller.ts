@@ -51,7 +51,7 @@ export class CourseController {
     return this.courseService.getEnrollmentsByCourse(courseId, paginationDto);
   }
 
-  @RequirePermissions('course:read', 'user:read')
+  @RequirePermissions('course:read')
   @Get('staff')
   async getAllCourseStaff(@Query() paginationDto: PaginationDto) {
     return await this.courseService.getCourseStaff(undefined, paginationDto);
@@ -64,19 +64,19 @@ export class CourseController {
     return { course };
   }
 
-  @RequirePermissions('course:update', 'course:read')
+  @RequirePermissions('course:update')
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
     return this.courseService.update(+id, updateCourseDto);
   }
 
-  @RequirePermissions('course:delete', 'course:read')
+  @RequirePermissions('course:delete')
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.courseService.remove(+id);
   }
 
-  @RequirePermissions('course:read', 'user:read')
+  @RequirePermissions('course:read')
   @Get(':courseId/staff')
   async getCourseStaff(
     @Query() paginationDto: PaginationDto,

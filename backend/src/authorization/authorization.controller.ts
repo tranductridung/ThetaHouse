@@ -14,33 +14,38 @@ import { Request } from 'express';
 import { UpdateRoleDto } from './dtos/update-role.dto';
 import { CreateRoleDto } from './dtos/create-role.dto';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { SuperAdminGuard } from './guards/superadmin.guard';
+import { PermissionsGuard } from './guards/permission.guard';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { AuthorizationService } from './authorization.service';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
 import { CreatePermissionDto } from './dtos/create-permission.dto';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 
-@UseGuards(AuthJwtGuard, SuperAdminGuard)
+@UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('authorization')
 export class AuthorizationController {
   constructor(private readonly authorizationService: AuthorizationService) {}
 
   // ----------------------------------- Role -----------------------------------
+  @RequirePermissions('authorization:create')
   @Post('roles')
   async createRole(@Body() createRoleDto: CreateRoleDto) {
     return await this.authorizationService.createRole(createRoleDto);
   }
 
+  @RequirePermissions('authorization:read')
   @Get('roles')
   async findRoles(@Query() paginationDto: PaginationDto) {
     return await this.authorizationService.findRoles(paginationDto);
   }
 
+  @RequirePermissions('authorization:read')
   @Get('roles/:id')
   async findRole(@Param('id') id: string) {
     return await this.authorizationService.findRole(+id);
   }
 
+  @RequirePermissions('authorization:update')
   @Patch('roles/:id')
   async updateRole(
     @Param('id') id: string,
@@ -49,12 +54,20 @@ export class AuthorizationController {
     return await this.authorizationService.updateRole(+id, updateRoleDto);
   }
 
+  @RequirePermissions('authorization:delete')
   @Delete('roles/:id')
   async removeRole(@Param('id') id: string) {
     return await this.authorizationService.removeRole(+id);
   }
 
+  @RequirePermissions('authorization:read')
+  @Get('roles/:id/permissions')
+  async findRolePermissions(@Param('id') id: string) {
+    return await this.authorizationService.getRolePermissions(+id);
+  }
+
   // ----------------------------------- Permission -----------------------------------
+  @RequirePermissions('authorization:create')
   @Post('permissions')
   async createPermission(@Body() createPermissionDto: CreatePermissionDto) {
     return await this.authorizationService.createPermission(
@@ -62,16 +75,25 @@ export class AuthorizationController {
     );
   }
 
+  @RequirePermissions('authorization:read')
   @Get('permissions')
   async findPermissions(@Query() paginationDto: PaginationDto) {
     return await this.authorizationService.findPermissions(paginationDto);
   }
 
+  @RequirePermissions('authorization:read')
+  @Get('permissions/meta')
+  async findMeta() {
+    return await this.authorizationService.findPermissionMeta();
+  }
+
+  @RequirePermissions('authorization:read')
   @Get('permissions/:id')
   async findPermission(@Param('id') id: string) {
     return await this.authorizationService.findPermission(+id);
   }
 
+  @RequirePermissions('authorization:update')
   @Patch('permissions/:id')
   async updatePermission(
     @Param('id') id: string,
@@ -83,13 +105,15 @@ export class AuthorizationController {
     );
   }
 
+  @RequirePermissions('authorization:delete')
   @Delete('permissions/:id')
   async removePermission(@Param('id') id: string) {
     return await this.authorizationService.removePermission(+id);
   }
 
-  // ----------------------------------- User Role & Permissions -----------------------------------
-  @Post('users/:userId/roles')
+  // ----------------------------------- User Role -----------------------------------
+  @RequirePermissions('authorization:create')
+  @Patch('users/:userId/roles')
   async assignRoleToUser(
     @Param('userId') userId: string,
     @Body('roleId') roleId: string,
@@ -97,6 +121,7 @@ export class AuthorizationController {
     return await this.authorizationService.assignRoleToUser(+userId, +roleId);
   }
 
+  @RequirePermissions('authorization:delete')
   @Delete('users/:userId/roles/:roleId')
   async removeUserRole(
     @Param('userId') userId: string,
@@ -111,38 +136,55 @@ export class AuthorizationController {
     );
   }
 
+  @RequirePermissions('authorization:read')
   @Get('users/:userId/roles')
   async getUserRoles(@Param('userId') userId: string) {
     return await this.authorizationService.getUserRoles(+userId);
   }
 
+  @RequirePermissions('authorization:read')
   @Get('users/:userId/permissions')
   async getUserPermissions(@Param('userId') userId: string) {
     return await this.authorizationService.getUserPermissions(+userId);
   }
 
-  @Post('roles/:roleId/permissions')
-  async assignPermissionsToRole(
+  @RequirePermissions('authorization:update')
+  @Patch('roles/:roleId/permissions')
+  async updatePermissionToRole(
     @Param('roleId') roleId: string,
     @Body('permissionIds') permissionIds: number[],
+  ) {
+    return await this.authorizationService.updatePermissionsToRole(
+      +roleId,
+      permissionIds,
+    );
+  }
+
+  @RequirePermissions('authorization:create')
+  @Post('roles/:roleId/permissions/:permissionId')
+  async assignPermissionToRole(
+    @Param('roleId') roleId: string,
+    @Param('permissionId') permissionId: number,
   ) {
     return await this.authorizationService.assignPermissionsToRole(
       +roleId,
-      permissionIds,
+      +permissionId,
     );
   }
 
-  @Delete('roles/:roleId/permissions')
-  async removePermissionsToRole(
+  @RequirePermissions('authorization:delete')
+  @Delete('roles/:roleId/permissions/:permissionId')
+  async removePermissionToRole(
     @Param('roleId') roleId: string,
-    @Body('permissionIds') permissionIds: number[],
+    @Param('permissionId') permissionId: number,
   ) {
     return await this.authorizationService.removePermissionsFromRole(
       +roleId,
-      permissionIds,
+      +permissionId,
     );
   }
 
+  @RequirePermissions('authorization:read')
   @Get('roles/:roleId/permissions')
   async getPermissionsOfRole(@Param('roleId') roleId: string) {
     return await this.authorizationService.getPermissionsOfRole(+roleId);

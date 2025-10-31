@@ -44,10 +44,10 @@ export class User {
   password: string;
 
   @Column({ type: 'text', nullable: true, select: false })
-  calendarAccessToken?: string | null;
+  googleAccessToken?: string | null;
 
   @Column({ type: 'text', nullable: true, select: false })
-  calendarRefreshToken?: string | null;
+  googleRefreshToken?: string | null;
 
   @Column({ type: 'enum', enum: SexType, default: SexType.UNDEFINED })
   sex: SexType;

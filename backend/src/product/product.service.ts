@@ -67,6 +67,13 @@ export class ProductService {
     }
 
     const product = this.productRepo.create(createProductDto);
+
+    // ----------------------------------------------- CHECK -----------------------------------------------
+    // CODE NOT COMPLETED
+    // RECALCULA TE AVG COST WHEN ADDING INITIAL STOCK VIA PURCHASE ORDER
+    // ----------------------------------------------- CHECK -----------------------------------------------
+    product.avgCost = 0;
+
     await this.productRepo.save(product);
     return product;
   }

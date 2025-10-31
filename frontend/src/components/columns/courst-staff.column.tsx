@@ -3,13 +3,13 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
 import { format } from "date-fns";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 import type { CourseStaffType } from "../schemas/course.schema";
 
 type CourseStaffProps = {
@@ -107,22 +107,24 @@ export const courseStaffColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="course-staff:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             <>
-              <DropdownMenuItem
+              <ActionItem
+                permission="course-staff:delete"
                 onClick={() => {
                   handleDelete(row.original.course.id, row.original.staff.id);
                 }}
               >
                 Delete
-              </DropdownMenuItem>
+              </ActionItem>
             </>
           </DropdownMenuContent>
         </DropdownMenu>

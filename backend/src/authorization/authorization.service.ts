@@ -1,13 +1,13 @@
 import {
+  Inject,
+  forwardRef,
   Injectable,
   NotFoundException,
   ConflictException,
   BadRequestException,
   ForbiddenException,
-  forwardRef,
-  Inject,
 } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Role } from './entities/role.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
@@ -32,11 +32,14 @@ export class AuthorizationService {
     private readonly userRoleRepo: Repository<UserRole>,
     @InjectRepository(RolePermission)
     private readonly rolePermisisonRepo: Repository<RolePermission>,
+    private dataSource: DataSource,
   ) {}
 
   private async assertSuperadmin(userId: number) {
     const roles = await this.getUserRoles(userId);
-    const isSuperadmin = roles.roles.some((r) => r.name === 'superadmin');
+    const isSuperadmin = roles.roles.some(
+      (r) => r.name.toLowerCase() === 'superadmin',
+    );
     if (!isSuperadmin) {
       throw new ForbiddenException('Only superadmin can perform this action!');
     }
@@ -100,7 +103,7 @@ export class AuthorizationService {
 
   async updateRole(id: number, updateRoleDto: UpdateRoleDto) {
     if (updateRoleDto.name === 'superadmin')
-      return new BadRequestException('Cannot update superadmin role!');
+      throw new BadRequestException('Cannot update superadmin role!');
 
     const role = await this.findRole(id);
 
@@ -114,7 +117,7 @@ export class AuthorizationService {
     const role = await this.findRole(id);
 
     if (role.name === 'superadmin')
-      return new BadRequestException('Cannot delete superadmin role!');
+      throw new BadRequestException('Cannot delete Superadmin role!');
 
     await this.roleRepo.remove(role);
     return { message: 'Delete role success!' };
@@ -222,25 +225,88 @@ export class AuthorizationService {
     return { message: 'Delete permission success!' };
   }
 
-  // -------------------------------- USER ROLES --------------------------------
-  async assignRoleToUser(userId: number, roleId: number) {
-    const hasRole = await this.checkUserRoleExist(userId, roleId);
-    if (hasRole) throw new BadRequestException(`User already has role!`);
+  async findPermissionMeta() {
+    const raw = await this.permissionRepo
+      .createQueryBuilder('permission')
+      .select([
+        'GROUP_CONCAT(DISTINCT permission.action) AS actions',
+        'GROUP_CONCAT(DISTINCT permission.resource) AS resources',
+      ])
+      .getRawOne<{ actions: string; resources: string }>();
 
+    let actions: string[] = [];
+    let resources: string[] = [];
+
+    if (raw) {
+      actions = raw.actions ? raw.actions.split(',') : [];
+      resources = raw.resources ? raw.resources.split(',') : [];
+    }
+
+    return { actions, resources };
+  }
+
+  // -------------------------------- USER ROLES --------------------------------
+  // Just use in system allow user have more than 1 role
+  // async assignRoleToUser(userId: number, roleId: number) {
+  //   const hasRole = await this.checkUserRoleExist(userId, roleId);
+  //   if (hasRole) throw new BadRequestException(`User already has role!`);
+
+  //   const role = await this.roleRepo.findOne({
+  //     where: { id: roleId },
+  //     select: { id: true },
+  //   });
+
+  //   if (!role) throw new NotFoundException('Role not found');
+
+  //   const userRole = this.userRoleRepo.create({
+  //     user: { id: userId },
+  //     role: { id: role.id },
+  //   });
+
+  //   await this.userRoleRepo.save(userRole);
+  //   return role.id;
+  // }
+
+  async assignRoleToUser(userId: number, roleId: number) {
     const role = await this.roleRepo.findOne({
       where: { id: roleId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
 
     if (!role) throw new NotFoundException('Role not found');
 
-    const userRole = this.userRoleRepo.create({
-      user: { id: userId },
-      role: { id: role.id },
+    if (role.name === 'superadmin') {
+      const count = await this.userRoleRepo.count({
+        where: {
+          role,
+        },
+      });
+      if (count >= 1)
+        throw new BadRequestException(
+          'Cannot create more than one SuperAdmin user!',
+        );
+    }
+
+    // Find exist userRole
+    const existingUserRole = await this.userRoleRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['role'],
     });
 
-    await this.userRoleRepo.save(userRole);
-    return role.id;
+    if (existingUserRole) {
+      // Update role
+      existingUserRole.role = role;
+      await this.userRoleRepo.save(existingUserRole);
+    } else {
+      // Create role
+      const newUserRole = this.userRoleRepo.create({
+        user: { id: userId },
+        role: { id: role.id },
+      });
+      await this.userRoleRepo.save(newUserRole);
+    }
+
+    return { userId, roleId: role.id };
   }
 
   // Check lại, chỉ superadmin mới có quyền
@@ -296,28 +362,78 @@ export class AuthorizationService {
 
     return { roles: userRoles.map((ur) => ur.role) };
   }
+
   // -------------------------------- ROLE PERMISSIONS --------------------------------
-  async assignPermissionsToRole(roleId: number, permissionIds: number[]) {
+  async getRolePermissions(roleId: number) {
+    // Check role exist
+    await this.findRole(roleId);
+    const rolePermissions = await this.rolePermisisonRepo.find({
+      where: { role: { id: roleId } },
+      relations: ['permission'],
+    });
+    return {
+      permissions: rolePermissions.map((rp) => rp.permission),
+    };
+  }
+
+  async updatePermissionsToRole(roleId: number, permissionIds: number[]) {
+    return await this.dataSource.transaction(async (manager) => {
+      // Check exist role
+      const role = await manager
+        .getRepository(Role)
+        .findOne({ where: { id: roleId } });
+      if (!role) throw new NotFoundException('Role not found');
+
+      if (role.name.toLowerCase() === 'superadmin')
+        throw new BadRequestException('Cannot change Superadmin role!');
+
+      // Remove all existed rolePermissions
+      await manager
+        .getRepository(RolePermission)
+        .delete({ role: { id: roleId } });
+
+      // Insert new permission for role
+      if (permissionIds.length > 0) {
+        const permissions = await manager.getRepository(Permission).findBy({
+          id: In(permissionIds),
+        });
+
+        const rolePermissions = permissions.map((permission) =>
+          manager.getRepository(RolePermission).create({
+            role,
+            permission,
+          }),
+        );
+
+        await manager.getRepository(RolePermission).save(rolePermissions);
+      }
+
+      return {
+        roleId: role.id,
+        permissionIds,
+      };
+    });
+  }
+
+  async assignPermissionsToRole(roleId: number, permissionId: number) {
     // Check role exist
     const role = await this.findRole(roleId);
 
-    const rolePermissions = this.rolePermisisonRepo.create(
-      permissionIds.map((permissionId) => ({
-        role,
-        permission: { id: permissionId },
-      })),
-    );
+    const rolePermissions = this.rolePermisisonRepo.create({
+      role,
+      permission: { id: permissionId },
+    });
 
     await this.rolePermisisonRepo.save(rolePermissions);
     return { roleId: role.id };
   }
 
-  async removePermissionsFromRole(roleId: number, permissionIds: number[]) {
+  async removePermissionsFromRole(roleId: number, permissionId: number) {
     // Check role exist
     await this.findRole(roleId);
     await this.rolePermisisonRepo.delete({
       role: { id: roleId },
-      permission: { id: In(permissionIds) },
+      permission: { id: permissionId },
     });
     return { message: 'Remove permissions from role success!' };
   }
@@ -333,6 +449,7 @@ export class AuthorizationService {
       permissions: rolePermissions.map((rp) => rp.permission),
     };
   }
+
   // -------------------------------- USER PERMISSIONS --------------------------------
   async checkPermissions(userId: number, permissions: string[]) {
     const count = await this.userRoleRepo

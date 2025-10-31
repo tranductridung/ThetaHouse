@@ -1,7 +1,7 @@
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Role } from '../../authorization/entities/role.entity';
+import { Role } from '../authorization/entities/role.entity';
 import { Permission } from 'src/authorization/entities/permission.entity';
 import { RolePermission } from 'src/authorization/entities/role-permission.entity';
 

@@ -2,16 +2,16 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
-import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
-import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { getItemStatusIcon } from "../styles/ItemStatus";
+import { Button } from "../ui/button";
+import { MoreHorizontal } from "lucide-react";
 import type { ItemType } from "../schemas/item.schema";
+import { type ColumnDef } from "@tanstack/react-table";
+import { getItemStatusIcon } from "../styles/ItemStatus";
+import { ActionItem } from "../commons/action-item.helper";
 import type { SourceTypeConst } from "../constants/constants";
 
 type ItemColumnsProps = {
@@ -138,7 +138,8 @@ export const itemColumns = ({
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
+              <ActionItem
+                permission="item:cancel"
                 onClick={() =>
                   onRemove?.(
                     row?.original?.id,
@@ -148,39 +149,47 @@ export const itemColumns = ({
                 }
               >
                 Remove
-              </DropdownMenuItem>
+              </ActionItem>
 
               {row.original.itemableType === "Service" && (
                 <>
-                  <DropdownMenuItem
+                  <ActionItem
+                    permission="item:transfer"
                     onClick={() => onTransfer?.(row.original.id)}
                   >
                     Transfer service
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
+                  </ActionItem>
+                  <ActionItem
+                    permission="appointment:create"
                     onClick={() => onCreateAppointment?.(row.original.id)}
                   >
                     Create Appointment
-                  </DropdownMenuItem>
+                  </ActionItem>
                 </>
               )}
 
               {row.original.itemableType === "Product" &&
                 !["Imported", "Exported"].includes(row.original.status) && (
-                  <DropdownMenuItem
+                  <ActionItem
+                    permission={`item:${
+                      getAction(row.original.sourceType) === "Import"
+                        ? "import"
+                        : "export"
+                    }`}
                     onClick={() => onAddExportImport?.(row.original.id)}
                   >
                     {getAction(row.original.sourceType)}
-                  </DropdownMenuItem>
+                  </ActionItem>
                 )}
 
               {row.original.itemableType === "Course" && (
                 <>
-                  <DropdownMenuItem
+                  <ActionItem
+                    permission="item:update"
                     onClick={() => onChangeCourse?.(row.original.id)}
                   >
                     Change course
-                  </DropdownMenuItem>
+                  </ActionItem>
                 </>
               )}
             </DropdownMenuContent>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import { DataSource, Not } from 'typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -33,20 +32,21 @@ import { CreateConsultationAppointmentDto } from './dto/create-consultation-appo
 import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
 import { GoogleCalendarService } from 'src/google-calendar/google-calendar.service';
 import { CreateCalendarDto } from 'src/google-calendar/dtos/create-calendar.dto';
+import { SnapshotType } from 'src/common/types/item.types';
 
 @Injectable()
 export class AppointmentService {
   constructor(
     private dataSource: DataSource,
-    @InjectRepository(Appointment)
-    private appointmentRepo: Repository<Appointment>,
     @Inject(forwardRef(() => ItemService))
     private itemService: ItemService,
-    private modulesService: ModulesService,
     private roomService: RoomService,
     private userService: UserService,
+    private modulesService: ModulesService,
     @Inject(forwardRef(() => PartnerService))
     private partnerService: PartnerService,
+    @InjectRepository(Appointment)
+    private appointmentRepo: Repository<Appointment>,
     private googleCalendarService: GoogleCalendarService,
   ) {}
 
@@ -103,7 +103,8 @@ export class AppointmentService {
           },
         });
 
-        const itemSession = Number(item.snapshotData.session) * item.quantity;
+        const itemSession =
+          Number((item.snapshotData as SnapshotType).session) * item.quantity;
         if (createdMainSession >= itemSession)
           throw new BadRequestException(
             `Cannot create more than ${itemSession} main session for this service!`,
@@ -133,15 +134,10 @@ export class AppointmentService {
         // by mainSessionCompleted/session
         // Multi with bonusSession to find the bonusSession can use
         const validBonusSession =
-          Math.floor(mainSessionCompleted / Number(item.snapshotData.session)) *
-          Number(item.snapshotData.bonusSession);
-
-        console.log(
-          'validate sessionnnnnnnnnnnnnnnn',
-          bonusSessionCreated,
-          validBonusSession,
-        );
-
+          Math.floor(
+            mainSessionCompleted /
+              Number((item.snapshotData as SnapshotType).session),
+          ) * Number((item.snapshotData as SnapshotType).bonusSession);
         if (bonusSessionCreated >= validBonusSession)
           throw new BadRequestException(
             'Completed main session of service to use bonus session!',
@@ -214,7 +210,9 @@ export class AppointmentService {
 
       createTherapyAppointmentDto.customerId = item.currentCustomerId;
 
-      appointment.duration = Number(item.snapshotData.duration);
+      appointment.duration = Number(
+        (item.snapshotData as SnapshotType).duration,
+      );
     } else {
       if (!createTherapyAppointmentDto.customerId) {
         throw new BadRequestException('Customer ID is required!');
@@ -226,9 +224,7 @@ export class AppointmentService {
       createTherapyAppointmentDto.customerId,
     );
 
-    if (!customer) {
-      throw new BadRequestException('Customer not exist!');
-    }
+    if (!customer) throw new BadRequestException('Customer not exist!');
 
     appointment.customer = customer;
 
@@ -253,6 +249,7 @@ export class AppointmentService {
       await this.validateSession(AppointmentType.FREE, customer, undefined);
     }
 
+    /////////////check lại phần này
     // Calculate endAt from startAt and duration (if startAt exist)
     if (createTherapyAppointmentDto.startAt) {
       // If type = free, dto must contain duration
@@ -286,6 +283,18 @@ export class AppointmentService {
           createTherapyAppointmentDto.roomId,
         );
       }
+    } else {
+      if (createTherapyAppointmentDto.healerId) {
+        appointment.healer = await this.userService.findOne(
+          Number(createTherapyAppointmentDto.healerId),
+        );
+      }
+
+      if (createTherapyAppointmentDto.roomId) {
+        appointment.room = await this.roomService.findOne(
+          Number(createTherapyAppointmentDto.roomId),
+        );
+      }
     }
 
     // Add modules
@@ -317,7 +326,7 @@ export class AppointmentService {
       const { accessToken, refreshToken } =
         await this.googleCalendarService.getUserTokens(appointment.healer.id);
 
-      if (!accessToken && !refreshToken) {
+      if (!accessToken || !refreshToken) {
         return {
           status: ResponseCalendarStatus.NOT_CONNECTED,
           error: 'Google token missing. Please connect with google calendar!',
@@ -334,8 +343,8 @@ export class AppointmentService {
         };
 
         await this.googleCalendarService.createEvent(
-          accessToken!,
-          refreshToken!,
+          accessToken,
+          refreshToken,
           createCalendarDto,
         );
 
@@ -444,19 +453,21 @@ export class AppointmentService {
   }
 
   async isHealerFree(
-    appoitmentStart: Date,
-    appoitmentEnd: Date,
+    appointmentStart: Date,
+    appointmentEnd: Date,
     healerId: number,
     oldAptId?: number,
   ) {
     const healer = await this.userService.findOne(healerId);
 
-    if (appoitmentStart > appoitmentEnd)
+    if (appointmentStart > appointmentEnd)
       throw new BadRequestException('Start time cannot greater than end time!');
 
     const queryBuilder = this.appointmentRepo
       .createQueryBuilder('a')
-      .where('a.healerId = :healerId', { healerId });
+      .leftJoinAndSelect('a.healer', 'healer')
+      .where('healer.id = :healerId', { healerId })
+      .andWhere('a.status <> :status', { status: AppointmentStatus.CANCELLED });
 
     if (oldAptId) queryBuilder.andWhere('a.id <> :oldAptId', { oldAptId });
 
@@ -464,19 +475,19 @@ export class AppointmentService {
       `
         NOT(
           (
-        a.startAt >= :appoitmentEnd
+            a.startAt >= :appointmentEnd
         AND
-          a.endAt >= :appoitmentEnd
+            a.endAt >= :appointmentEnd
         )
         OR
           (
-        a.startAt <= :appoitmentStart
+            a.startAt <= :appointmentStart
         AND
-          a.endAt <= :appoitmentStart
+            a.endAt <= :appointmentStart
           )
         )
         `,
-      { appoitmentStart, appoitmentEnd },
+      { appointmentStart, appointmentEnd },
     );
 
     const conflictAppointment = await queryBuilder.getOne();
@@ -486,20 +497,22 @@ export class AppointmentService {
   }
 
   async isRoomFree(
-    appoitmentStart: Date,
-    appoitmentEnd: Date,
+    appointmentStart: Date,
+    appointmentEnd: Date,
     roomId: number,
     oldAptId?: number,
   ) {
     const room = await this.roomService.findOne(roomId);
 
-    if (appoitmentStart > appoitmentEnd)
+    if (appointmentStart > appointmentEnd)
       throw new BadRequestException('Start time cannot greater than end time!');
 
     // Get appointment which is conflict with date of new appointment
     const queryBuilder = this.appointmentRepo
       .createQueryBuilder('a')
-      .where('a.roomId = :roomId', { roomId });
+      .leftJoinAndSelect('a.room', 'room')
+      .where('room.id = :roomId', { roomId })
+      .andWhere('a.status <> :status', { status: AppointmentStatus.CANCELLED });
 
     if (oldAptId) queryBuilder.andWhere('a.id <> :oldAptId', { oldAptId });
 
@@ -507,19 +520,19 @@ export class AppointmentService {
       `
         NOT(
         (
-          a.startAt >= :appoitmentEnd
+          a.startAt >= :appointmentEnd
           AND
-          a.endAt >= :appoitmentEnd
+          a.endAt >= :appointmentEnd
         )
         OR
         (
-          a.startAt <= :appoitmentStart
+          a.startAt <= :appointmentStart
           AND
-          a.endAt <= :appoitmentStart  
+          a.endAt <= :appointmentStart  
         )
         )
         `,
-      { appoitmentStart, appoitmentEnd },
+      { appointmentStart, appointmentEnd },
     );
     const conflictRoom = await queryBuilder.getOne();
 

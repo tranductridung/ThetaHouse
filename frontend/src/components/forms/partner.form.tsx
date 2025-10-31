@@ -1,40 +1,39 @@
 "use client";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
   Form,
-  FormField,
   FormItem,
-  FormControl,
-  FormMessage,
+  FormField,
   FormLabel,
+  FormMessage,
+  FormControl,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
-  SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectTrigger,
+  SelectContent,
 } from "@/components/ui/select";
 import {
-  createPartnerFormSchema,
-  editPartnerFormSchema,
-  type CreatePartnerFormType,
-  type EditPartnerFormType,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
   type PartnerType,
+  editPartnerFormSchema,
+  createPartnerFormSchema,
+  type EditPartnerFormType,
+  type CreatePartnerFormType,
 } from "../schemas/partner.schema";
-import { useEffect, useState } from "react";
 import { Calendar } from "../ui/calendar";
+import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { ChevronDownIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type PartnerProps = {
   type: "add" | "edit";
@@ -121,25 +120,28 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
             )}
           />
 
-          <div className="flex flex-col md:flex-row md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="dob"
               render={({ field }) => (
-                <FormItem className="flex md:w-1/2 flex-col w-full">
-                  <FormLabel>Date of Birth</FormLabel>
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-sm font-medium">
+                    Date of Birth
+                  </FormLabel>
                   <FormControl>
                     <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild className="w-full">
+                      <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          id="date"
-                          className="w-full justify-between font-normal"
+                          className="w-full h-10 justify-between font-normal text-left"
                         >
-                          {field.value
-                            ? new Date(field.value).toLocaleDateString()
-                            : "Select date"}
-                          <ChevronDownIcon />
+                          <span className="truncate">
+                            {field.value
+                              ? new Date(field.value).toLocaleDateString()
+                              : "Select date"}
+                          </span>
+                          <ChevronDownIcon className="h-4 w-4 opacity-50 flex-shrink-0" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent
@@ -166,65 +168,71 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               control={form.control}
               name="sex"
               render={({ field }) => (
-                <FormItem className="flex md:w-1/2 flex-col w-full">
-                  <FormLabel>Sex</FormLabel>
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-sm font-medium">Gender</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select sex of partner" />
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup className="w-full">
+                      <SelectGroup>
                         <SelectItem value="Undefined">Undefined</SelectItem>
                         <SelectItem value="Male">Male</SelectItem>
                         <SelectItem value="Female">Female</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          <div className="flex flex-col md:flex-row md:gap-5">
-            {/* Phone Number */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="phoneNumber"
               render={({ field }) => (
-                <FormItem className="flex md:w-1/2 flex-col w-full">
-                  <FormLabel>Phone Number</FormLabel>
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">
+                    Phone Number
+                  </FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="Phone Number" {...field} />
+                    <Input
+                      type="tel"
+                      placeholder="012 345 6789"
+                      className="h-10"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {/* Type */}
+
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
-                <FormItem className="flex md:w-1/2 flex-col w-full">
-                  <FormLabel>Type</FormLabel>
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">
+                    Partner Type
+                  </FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                     disabled={type !== "add"}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a type of partner" />
+                    <SelectTrigger className="w-full h-10">
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup className="w-full">
+                      <SelectGroup>
                         <SelectItem value="Customer">Customer</SelectItem>
                         <SelectItem value="Supplier">Supplier</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-
                   <FormMessage />
                 </FormItem>
               )}

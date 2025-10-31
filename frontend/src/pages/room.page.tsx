@@ -1,15 +1,16 @@
 import api from "@/api/api";
-import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
-import type { RoomFormType, RoomType } from "@/components/schemas/room.schema";
-import { roomColumns } from "@/components/columns/room.column";
-import { handleAxiosError } from "@/lib/utils";
-import PageTitle from "@/components/Title";
 import { toast } from "sonner";
-import { useCombineFormManager } from "@/hooks/use-custom-manager";
-import RoomModal from "@/components/modals/room.modal";
-import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
+import RoomModal from "@/components/modals/room.modal";
+import { roomColumns } from "@/components/columns/room.column";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useCombineFormManager } from "@/hooks/use-custom-manager";
+import { RequirePermission } from "@/components/commons/require-permission";
+import type { RoomFormType, RoomType } from "@/components/schemas/room.schema";
 
 type RoomProps = {
   isUseTitle?: boolean;
@@ -19,10 +20,10 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
   const { setLoading } = useLoading();
   const { fetchPermissions } = useAuth();
 
-  const [data, setData] = useState<RoomType[]>([]);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [data, setData] = useState<RoomType[]>([]);
 
   const { formManager, setFormManager, onAdd, onEdit, onClose } =
     useCombineFormManager<RoomType>();
@@ -41,6 +42,7 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
 
   const handleSubmit = async (formData: RoomFormType) => {
     try {
+      setLoading(true);
       if (formManager.type === "add") {
         await api.post("/rooms", formData);
         toast.success("Add room success!");
@@ -57,6 +59,8 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
       });
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,7 +68,7 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("room");
+        await fetchPermissions(["room"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -73,23 +77,25 @@ const RoomTest = ({ isUseTitle = true }: RoomProps) => {
 
     run();
   }, [pageIndex, pageSize]);
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Room"></PageTitle>}
-
-      <DataTable
-        onAdd={onAdd}
-        columns={roomColumns({
-          onEdit,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
-
+      <RequirePermission permission="room:read">
+        <DataTable
+          onAdd={onAdd}
+          columns={roomColumns({
+            onEdit,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"room:create"}
+        />
+      </RequirePermission>
       <RoomModal
         formManager={formManager}
         handleSubmit={handleSubmit}

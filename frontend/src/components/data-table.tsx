@@ -46,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useState } from "react";
+import { RequirePermission } from "./commons/require-permission";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -57,6 +58,7 @@ interface DataTableProps<TData, TValue> {
   setPageIndex: (page: number) => void;
   setPageSize: (size: number) => void;
   title?: string | null;
+  permission?: string | null;
 }
 
 export function DataTable<TData, TValue>({
@@ -69,6 +71,7 @@ export function DataTable<TData, TValue>({
   setPageIndex,
   setPageSize,
   title,
+  permission,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState("");
   const table = useReactTable({
@@ -143,15 +146,15 @@ export function DataTable<TData, TValue>({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {onAdd ? (
-            <Button variant="outline" size="sm" onClick={onAdd}>
-              <PlusIcon />
-              <span className="hidden lg:inline">
-                {title ? title : "Add Section"}{" "}
-              </span>
-            </Button>
-          ) : (
-            ""
+          {onAdd && (
+            <RequirePermission permission={permission ? permission : ""}>
+              <Button variant="outline" size="sm" onClick={onAdd}>
+                <PlusIcon />
+                <span className="hidden lg:inline">
+                  {title ? title : "Add Section"}{" "}
+                </span>
+              </Button>
+            </RequirePermission>
           )}
         </div>
       </div>

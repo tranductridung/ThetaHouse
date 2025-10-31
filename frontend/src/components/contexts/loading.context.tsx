@@ -22,10 +22,13 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
       value={{ isLoading, setLoading, loadingMessage, setLoadingMessage }}
     >
       {children}
+
       {isLoading && (
-        <div className="absolute inset-0 bg-white bg-opacity-200 flex flex-col items-center justify-center gap-4 z-50">
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/50 ">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-lg font-medium text-gray-800">{loadingMessage}</p>
+          <p className="mt-4 text-lg font-medium text-gray-900">
+            {loadingMessage}
+          </p>
         </div>
       )}
     </LoadingContext.Provider>

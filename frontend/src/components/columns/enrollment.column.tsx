@@ -1,22 +1,22 @@
 "use client";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import type { EnrollmentType } from "../schemas/enrollment.schema";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
+import type { EnrollmentType } from "../schemas/enrollment.schema";
 
 type EnrollmentProps = {
   handleDelete: (id: number) => void;
@@ -131,21 +131,23 @@ export const enrollmentColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="enrollment:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
-            <DropdownMenuItem
+            <ActionItem
+              permission="enrollment:update"
               onClick={() => {
                 handleDelete(row.original.id);
               }}
             >
               Withdrawn
-            </DropdownMenuItem>
+            </ActionItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

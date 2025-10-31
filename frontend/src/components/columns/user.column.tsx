@@ -1,41 +1,43 @@
 "use client";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import type { UserType } from "@/components/schemas/user.schema";
-import type { UserRoleConst } from "@/components/constants/constants";
 import {
   Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
+  SelectTrigger,
+  SelectContent,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { RoleType } from "../schemas/role.schema";
 import type { UserAuthContextType } from "@/auth/AuthContext";
+import type { UserType } from "@/components/schemas/user.schema";
 
 type UserProps = {
   toggleStatus: (id: number) => void;
-  handleChangeRole: (id: number, role: UserRoleConst) => void;
+  handleChangeRole: (userId: number, roleId: number) => void;
+  roleList: RoleType[];
   user: UserAuthContextType | null;
 };
 
 export const userColumns = ({
   toggleStatus,
   handleChangeRole,
+  roleList,
   user,
 }: UserProps): ColumnDef<UserType>[] => [
   {
@@ -121,27 +123,42 @@ export const userColumns = ({
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => {
-      const currentRole = row.original.role;
+      const currentRole = row.original.userRoles[0].role;
       const userId = row.original.id;
 
-      return (
-        <Select
-          value={currentRole}
-          disabled={user?.email === row.original.email}
-          onValueChange={(newRole) => {
-            handleChangeRole(userId, newRole as UserRoleConst);
-          }}
-        >
-          <SelectTrigger className="h-8 w-40" id={`${userId}-role`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="Admin">Admin</SelectItem>
-            <SelectItem value="Manager">Manager</SelectItem>
-            <SelectItem value="Employee">Employee</SelectItem>
-          </SelectContent>
-        </Select>
-      );
+      if (user?.permissions.includes("authorization:create"))
+        return (
+          <Select
+            value={currentRole.name}
+            disabled={user?.email === row.original.email}
+            onValueChange={(newRoleName) => {
+              let newRoleId;
+              roleList.forEach((role) => {
+                if (role.name === newRoleName) newRoleId = role.id;
+              });
+
+              handleChangeRole(userId, Number(newRoleId));
+            }}
+          >
+            <SelectTrigger className="h-8 w-40" id={`${userId}-role`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {roleList.map((r) => {
+                console.log(r);
+                return (
+                  <>
+                    <SelectItem value={r.name}>
+                      {r.name[0].toUpperCase() + r.name.slice(1).toLowerCase()}
+                    </SelectItem>
+                  </>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        );
+
+      return <div>{currentRole.name}</div>;
     },
   },
   {

@@ -1,21 +1,21 @@
 "use client";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
   CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
+import { Badge } from "@/components/ui/badge";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { ModuleType } from "../schemas/module.schema";
+import { ActionItem } from "../commons/action-item.helper";
 
 type ModuleProps = {
   handleDelete: (id: number) => void;
@@ -103,40 +103,44 @@ export const moduleColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="module:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Deleted" ? (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission="module:delete"
                   onClick={() => {
                     handleDelete(row.original.id);
                   }}
                 >
                   Delete
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="module:update"
                   onClick={() => {
                     handleToggle(row.original.id);
                   }}
                 >
                   {row.original.status !== "Active" ? "Enable" : "Disable"}
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             ) : (
-              <DropdownMenuItem
+              <ActionItem
+                permission="module:update"
                 onClick={() => {
                   handleRestore(row.original.id);
                 }}
               >
                 Restore
-              </DropdownMenuItem>
+              </ActionItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

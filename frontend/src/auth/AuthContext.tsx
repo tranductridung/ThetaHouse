@@ -8,7 +8,7 @@ export interface UserAuthContextType {
   id: number;
   fullName: string;
   email: string;
-  role: string[];
+  roles: string[];
   permissions: string[];
 }
 
@@ -18,7 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  fetchPermissions: (resource: string) => Promise<void>;
+  fetchPermissions: (resources: string[]) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -34,7 +34,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const res = await api.get("/users/me");
-      setUser(res.data.user);
+      const userData = res.data.user;
+
+      if (!userData.roles || userData.roles.length === 0) {
+        await logout();
+        navigate("/errors/forbidden");
+        return;
+      }
+
+      setUser({
+        ...res.data.user,
+        permissions: user?.permissions,
+      });
     } catch (err) {
       console.error("Error fetching user:", err);
       setUser(null);
@@ -48,10 +59,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await fetchUser();
   };
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -61,9 +68,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         { withCredentials: true }
       );
 
+      const userData = response.data.user;
+      if (!userData.roles || userData.roles.length === 0) {
+        await logout();
+        navigate("/errors/forbidden");
+        return;
+      }
+
       const accessToken = response.data.accessToken;
       localStorage.setItem("accessToken", accessToken);
-      setUser(response.data.user);
+
+      await fetchUser();
+
+      // setUser({
+      //   ...response.data.user,
+      //   permissions: user?.permissions,
+      // });
       navigate("/");
     } catch (error) {
       handleAxiosError(error);
@@ -86,20 +106,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchPermissions = async (resource: string) => {
+  const fetchPermissions = async (resources: string[]) => {
     try {
-      if (!resource) return;
-      const response = await api.get(
-        `${backendUrl}/users/me/permissions?resource=${resource}`
+      if (!resources || resources.length === 0) return;
+
+      const permissions = new Set<string>();
+
+      const responses = await Promise.all(
+        resources.map((resource) =>
+          api.get(`${backendUrl}/users/me/permissions?resource=${resource}`)
+        )
       );
 
+      responses.forEach((response) => {
+        const data = response.data.permissions;
+        if (Array.isArray(data)) {
+          data.forEach((p) => permissions.add(p));
+        } else {
+          permissions.add(data);
+        }
+      });
+
       setUser((prev) =>
-        prev ? { ...prev, permissions: response.data.permissions } : null
+        prev ? { ...prev, permissions: Array.from(permissions) } : null
       );
     } catch (error) {
       handleAxiosError(error);
     }
   };
+
+  useEffect(() => {
+    const run = async () => {
+      await fetchUser();
+    };
+    run();
+  }, []);
 
   return (
     <AuthContext.Provider

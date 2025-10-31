@@ -1,6 +1,6 @@
+import { RoleSeed } from './role.seed';
 import { Injectable } from '@nestjs/common';
-import { RoleSeed } from './entities/role.seed';
-import { PermissionSeed } from './entities/permission.seed';
+import { PermissionSeed } from './permission.seed';
 
 @Injectable()
 export class SeedService {
@@ -9,7 +9,7 @@ export class SeedService {
     private readonly roleSeed: RoleSeed,
   ) {}
 
-  async onModuleInit() {
+  async seedData() {
     await this.permissionSeed.seed();
     await this.roleSeed.seed();
   }

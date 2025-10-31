@@ -2,16 +2,16 @@
 
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { MoreHorizontal } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { ConsignmentType } from "../schemas/source.schema";
+import { ActionItem } from "../commons/action-item.helper";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
+import type { ConsignmentType } from "../schemas/source.schema";
 import type { ConsignmentTypeConst } from "../constants/constants";
 
 type ConsignmentProps = {
@@ -130,30 +130,35 @@ export const consignmentColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="consignment:read"
               onClick={() => {
                 onDetail(row.original.id);
               }}
             >
               View Consignment
-            </DropdownMenuItem>
+            </ActionItem>
             {row.original.status !== "Cancelled" && (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission={`consignment:${
+                    row.original.type === "In" ? "import" : "export"
+                  }`}
                   onClick={() => {
                     onHandle(row.original.id);
                   }}
                 >
                   {row.original.type === "In" ? "Import" : "Export"}
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="consignment:cancel"
                   onClick={() => {
                     onCancel(row.original.id, row.original.type);
                   }}
                 >
                   Cancel
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             )}
           </DropdownMenuContent>

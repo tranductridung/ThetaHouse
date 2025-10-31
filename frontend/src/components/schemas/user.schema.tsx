@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { USER_SEX, USER_ROLE, USER_STATUS } from "../constants/constants";
+import { USER_SEX, USER_STATUS } from "../constants/constants";
+import { roleSchema } from "./role.schema";
 
 export const baseUserSchema = z.object({
   fullName: z.string(),
@@ -19,7 +20,12 @@ export const userSchema = baseUserSchema.extend({
   id: z.number(),
   email: z.string().email(),
   status: z.enum(USER_STATUS),
-  role: z.enum(USER_ROLE),
+  userRoles: z.array(
+    z.object({
+      id: z.number(),
+      role: roleSchema,
+    })
+  ),
 });
 
 export const changePwdFormSchema = z

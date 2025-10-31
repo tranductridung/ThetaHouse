@@ -1,22 +1,27 @@
 import api from "@/api/api";
-import ConsignmentHistory from "@/components/partner-components/ConsignmentHistory";
-import ConsultationAppointment from "@/components/partner-components/ConsultationAppointment";
-import EnrollmentHistory from "@/components/partner-components/EnrollmentHistory";
+import PageTitle from "@/components/Title";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { handleAxiosError } from "@/lib/utils";
 import OrderHistory from "@/components/partner-components/OrderHistory";
 import PersonalInfor from "@/components/partner-components/PersonalInfor";
 import PurchaseHistory from "@/components/partner-components/PurchaseHistory";
-import TherapyAppointment from "@/components/partner-components/TherapyAppointment";
-import PageTitle from "@/components/Title";
 import { Tabs, TabsTrigger, TabsList, TabsContent } from "@/components/ui/tabs";
-import { handleAxiosError } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import EnrollmentHistory from "@/components/partner-components/EnrollmentHistory";
+import TherapyAppointment from "@/components/partner-components/TherapyAppointment";
+import ConsignmentHistory from "@/components/partner-components/ConsignmentHistory";
+import ConsultationAppointment from "@/components/partner-components/ConsultationAppointment";
+import { useLoading } from "@/components/contexts/loading.context";
+import { useAuth } from "@/auth/useAuth";
+
 type PartnerDetailProps = {
   isUseTitle?: boolean;
 };
 const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
   const { partnerType, id } = useParams();
   const [notFound, setNotFound] = useState(false);
+  const { setLoading } = useLoading();
+  const { fetchPermissions } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -31,7 +36,17 @@ const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
   };
 
   useEffect(() => {
-    fetchData();
+    const run = async () => {
+      try {
+        setLoading(true);
+        await fetchPermissions(["partner"]);
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
   }, []);
 
   if (notFound)

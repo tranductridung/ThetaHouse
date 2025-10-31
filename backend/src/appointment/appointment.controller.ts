@@ -9,15 +9,15 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
-import { AppointmentService } from './appointment.service';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
-import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
-import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+import { AppointmentService } from './appointment.service';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { CreateTherapyAppointmentDto } from './dto/create-appointment.dto';
-import { CreateConsultationAppointmentDto } from './dto/create-consultation-appointment.dto';
-import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
+import { PermissionsGuard } from 'src/authorization/guards/permission.guard';
 import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
+import { UpdateConsultationAppointmentDto } from './dto/update-consultation-appointment.dto';
+import { CreateConsultationAppointmentDto } from './dto/create-consultation-appointment.dto';
 
 @UseGuards(AuthJwtGuard, PermissionsGuard)
 @Controller('appointments')

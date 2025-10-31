@@ -1,20 +1,20 @@
 "use client";
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { ColumnDef } from "@tanstack/react-table";
-import {
-  CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
+  CheckCircle2Icon,
 } from "lucide-react";
-import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import type { ColumnDef } from "@tanstack/react-table";
+import { ActionItem } from "../commons/action-item.helper";
 import type { DiscountType } from "../schemas/discount.schema";
 
 type DiscountProps = {
@@ -137,40 +137,44 @@ export const discountColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
+            <ActionItem
+              permission="discount:update"
               onClick={() => {
                 onEdit(row.original);
               }}
             >
               Edit
-            </DropdownMenuItem>
+            </ActionItem>
 
             {row.original.status !== "Deleted" ? (
               <>
-                <DropdownMenuItem
+                <ActionItem
+                  permission="discount:delete"
                   onClick={() => {
                     handleDelete(row.original.id);
                   }}
                 >
                   Delete
-                </DropdownMenuItem>
+                </ActionItem>
 
-                <DropdownMenuItem
+                <ActionItem
+                  permission="discount:update"
                   onClick={() => {
                     handleToggle(row.original.id);
                   }}
                 >
                   {row.original.status !== "Active" ? "Enable" : "Disable"}
-                </DropdownMenuItem>
+                </ActionItem>
               </>
             ) : (
-              <DropdownMenuItem
+              <ActionItem
+                permission="discount:update"
                 onClick={() => {
                   handleRestore(row.original.id);
                 }}
               >
                 Restore
-              </DropdownMenuItem>
+              </ActionItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

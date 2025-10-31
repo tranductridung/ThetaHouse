@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
 import {
   User,
-  UserCircle2,
-  CalendarDays,
   Loader2,
   AlertCircle,
   ChevronLeft,
+  UserCircle2,
   ChevronRight,
+  CalendarDays,
 } from "lucide-react";
 import api from "@/api/api";
-import { useAuth } from "@/auth/useAuth";
+import { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
 
 type CalendarView = "month" | "week" | "day";
 
@@ -336,12 +336,12 @@ function ErrorMessage({
             Unable to load appointments
           </h3>
           <p className="text-gray-600 text-sm mb-4">{message}</p>
-          <button
+          <Button
             onClick={onRetry}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -355,15 +355,20 @@ export default function MyCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { user } = useAuth();
-
-  const loadAppointments = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await api.get(`appointments/all`);
-      setAppointments(response.data.appointments);
+      const appointments = response.data.appointments.map(
+        (apt: Appointment) => ({
+          ...apt,
+          startAt: new Date(apt.startAt),
+          endAt: new Date(apt.endAt),
+        })
+      );
+      setAppointments(appointments);
     } catch (err) {
       console.error("Failed to load appointments:", err);
       setError(
@@ -376,11 +381,11 @@ export default function MyCalendar() {
   }, []);
 
   useEffect(() => {
-    loadAppointments();
-  }, [loadAppointments]);
+    fetchData();
+  }, [fetchData]);
 
   const handleRetry = () => {
-    loadAppointments();
+    fetchData();
   };
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -467,12 +472,12 @@ export default function MyCalendar() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               {/* Navigation */}
               <div className="flex items-center gap-4">
-                <button
+                <Button
                   onClick={() => navigateDate("prev")}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
-                </button>
+                </Button>
 
                 <h2 className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
                   {view === "day"
@@ -485,25 +490,25 @@ export default function MyCalendar() {
                     : formatDate(currentDate)}
                 </h2>
 
-                <button
+                <Button
                   onClick={() => navigateDate("next")}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={goToToday}
                   className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Today
-                </button>
+                </Button>
               </div>
 
               {/* View buttons */}
               <div className="flex rounded-lg border border-gray-200 overflow-hidden">
                 {["month", "week", "day"].map((viewType) => (
-                  <button
+                  <Button
                     key={viewType}
                     onClick={() => setView(viewType as CalendarView)}
                     className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${
@@ -513,7 +518,7 @@ export default function MyCalendar() {
                     }`}
                   >
                     {viewType}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

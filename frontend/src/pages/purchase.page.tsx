@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
 import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
+import { RequirePermission } from "@/components/commons/require-permission";
 
 type PurchaseProps = { supplierId?: number; isUseTitle?: boolean };
 const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
@@ -44,7 +45,12 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
   const { handleExportImport } = useSourceActions(fetchData);
 
   const onImport = async (id: number) => {
-    handleExportImport(id, "Purchase");
+    try {
+      setLoading(true);
+      await handleExportImport(id, "Purchase");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onAdd = () => {
@@ -59,11 +65,14 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
     if (typeof id !== "number") return;
 
     try {
+      setLoading(true);
       await api.post(`purchases/${id}/cancel`);
       fetchData();
       toast.success("Purchase is cancelled!");
     } catch (error) {
       handleAxiosError(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,7 +85,7 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions("purchase");
+        await fetchPermissions(["purchase"]);
         await fetchData();
       } finally {
         setLoading(false);
@@ -85,24 +94,27 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
 
     run();
   }, [pageIndex, pageSize]);
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Purchase"></PageTitle>}
-
-      <DataTable
-        onAdd={onAdd}
-        columns={purchaseColumns({
-          onDetail,
-          onImport,
-          onCancel,
-        })}
-        data={data}
-        total={total}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        setPageIndex={setPageIndex}
-        setPageSize={setPageSize}
-      />
+      <RequirePermission permission="purchase:read">
+        <DataTable
+          onAdd={onAdd}
+          columns={purchaseColumns({
+            onDetail,
+            onImport,
+            onCancel,
+          })}
+          data={data}
+          total={total}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          setPageIndex={setPageIndex}
+          setPageSize={setPageSize}
+          permission={"purchase:create"}
+        />
+      </RequirePermission>
 
       <ConfirmDialog
         type="purchase"
