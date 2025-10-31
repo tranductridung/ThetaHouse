@@ -36,7 +36,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const Role = () => {
   const { setLoading } = useLoading();
-  const { fetchPermissions, user } = useAuth();
+  const { fetchPermissions } = useAuth();
   const [roles, setRoles] = useState<RoleType[]>([]);
   const [actions, setActions] = useState<string[]>([]);
   const [resources, setResources] = useState<string[]>([]);

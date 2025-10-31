@@ -48,7 +48,7 @@ export const SignupForm = () => {
     const { confirmPassword, ...payload } = data;
     await axios
       .post(`${backendUrl}/auth/signup`, { ...payload })
-      .then((response) => {
+      .then(() => {
         setShowEmailDialog(true);
       })
       .catch((error) => {

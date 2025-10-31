@@ -119,7 +119,7 @@ function MonthView({
 }) {
   const daysInMonth = getDaysInMonth(currentDate);
   const firstDay = getFirstDayOfMonth(currentDate);
-  const today = new Date();
+  // const today = new Date();
 
   const days = [];
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

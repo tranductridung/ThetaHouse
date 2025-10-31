@@ -23,18 +23,16 @@ import type {
   EditUserFormType,
   UserType,
 } from "./schemas/user.schema";
-
-import { toast } from "sonner";
 import api from "@/api/api";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Button } from "./ui/button";
 import { useAuth } from "@/auth/useAuth";
 import { useEffect, useState } from "react";
-import UserProfileForm from "./forms/user-profile.form";
+import { Badge } from "@/components/ui/badge";
 import { handleAxiosError } from "@/lib/utils";
-import { Button } from "./ui/button";
-
+import UserProfileForm from "./forms/user-profile.form";
 import ChangePasswordForm from "./forms/change-password.form";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const UserProfile = () => {
   const { refreshUser } = useAuth();
