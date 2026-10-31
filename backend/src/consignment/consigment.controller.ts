@@ -24,6 +24,12 @@ import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 export class ConsignmentController {
   constructor(private readonly consignmentService: ConsignmentService) {}
 
+  @RequirePermissions('consignment:read')
+  @Get(':id/items/not-handled')
+  async checkAllProductIsExported(@Param('id') consignmentId: string) {
+    return await this.consignmentService.isAllProductHandled(+consignmentId);
+  }
+
   @RequirePermissions('consignment:create')
   @Post()
   async create(
@@ -149,5 +155,27 @@ export class ConsignmentController {
       +itemId,
     );
     return result;
+  }
+
+  @RequirePermissions('consignment:read')
+  @Get(':consignmentId/remain')
+  async getRemainProductOfConsignment(
+    @Param('consignmentId') consignmentId: string,
+  ) {
+    return await this.consignmentService.getRemainQuantityOfConsignment(
+      +consignmentId,
+    );
+  }
+
+  @RequirePermissions('item:read')
+  @Get(':consignmentId/items/:itemId/remain')
+  async getRemainProductOfItem(
+    @Param('consignmentId') consignmentId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return await this.consignmentService.getRemainQuantityOfItem(
+      +consignmentId,
+      +itemId,
+    );
   }
 }

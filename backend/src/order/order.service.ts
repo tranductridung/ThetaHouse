@@ -207,10 +207,21 @@ export class OrderService {
         .take(limit)
         .getManyAndCount();
 
-      return { orders, total };
+      const newOrders = await this.itemService.enrichSourcesWithHandleStatus(
+        orders,
+        SourceType.ORDER,
+      );
+
+      return { orders: [...newOrders], total };
     } else {
       const orders = await queryBuilder.getMany();
-      return orders;
+
+      const newOrders = await this.itemService.enrichSourcesWithHandleStatus(
+        orders,
+        SourceType.ORDER,
+      );
+
+      return { orders: [...newOrders] };
     }
   }
 
@@ -899,5 +910,79 @@ export class OrderService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async test(orderId: number) {
+    const items = await this.itemService.findItemsBySource(
+      orderId,
+      SourceType.ORDER,
+      ItemableType.PRODUCT,
+      [ItemStatus.NONE, ItemStatus.PARTIAL],
+      true,
+    );
+
+    const result: { itemId: number; notExportedQuantity: number }[] = [];
+
+    for (const item of items) {
+      let notExportedQuantity = 0;
+      if (item.status !== ItemStatus.EXPORTED) {
+        const exported = await this.inventoryService.countInvenQuantity(
+          item.id,
+          InventoryAction.EXPORT,
+        );
+        notExportedQuantity = item.quantity - exported;
+      }
+      result.push({ itemId: item.id, notExportedQuantity });
+    }
+
+    return Array.from(result);
+  }
+
+  async testt(orderId: number, itemId: number) {
+    const item = await this.dataSource
+      .createQueryBuilder(Item, 'i')
+      .where('i.id = :itemId', { itemId })
+      .andWhere('i.sourceId = :sourceId AND i.sourceType = :sourceType', {
+        sourceId: orderId,
+        sourceType: SourceType.ORDER,
+      })
+      .andWhere('i.itemableType = :itemableType', {
+        itemableType: ItemableType.PRODUCT,
+      })
+      .andWhere('i.isActive = :isActive', { isActive: true })
+      .getOne();
+
+    if (!item) throw new NotFoundException('Item not found!');
+
+    let notExportedQuantity = 0;
+
+    if (item.status !== ItemStatus.EXPORTED) {
+      const exported = await this.inventoryService.countInvenQuantity(
+        item.id,
+        InventoryAction.EXPORT,
+      );
+      notExportedQuantity = item.quantity - exported;
+    }
+
+    return { notExportedQuantity };
+  }
+
+  async getRemainQuantityOfOrder(orderId: number) {
+    return await this.itemService.getRemainQuantityOfSource(
+      orderId,
+      SourceType.ORDER,
+    );
+  }
+
+  async getRemainQuantityOfItem(orderId: number, itemId: number) {
+    return await this.itemService.getRemainQuantityOfItem(
+      orderId,
+      SourceType.ORDER,
+      itemId,
+    );
+  }
+
+  async isAllProductExported(orderId: number) {
+    return this.itemService.checkHandledOfSource(orderId, SourceType.ORDER);
   }
 }

@@ -16,6 +16,7 @@ import { Button } from "../ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { DiscountType } from "../schemas/discount.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type DiscountProps = {
   handleDelete: (id: number) => void;
@@ -73,10 +74,7 @@ export const discountColumns = ({
   {
     accessorFn: (row) => {
       if (row.type === "Fixed") {
-        return (row.value ?? 0).toLocaleString("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        });
+        return formatCurrency(row?.value ?? 0);
       }
 
       // Default
@@ -85,20 +83,11 @@ export const discountColumns = ({
     header: "Discount",
   },
   {
-    accessorFn: (row) =>
-      (row?.maxDiscountAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.maxDiscountAmount ?? 0),
     header: "Max Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.minTotalValue ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
-
+    accessorFn: (row) => formatCurrency(row?.minTotalValue ?? 0),
     header: "Min Total",
   },
   {

@@ -3,6 +3,7 @@
 import { Button } from "../ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { DiscountType } from "../schemas/discount.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type AddDiscountProps = {
   handleAddDiscount: (discount: DiscountType, itemId?: number) => void;
@@ -54,20 +55,11 @@ export const addDiscountColumns = ({
     header: "Value",
   },
   {
-    accessorFn: (row) =>
-      (row?.maxDiscountAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.maxDiscountAmount ?? 0),
     header: "Max Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.minTotalValue ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
-
+    accessorFn: (row) => formatCurrency(row?.minTotalValue ?? 0),
     header: "Min Total",
   },
   {

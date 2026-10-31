@@ -23,6 +23,14 @@ import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 export class PartnerController {
   constructor(private readonly partnerService: PartnerService) {}
 
+  @RequirePermissions('partner:read')
+  @Get('/customers')
+  async findAllActiveCustomer(@Query() paginationDto: PaginationDto) {
+    return await this.partnerService.findAllByType(
+      PartnerType.CUSTOMER,
+      paginationDto,
+    );
+  }
   @RequirePermissions('partner:create')
   @Post()
   async create(@Body() createPartnerDto: CreatePartnerDto) {
@@ -40,15 +48,6 @@ export class PartnerController {
   @Get(':partnerId/transactions')
   async getTransactionsByPartner(@Param('partnerId') partnerId: number) {
     return await this.partnerService.getTransactionsByPartner(partnerId);
-  }
-
-  @RequirePermissions('partner:read')
-  @Get('/customer')
-  async findAllActiveCustomer(@Query() paginationDto: PaginationDto) {
-    return await this.partnerService.findAllByType(
-      PartnerType.CUSTOMER,
-      paginationDto,
-    );
   }
 
   @RequirePermissions('partner:read', 'order:read')
@@ -144,7 +143,7 @@ export class PartnerController {
   }
 
   @RequirePermissions('partner:read')
-  @Get('/supplier')
+  @Get('/suppliers')
   async findAllActiveSupllier(@Query() paginationDto: PaginationDto) {
     return await this.partnerService.findAllByType(
       PartnerType.SUPPLIER,

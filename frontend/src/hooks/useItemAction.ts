@@ -128,7 +128,11 @@ export const useItemActions = (refetch: () => void) => {
     }
 
     try {
-      await api.post(`${sourceType}s/${sourceId}/items`, payload);
+      const response = await api.post(
+        `/${sourceType.toLowerCase()}s/${sourceId}/items`,
+        payload
+      );
+      console.log(response);
       toast.success("Add item success!");
       refetch();
       return true;

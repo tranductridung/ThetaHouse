@@ -13,6 +13,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { getItemStatusIcon } from "../styles/ItemStatus";
 import { ActionItem } from "../commons/action-item.helper";
 import type { SourceTypeConst } from "../constants/constants";
+import { formatCurrency } from "@/lib/utils";
 
 type ItemColumnsProps = {
   hasAction: boolean;
@@ -62,27 +63,15 @@ export const itemColumns = ({
       header: "Quantity",
     },
     {
-      accessorFn: (row) =>
-        (Number(row?.unitPrice) || 0).toLocaleString("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }),
+      accessorFn: (row) => formatCurrency(row?.unitPrice ?? 0),
       header: "Unit Price",
     },
     {
-      accessorFn: (row) =>
-        (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }),
+      accessorFn: (row) => formatCurrency(row?.totalAmount ?? 0),
       header: "Total Amount",
     },
     {
-      accessorFn: (row) =>
-        (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }),
+      accessorFn: (row) => formatCurrency(row?.finalAmount ?? 0),
       header: "Final Amount",
     },
     {

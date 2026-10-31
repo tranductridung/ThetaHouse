@@ -21,13 +21,13 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
+import axios from "axios";
 import api from "@/api/api";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { handleAxiosError } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 
 interface GoogleCalendarDialogProps {
   isOpen: boolean;
@@ -45,15 +45,12 @@ const GoogleCalendarDialog = ({
 
   const checkConnectionStatus = async () => {
     try {
-      console.log("11111111111111111111");
       setIsLoading(true);
-      console.log("22222222222222");
       const response = await api.get("google-calendar/status");
-      console.log("Google Calendar status response:", response);
       setIsConnected(response.data.connected);
-      console.log("33333333333333");
     } catch (error) {
       setIsConnected(false);
+      handleAxiosError(error);
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +64,7 @@ const GoogleCalendarDialog = ({
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const handleConnect = async () => {
+  const handleConnectGoogleCalendar = async () => {
     setIsConnecting(true);
     try {
       const responses = await axios.post(
@@ -211,7 +208,7 @@ const GoogleCalendarDialog = ({
                 <div className="flex flex-col sm:flex-row gap-3">
                   {!isConnected ? (
                     <Button
-                      onClick={handleConnect}
+                      onClick={() => handleConnectGoogleCalendar()}
                       disabled={isConnecting}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5 shadow-lg hover:shadow-xl transition-all duration-200"
                     >

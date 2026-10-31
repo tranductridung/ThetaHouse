@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import type { TransactionType } from "../schemas/transaction.schema";
 import { getTransactionStatusIcon } from "../styles/TransactionStatus";
+import { formatCurrency } from "@/lib/utils";
 
 type ChooseTransactionProps = {
   handleChooseTransaction: (transaction: TransactionType) => void;
@@ -42,19 +43,11 @@ export const chooseTransactionColumns = ({
     header: "Source Type",
   },
   {
-    accessorFn: (row) =>
-      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.totalAmount ?? 0),
     header: "Total Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.paidAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.paidAmount ?? 0),
     header: "Paid Amount",
   },
   {

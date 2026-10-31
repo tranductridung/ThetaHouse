@@ -81,6 +81,7 @@ export class GoogleCalendarController {
     @Res() res: Response,
     @Query() query: { code: string; state: string },
   ) {
+    console.log('CALLBACKKKKKKKKKKKKKKKKKKKKKKKKKK');
     // Validate state token
     const { code, state } = query;
     let decoded: { userId: number; email: string };
@@ -104,10 +105,18 @@ export class GoogleCalendarController {
       tokens.access_token,
     );
 
-    if (userProfile?.data?.email !== decoded.email)
-      return new UnauthorizedException(
-        'Email mismatch. Please use the Google account you used to sign up.',
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+
+    if (userProfile?.data?.email !== decoded.email) {
+      const redirectUrl = new URL(`${frontendUrl}/error/email-mismatch`);
+      redirectUrl.searchParams.set('accountEmail', decoded.email);
+      redirectUrl.searchParams.set(
+        'googleCalendarEmail',
+        userProfile?.data?.email,
       );
+      return res.redirect(redirectUrl.toString());
+    }
 
     // Save tokens to user's profile
     await this.googleCalendarService.saveGoogleTokens(
@@ -117,8 +126,6 @@ export class GoogleCalendarController {
     );
 
     // Redirect to frontend with success message
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     return res.redirect(frontendUrl);
   }
 

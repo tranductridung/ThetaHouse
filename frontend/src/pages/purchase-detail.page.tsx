@@ -338,6 +338,9 @@ const PurchaseDetails = ({ isUseTitle = true }: PurchaseDetailProps) => {
             formManager={exportImportFormManager}
             handleSubmit={onSubmitExportImport}
             onClose={onCloseExportImport}
+            itemId={exportImportFormManager.selectedItemId!}
+            sourceType={"Purchase"}
+            sourceId={purchase?.id}
           ></ExportImportModal>
         </div>
       </RequirePermission>

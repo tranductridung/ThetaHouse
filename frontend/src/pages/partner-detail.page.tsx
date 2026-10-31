@@ -1,8 +1,10 @@
 import api from "@/api/api";
+import { useAuth } from "@/auth/useAuth";
 import PageTitle from "@/components/Title";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { handleAxiosError } from "@/lib/utils";
+import { useLoading } from "@/components/contexts/loading.context";
 import OrderHistory from "@/components/partner-components/OrderHistory";
 import PersonalInfor from "@/components/partner-components/PersonalInfor";
 import PurchaseHistory from "@/components/partner-components/PurchaseHistory";
@@ -11,17 +13,16 @@ import EnrollmentHistory from "@/components/partner-components/EnrollmentHistory
 import TherapyAppointment from "@/components/partner-components/TherapyAppointment";
 import ConsignmentHistory from "@/components/partner-components/ConsignmentHistory";
 import ConsultationAppointment from "@/components/partner-components/ConsultationAppointment";
-import { useLoading } from "@/components/contexts/loading.context";
-import { useAuth } from "@/auth/useAuth";
 
 type PartnerDetailProps = {
   isUseTitle?: boolean;
 };
+
 const PartnerDetail = ({ isUseTitle = true }: PartnerDetailProps) => {
-  const { partnerType, id } = useParams();
-  const [notFound, setNotFound] = useState(false);
   const { setLoading } = useLoading();
   const { fetchPermissions } = useAuth();
+  const { partnerType, id } = useParams();
+  const [notFound, setNotFound] = useState(false);
 
   const fetchData = async () => {
     try {

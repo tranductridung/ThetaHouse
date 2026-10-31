@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   AdjustmentType,
+  InventoryAction,
   ItemableType,
   ItemStatus,
   PartnerType,
@@ -162,10 +163,21 @@ export class PurchaseService {
         .take(limit)
         .getManyAndCount();
 
-      return { purchases, total };
+      const newPurchases = await this.itemService.enrichSourcesWithHandleStatus(
+        purchases,
+        SourceType.PURCHASE,
+      );
+
+      return { purchases: [...newPurchases], total };
     } else {
       const purchases = await queryBuilder.getMany();
-      return purchases;
+
+      const newPurchases = await this.itemService.enrichSourcesWithHandleStatus(
+        purchases,
+        SourceType.PURCHASE,
+      );
+
+      return { purchases: [...newPurchases] };
     }
   }
 
@@ -564,5 +576,27 @@ export class PurchaseService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getRemainQuantityOfPurchase(purchaseId: number) {
+    return await this.itemService.getRemainQuantityOfSource(
+      purchaseId,
+      SourceType.PURCHASE,
+    );
+  }
+
+  async getRemainQuantityOfItem(purchaseId: number, itemId: number) {
+    return await this.itemService.getRemainQuantityOfItem(
+      purchaseId,
+      SourceType.PURCHASE,
+      itemId,
+    );
+  }
+
+  async isAllProductImported(purchaseId: number) {
+    return this.itemService.checkHandledOfSource(
+      purchaseId,
+      SourceType.PURCHASE,
+    );
   }
 }

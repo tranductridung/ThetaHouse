@@ -1,9 +1,9 @@
 import {
   Card,
-  CardContent,
+  CardTitle,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardContent,
 } from "@/components/ui/card";
 import {
   useCreateFormManager,
@@ -48,7 +48,9 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
   const { fetchPermissions } = useAuth();
   const [order, setOrder] = useState<OrderDetailType | null>(null);
   const [showPartnerDialog, setShowPartnerDialog] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<number | undefined>(
+    undefined
+  );
   const [transaction, setTransaction] = useState<TransactionType | null>(null);
   const {
     formManager: appointmentFormManager,
@@ -86,6 +88,7 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
       setOrder(orderReponse.data.order);
 
       const transactionReponse = await api.get(`/transactions/orders/${id}`);
+
       setTransaction(transactionReponse.data.transaction);
     } catch (error) {
       handleAxiosError(error);
@@ -423,10 +426,14 @@ const OrderDetails = ({ isUseTitle = true }: OrderDetailProps) => {
             onClose={onClosePayment}
           ></PaymentModal>
           {/* Export or Import item modal */}
+
           <ExportImportModal
             formManager={exportImportFormManager}
             handleSubmit={onSubmitExportImport}
             onClose={onCloseExportImport}
+            itemId={exportImportFormManager.selectedItemId!}
+            sourceType={"Order"}
+            sourceId={order?.id}
           ></ExportImportModal>
           {/* Add partner modal */}
           <AddPartnerModal

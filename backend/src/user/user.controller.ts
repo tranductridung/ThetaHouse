@@ -73,7 +73,6 @@ export class UserController {
     return await this.userService.toggleStatus(id);
   }
 
-  @RequirePermissions('user:read')
   @Get('me')
   getUserInfor(@Req() req: Request) {
     return {
@@ -86,7 +85,6 @@ export class UserController {
     };
   }
 
-  @RequirePermissions('user:read')
   @Get('me/profile')
   async getProfile(@Req() req: Request) {
     const userId = Number(req?.user?.id);
@@ -99,14 +97,12 @@ export class UserController {
     return { user };
   }
 
-  @RequirePermissions('user:update')
   @Patch('me')
   async updateProfile(@Req() req: Request, @Body() data: UpdateUserDto) {
     const user = await this.userService.updateUser(Number(req?.user?.id), data);
     return { user };
   }
 
-  @RequirePermissions('user:update')
   @Patch('me/password')
   async changePassword(@Req() req: Request, @Body() data: ChangePasswordDTO) {
     return await this.userService.changePassword(data, Number(req?.user?.id));

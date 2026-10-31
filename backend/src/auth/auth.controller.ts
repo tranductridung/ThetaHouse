@@ -2,7 +2,6 @@ import {
   Body,
   Get,
   Post,
-  Query,
   Req,
   Res,
   UseGuards,
@@ -73,9 +72,21 @@ export class AuthController {
 
   @Get('verify-email')
   @UseGuards(VerifyEmailJwtGuard)
-  async verifyEmail(@Query('token') token: string, @Req() req: Request) {
-    await this.authService.verifyEmail(Number(req?.user?.id));
-    return { message: 'Verify email success!' };
+  async verifyEmail(@Req() req: Request, @Res() res: Response) {
+    const feUrl =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+
+    try {
+      await this.authService.verifyEmail(Number(req.user?.id));
+      return res.redirect(`${feUrl}/success/verify-email-success`);
+    } catch (error) {
+      return res.redirect(`${feUrl}/error/verify-email-failed`);
+    }
+  }
+
+  @Post('resend-verify-email')
+  async resendVerifyEmail(@Body('email') email: string) {
+    return this.authService.resendVerifyEmail(email);
   }
 
   @Post('refresh')

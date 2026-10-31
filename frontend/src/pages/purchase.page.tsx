@@ -8,10 +8,12 @@ import { handleAxiosError } from "@/lib/utils";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import PageTitle from "@/components/Title";
 import { toast } from "sonner";
-import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
+import ConfirmCancelSourceDialog from "@/components/modals/alert/confirm-cancel-source.modal";
 import { useLoading } from "@/components/contexts/loading.context";
 import { useAuth } from "@/auth/useAuth";
 import { RequirePermission } from "@/components/commons/require-permission";
+import type { HandledItemListType } from "@/components/modals/alert/confirm-export-import-source.modal";
+import ConfirmExportImportSourceDialog from "@/components/modals/alert/confirm-export-import-source.modal";
 
 type PurchaseProps = { supplierId?: number; isUseTitle?: boolean };
 const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
@@ -26,6 +28,11 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
+
+  const [showConfirmImportDialog, setShowConfirmImportDialog] = useState(false);
+  const [confirmImportData, setConfirmImportData] = useState<
+    HandledItemListType[]
+  >([]);
 
   const fetchData = async () => {
     try {
@@ -44,10 +51,11 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
 
   const { handleExportImport } = useSourceActions(fetchData);
 
-  const onImport = async (id: number) => {
+  const onSubmitImport = async (id: number) => {
     try {
       setLoading(true);
       await handleExportImport(id, "Purchase");
+      await fetchData();
     } finally {
       setLoading(false);
     }
@@ -95,6 +103,18 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
     run();
   }, [pageIndex, pageSize]);
 
+  const onImport = async (id: number) => {
+    setSelectedPurchaseId(id);
+    setShowConfirmImportDialog(true);
+
+    try {
+      const response = await api.get(`purchases/${id}/items/not-imported`);
+      setConfirmImportData(response.data);
+    } catch (error) {
+      handleAxiosError(error);
+    }
+  };
+
   return (
     <div className="p-4">
       {isUseTitle && <PageTitle title="Purchase"></PageTitle>}
@@ -116,13 +136,22 @@ const Purchase = ({ supplierId, isUseTitle = true }: PurchaseProps) => {
         />
       </RequirePermission>
 
-      <ConfirmDialog
+      <ConfirmCancelSourceDialog
         type="purchase"
         showConfirmDialog={showConfirmDialog}
         setShowConfirmDialog={setShowConfirmDialog}
         handleCancel={handleCancel}
         selectedId={selectedPurchaseId}
-      ></ConfirmDialog>
+      ></ConfirmCancelSourceDialog>
+
+      <ConfirmExportImportSourceDialog
+        type={"purchase"}
+        handleType={"export"}
+        showConfirmDialog={showConfirmImportDialog}
+        setShowConfirmDialog={setShowConfirmImportDialog}
+        handleConfirm={() => onSubmitImport(selectedPurchaseId!)}
+        data={confirmImportData}
+      ></ConfirmExportImportSourceDialog>
     </div>
   );
 };

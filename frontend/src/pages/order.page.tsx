@@ -1,3 +1,6 @@
+import ConfirmExportImportSourceDialog, {
+  type HandledItemListType,
+} from "@/components/modals/alert/confirm-export-import-source.modal";
 import api from "@/api/api";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/useAuth";
@@ -11,9 +14,9 @@ import AddPayerModal from "@/components/modals/add-payer.modal";
 import { orderColumns } from "@/components/columns/order.column";
 import { useLoading } from "@/components/contexts/loading.context";
 import type { OrderType } from "@/components/schemas/source.schema";
-import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
 import type { AddPayerType } from "@/components/schemas/add-payer.schema";
 import { RequirePermission } from "@/components/commons/require-permission";
+import ConfirmCancelSourceDialog from "@/components/modals/alert/confirm-cancel-source.modal";
 
 export type FormManagerType = {
   isShow: boolean;
@@ -37,9 +40,14 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
   const [total, setTotal] = useState(0);
 
   const [showPayerDialog, setShowPayerDialog] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showConfirmCancelDialog, setShowConfirmCancelDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number>();
   const [payerId, setPayerId] = useState<number | null>(null);
+
+  const [showConfirmExportDialog, setShowConfirmExportDialog] = useState(false);
+  const [confirmExportData, setConfirmExportData] = useState<
+    HandledItemListType[]
+  >([]);
 
   const fetchData = async () => {
     try {
@@ -79,10 +87,11 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
 
   const { handleExportImport } = useSourceActions(fetchData);
 
-  const handleExport = async (id: number) => {
+  const onSubmitExport = async (id: number) => {
     try {
       setLoading(true);
       await handleExportImport(id, "Order");
+      await fetchData();
     } finally {
       setLoading(false);
     }
@@ -104,7 +113,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
     } catch (error) {
       handleAxiosError(error);
     } finally {
-      setShowConfirmDialog(false);
+      setShowConfirmCancelDialog(false);
       setSelectedOrderId(undefined);
       setPayerId(null);
       setLoading(false);
@@ -114,7 +123,19 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
   const onSubmitAddPayer = (formData: AddPayerType) => {
     setPayerId(formData.payer.id);
     setShowPayerDialog(false);
-    setShowConfirmDialog(true);
+    setShowConfirmCancelDialog(true);
+  };
+
+  const onExport = async (id: number) => {
+    setSelectedOrderId(id);
+    setShowConfirmExportDialog(true);
+
+    try {
+      const response = await api.get(`orders/${id}/items/not-exported`);
+      setConfirmExportData(response.data);
+    } catch (error) {
+      handleAxiosError(error);
+    }
   };
 
   return (
@@ -125,8 +146,8 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
           onAdd={onAdd}
           columns={orderColumns({
             onDetail,
-            handleExport,
             onCancel,
+            onExport,
           })}
           data={data}
           total={total}
@@ -137,6 +158,7 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
           permission={"order:create"}
         />
       </RequirePermission>
+
       <AddPayerModal
         type={"order"}
         onSubmitAddPayer={onSubmitAddPayer}
@@ -144,13 +166,22 @@ const Order = ({ customerId, isUseTitle = true }: OrderProps) => {
         setShowPayerDialog={setShowPayerDialog}
       ></AddPayerModal>
 
-      <ConfirmDialog
+      <ConfirmCancelSourceDialog
         type={"order"}
-        showConfirmDialog={showConfirmDialog}
-        setShowConfirmDialog={setShowConfirmDialog}
+        showConfirmDialog={showConfirmCancelDialog}
+        setShowConfirmDialog={setShowConfirmCancelDialog}
         handleCancel={handleCancel}
         selectedId={selectedOrderId}
-      ></ConfirmDialog>
+      ></ConfirmCancelSourceDialog>
+
+      <ConfirmExportImportSourceDialog
+        handleType={"import"}
+        type={"order"}
+        showConfirmDialog={showConfirmExportDialog}
+        setShowConfirmDialog={setShowConfirmExportDialog}
+        handleConfirm={() => onSubmitExport(selectedOrderId!)}
+        data={confirmExportData}
+      ></ConfirmExportImportSourceDialog>
     </div>
   );
 };

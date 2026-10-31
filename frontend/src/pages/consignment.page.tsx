@@ -2,6 +2,9 @@ import type {
   PartnerTypeConst,
   ConsignmentTypeConst,
 } from "@/components/constants/constants";
+import ConfirmExportImportSourceDialog, {
+  type HandledItemListType,
+} from "@/components/modals/alert/confirm-export-import-source.modal";
 import api from "@/api/api";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/useAuth";
@@ -13,11 +16,11 @@ import { DataTable } from "@/components/data-table";
 import { useSourceActions } from "@/hooks/useSourceAction";
 import AddPayerModal from "@/components/modals/add-payer.modal";
 import { useLoading } from "@/components/contexts/loading.context";
-import ConfirmDialog from "@/components/alert-dialogs/confirm.dialog";
 import type { ConsignmentType } from "@/components/schemas/source.schema";
 import type { AddPayerType } from "@/components/schemas/add-payer.schema";
 import { consignmentColumns } from "@/components/columns/consigment.column";
 import { RequirePermission } from "@/components/commons/require-permission";
+import ConfirmCancelSourceDialog from "@/components/modals/alert/confirm-cancel-source.modal";
 
 type ConsignmentProps = {
   partnerId?: number | undefined;
@@ -39,8 +42,16 @@ const Consignment = ({
 
   const [showPayerDialog, setShowPayerDialog] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedConsignmentId, setSelectedConsignmentId] = useState<number>();
+  const [selectedConsignment, setSelectedConsignment] = useState<{
+    id: number;
+    type: ConsignmentTypeConst;
+  }>();
   const [payerId, setPayerId] = useState<number | null>(null);
+
+  const [showConfirmHandleDialog, setShowConfirmHandleDialog] = useState(false);
+  const [confirmHandleData, setConfirmHandleData] = useState<
+    HandledItemListType[]
+  >([]);
 
   const navigate = useNavigate();
 
@@ -57,8 +68,8 @@ const Consignment = ({
       let url = `/consignments?page=${pageIndex}&limit=${pageSize}`;
 
       if (partnerId && partnerType) {
-        const tmp = partnerType === "Customer" ? "customers" : "suppliers";
-        url = `/partners/${tmp}/${partnerId}/consignments?page=${pageIndex}&limit=${pageSize}`;
+        // const tmp = partnerType === "Customer" ? "customers" : "suppliers";
+        url = `/partners/${partnerType.toLocaleLowerCase()}s/${partnerId}/consignments?page=${pageIndex}&limit=${pageSize}`;
       }
 
       const response = await api.get(url);
@@ -71,7 +82,7 @@ const Consignment = ({
   };
   const { handleExportImport } = useSourceActions(fetchData);
 
-  const onHandle = async (id: number) => {
+  const onSubmitHandle = async (id: number) => {
     try {
       setLoading(true);
       await handleExportImport(id, "Consignment");
@@ -115,13 +126,24 @@ const Consignment = ({
     } else {
       setShowPayerDialog(true);
     }
-    setSelectedConsignmentId(id);
+    setSelectedConsignment({ id, type });
   };
 
   const onSubmitAddPayer = (formData: AddPayerType) => {
     setPayerId(formData.payer.id);
     setShowPayerDialog(false);
     setShowConfirmDialog(true);
+  };
+  const onHandle = async (id: number, type: ConsignmentTypeConst) => {
+    setSelectedConsignment({ id, type });
+    setShowConfirmHandleDialog(true);
+
+    try {
+      const response = await api.get(`consignments/${id}/check-handled`);
+      setConfirmHandleData(response.data);
+    } catch (error) {
+      handleAxiosError(error);
+    }
   };
 
   return (
@@ -152,13 +174,22 @@ const Consignment = ({
         setShowPayerDialog={setShowPayerDialog}
       ></AddPayerModal>
 
-      <ConfirmDialog
+      <ConfirmCancelSourceDialog
         type="consignment"
         showConfirmDialog={showConfirmDialog}
         setShowConfirmDialog={setShowConfirmDialog}
         handleCancel={handleCancel}
-        selectedId={selectedConsignmentId}
-      ></ConfirmDialog>
+        selectedId={selectedConsignment?.id}
+      ></ConfirmCancelSourceDialog>
+
+      <ConfirmExportImportSourceDialog
+        type={"consignment"}
+        handleType={selectedConsignment?.type === "In" ? "import" : "export"}
+        showConfirmDialog={showConfirmHandleDialog}
+        setShowConfirmDialog={setShowConfirmHandleDialog}
+        handleConfirm={() => onSubmitHandle(selectedConsignment?.id)}
+        data={confirmHandleData}
+      ></ConfirmExportImportSourceDialog>
     </div>
   );
 };

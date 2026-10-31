@@ -51,7 +51,6 @@ export function UserComboBox({
         const res = await api.get(
           `/users?page=${page}&limit=${pageSize}&search=${input}`
         );
-        console.log("ressss", res);
         const items: UserOption[] = res.data.users || [];
 
         setUsers((prev) => (page === 0 ? items : [...prev, ...items]));

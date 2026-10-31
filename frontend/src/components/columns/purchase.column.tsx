@@ -12,6 +12,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { PurchaseType } from "../schemas/source.schema";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
+import { formatCurrency } from "@/lib/utils";
 
 type PurchaseProps = {
   onDetail: (id: number) => void;
@@ -33,27 +34,15 @@ export const purchaseColumns = ({
     header: "Quantity",
   },
   {
-    accessorFn: (row) =>
-      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.totalAmount ?? 0),
     header: "Total Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.discountAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.discountAmount ?? 0),
     header: "Discount Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.finalAmount ?? 0),
     header: "Final Amount",
   },
   {
@@ -120,14 +109,16 @@ export const purchaseColumns = ({
 
             {row.original.status !== "Cancelled" && (
               <>
-                <ActionItem
-                  permission="purchase:import"
-                  onClick={() => {
-                    onImport(row.original.id);
-                  }}
-                >
-                  Import Purchase
-                </ActionItem>
+                {!row.original.isAllImported && (
+                  <ActionItem
+                    permission="purchase:import"
+                    onClick={() => {
+                      onImport(row.original.id);
+                    }}
+                  >
+                    Import Purchase
+                  </ActionItem>
+                )}
 
                 <ActionItem
                   permission="purchase:cancel"

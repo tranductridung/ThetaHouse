@@ -1,5 +1,22 @@
 "use client";
-
+import {
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Table,
   TableBody,
@@ -18,41 +35,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
   orderDraftSchema,
   type OrderDraftType,
 } from "@/components/schemas/source.schema";
 import { toast } from "sonner";
-import React, { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { type ProductType } from "../schemas/product.schema";
+import { ChevronsUpDown, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import AddItemRow from "../commands/items.command";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { CourseType } from "../schemas/course.schema";
+import { type ProductType } from "../schemas/product.schema";
 import type { ServiceType } from "../schemas/service.schema";
 import type { DiscountType } from "../schemas/discount.schema";
-import {
-  FormProvider,
-  useFieldArray,
-  useForm,
-  useWatch,
-} from "react-hook-form";
-import { ChevronsUpDown, X } from "lucide-react";
 import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
-import AddItemRow from "../commands/items.command";
-import type { CourseType } from "../schemas/course.schema";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../ui/collapsible";
 import { DiscountComboBox } from "../comboBoxs/discount.comboBox";
-import { formatCurrency } from "@/lib/utils";
 
 type OrderProps = {
   onSubmit: (formData: OrderDraftType) => void;
@@ -421,16 +420,6 @@ export default function CreateOrderForm({ onSubmit }: OrderProps) {
       >
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 py-6 px-4">
           <div className="max-w-7xl mx-auto">
-            {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Create Order
-              </h1>
-              <p className="text-gray-600">
-                Fill in the details below to create a new order
-              </p>
-            </div>
-
             <div className="flex lg:flex-row flex-col gap-6">
               {/* Main Content Area */}
               <div className="flex-1 space-y-6">

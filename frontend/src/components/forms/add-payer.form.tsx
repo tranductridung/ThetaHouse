@@ -26,7 +26,7 @@ export default function AddPayerForm({ onSubmit }: AddPayerProps) {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, (error) => console.log(error))}
         className="space-y-4 text-xl h-full w-full "
       >
         <FormField

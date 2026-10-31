@@ -19,6 +19,7 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { RolePermission } from './entities/role-permission.entity';
 import { CreatePermissionDto } from './dtos/create-permission.dto';
 import { UpdatePermissionDto } from './dtos/update-permission.dto';
+import { UserStatus } from '../common/enums/enum';
 
 @Injectable()
 export class AuthorizationService {
@@ -246,7 +247,7 @@ export class AuthorizationService {
   }
 
   // -------------------------------- USER ROLES --------------------------------
-  // Just use in system allow user have more than 1 role
+  // Just use in system allow user have more role
   // async assignRoleToUser(userId: number, roleId: number) {
   //   const hasRole = await this.checkUserRoleExist(userId, roleId);
   //   if (hasRole) throw new BadRequestException(`User already has role!`);
@@ -268,6 +269,12 @@ export class AuthorizationService {
   // }
 
   async assignRoleToUser(userId: number, roleId: number) {
+    const user = await this.userService.findOne(userId);
+    if (user.status === UserStatus.UNVERIFIED)
+      throw new BadRequestException(
+        `User with status ${user.status} cannot be assigned a role yet.`,
+      );
+
     const role = await this.roleRepo.findOne({
       where: { id: roleId },
       select: { id: true, name: true },
@@ -281,6 +288,7 @@ export class AuthorizationService {
           role,
         },
       });
+
       if (count >= 1)
         throw new BadRequestException(
           'Cannot create more than one SuperAdmin user!',
@@ -303,8 +311,12 @@ export class AuthorizationService {
         user: { id: userId },
         role: { id: role.id },
       });
+
       await this.userRoleRepo.save(newUserRole);
     }
+
+    if (user.status === UserStatus.PENDING)
+      await this.userService.changeStatus(user.id, UserStatus.ACTIVE);
 
     return { userId, roleId: role.id };
   }
@@ -312,21 +324,28 @@ export class AuthorizationService {
   // Check lại, chỉ superadmin mới có quyền
   async removeUserRole(currentUserId: number, userId: number, roleId: number) {
     if (currentUserId === userId)
-      throw new BadRequestException('You cannot remove your own role');
+      throw new BadRequestException('You cannot remove your role');
 
     const role = await this.roleRepo.findOne({
       where: { id: roleId },
       select: { id: true },
     });
 
-    if (!role) throw new NotFoundException('Role not found');
+    if (!role) throw new NotFoundException('Role not found!');
 
     await this.userRoleRepo.delete({
       user: { id: userId },
       role: { id: role.id },
     });
 
-    return role.id;
+    const countUserRole = await this.userRoleRepo.count({
+      where: { user: { id: userId } },
+    });
+
+    if (countUserRole === 0)
+      await this.userService.changeStatus(userId, UserStatus.PENDING);
+
+    return { message: 'Delete user role success!' };
   }
 
   async checkUserRoleExist(userId: number, roleId: number) {

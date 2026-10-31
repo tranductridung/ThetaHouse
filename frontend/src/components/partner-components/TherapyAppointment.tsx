@@ -10,6 +10,7 @@ const TherapyAppointment = ({ customerId }: TherapyAppointmentProps) => {
       <Appointment
         appointmentCategory="Therapy"
         customerId={Number(customerId)}
+        isUseTitle={false}
       />
     </div>
   );

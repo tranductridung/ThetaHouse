@@ -11,6 +11,7 @@ const ConsultationAppointment = ({
     <div className="flex flex-col gap-5 p-4 justify-end">
       <Appointment
         appointmentCategory="Consultation"
+        isUseTitle={false}
         customerId={Number(customerId)}
       />
     </div>

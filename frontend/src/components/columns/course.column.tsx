@@ -18,6 +18,7 @@ import { Button } from "../ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { CourseType } from "../schemas/course.schema";
 import { ActionItem } from "../commons/action-item.helper";
+import { formatCurrency } from "@/lib/utils";
 
 type CourseProps = {
   handleDelete: (id: number) => void;
@@ -115,11 +116,7 @@ export const courseColumns = ({
     header: "Online Session",
   },
   {
-    accessorFn: (row) =>
-      (row?.price ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.price ?? 0),
     header: "Price",
   },
   {

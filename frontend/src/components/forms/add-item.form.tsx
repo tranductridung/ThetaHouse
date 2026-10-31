@@ -1,14 +1,3 @@
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import {
-  itemDraftListSchema,
-  type ItemDraftListType,
-} from "../schemas/item.schema";
-import { Form } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "../ui/button";
-import type { ProductType } from "../schemas/product.schema";
-import type { ServiceType } from "../schemas/service.schema";
-import type { DiscountType } from "../schemas/discount.schema";
 import {
   Card,
   CardAction,
@@ -17,20 +6,33 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { FormControl, FormField, FormItem } from "@/components/ui/form";
-import { Input } from "../ui/input";
-import AddItemRow from "../commands/items.command";
-import type { CourseType } from "../schemas/course.schema";
+import {
+  itemDraftListSchema,
+  type ItemDraftListType,
+} from "../schemas/item.schema";
 import { toast } from "sonner";
 import { X } from "lucide-react";
-import { DiscountComboBox } from "../comboBoxs/discount.comboBox";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Form } from "@/components/ui/form";
 import { formatCurrency } from "@/lib/utils";
+import AddItemRow from "../commands/items.command";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { CourseType } from "../schemas/course.schema";
+import type { ProductType } from "../schemas/product.schema";
+import type { ServiceType } from "../schemas/service.schema";
+import type { DiscountType } from "../schemas/discount.schema";
+import { DiscountComboBox } from "../comboBoxs/discount.comboBox";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { FormControl, FormField, FormItem } from "@/components/ui/form";
+
 type AddItemProps = {
   onSubmit: (itemDraftTypes: ItemDraftListType) => void;
   source: "Order" | "Purchase" | "Consignment";
+  consignmentType?: "In" | "Out";
 };
 
-const AddItemForm = ({ onSubmit, source }: AddItemProps) => {
+const AddItemForm = ({ onSubmit, source, consignmentType }: AddItemProps) => {
   const form = useForm<ItemDraftListType>({
     resolver: zodResolver(itemDraftListSchema),
     defaultValues: {
@@ -82,6 +84,17 @@ const AddItemForm = ({ onSubmit, source }: AddItemProps) => {
     form.setValue(`items.${index}.discountAmount`, discountAmount);
   };
 
+  const getProductDefaultPrice = (product: ProductType) => {
+    if (source === "Order") return product.defaultOrderPrice ?? 0;
+    else if (source === "Purchase") return product.defaultPurchasePrice ?? 0;
+
+    if (!consignmentType)
+      toast.error("Consignment type is required for consignment source");
+
+    if (consignmentType === "Out") return product.defaultOrderPrice ?? 0;
+    return product.defaultPurchasePrice ?? 0;
+  };
+
   const handleAddProduct = (product: ProductType) => {
     const selectedProducts = form.getValues("items");
 
@@ -95,11 +108,8 @@ const AddItemForm = ({ onSubmit, source }: AddItemProps) => {
       toast.error("Product already added!");
       return;
     }
-
-    const { subtotal, discountAmount } = calculateDiscountAmount(
-      1,
-      product?.defaultOrderPrice ?? 0
-    );
+    const unitPrice = getProductDefaultPrice(product);
+    const { subtotal, discountAmount } = calculateDiscountAmount(1, unitPrice);
 
     append({
       quantity: 1,
@@ -108,7 +118,7 @@ const AddItemForm = ({ onSubmit, source }: AddItemProps) => {
       discount: undefined,
       name: product.name,
       description: product.description,
-      unitPrice: product.defaultOrderPrice ?? 0,
+      unitPrice,
       subtotal: subtotal,
       discountAmount: discountAmount,
     });
@@ -421,11 +431,13 @@ const AddItemForm = ({ onSubmit, source }: AddItemProps) => {
                     <CardFooter className="flex justify-between font-bold">
                       <span>Total</span>
                       <span>
-                        {Math.max(
-                          (watchedItems?.[index]?.subtotal ?? 0) -
-                            (watchedItems?.[index]?.discountAmount ?? 0),
-                          0
-                        ).toLocaleString()}
+                        {formatCurrency(
+                          Math.max(
+                            (watchedItems?.[index]?.subtotal ?? 0) -
+                              (watchedItems?.[index]?.discountAmount ?? 0),
+                            0
+                          )
+                        )}
                       </span>
                     </CardFooter>
                   </Card>

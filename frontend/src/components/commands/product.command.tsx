@@ -26,7 +26,6 @@ export function ProductList({
     try {
       const res = await api.get(`/products?page=${page}&limit=${pageSize}`);
       const items: ProductType[] = res.data.products || [];
-
       setProducts((prev) => [...prev, ...items]);
       setHasMore(items.length === pageSize);
     } catch (err) {

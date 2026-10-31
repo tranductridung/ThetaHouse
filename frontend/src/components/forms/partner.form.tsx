@@ -84,7 +84,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               {type === "add" ? "Create Partner" : "Edit Partner"}
             </h1>
           </div>
-
           {/* Full Name */}
           <FormField
             control={form.control}
@@ -99,7 +98,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               </FormItem>
             )}
           />
-
           {/* Email*/}
           <FormField
             control={form.control}
@@ -119,7 +117,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               </FormItem>
             )}
           />
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -187,7 +184,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               )}
             />
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -268,7 +264,6 @@ const PartnerForm = ({ onSubmit, type, partnerData }: PartnerProps) => {
               </FormItem>
             )}
           />
-
           <Button type="submit" className="w-full">
             {type === "add" ? "Create" : "Save"}
           </Button>

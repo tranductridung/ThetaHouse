@@ -7,7 +7,10 @@ type EnrollmentHistoryProps = {
 const EnrollmentHistory = ({ customerId }: EnrollmentHistoryProps) => {
   return (
     <div>
-      <Enrollment customerId={Number(customerId)}></Enrollment>
+      <Enrollment
+        isUseTitle={false}
+        customerId={Number(customerId)}
+      ></Enrollment>
     </div>
   );
 };

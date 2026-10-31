@@ -13,10 +13,11 @@ import { ActionItem } from "../commons/action-item.helper";
 import { getSourceStatusIcon } from "../styles/SourceStatus";
 import type { ConsignmentType } from "../schemas/source.schema";
 import type { ConsignmentTypeConst } from "../constants/constants";
+import { formatCurrency } from "@/lib/utils";
 
 type ConsignmentProps = {
   onDetail: (id: number) => void;
-  onHandle: (id: number) => void;
+  onHandle: (id: number, type: ConsignmentTypeConst) => void;
   onCancel: (id: number, type: ConsignmentTypeConst) => void;
 };
 
@@ -31,19 +32,11 @@ export const consignmentColumns = ({
     header: "Type",
   },
   {
-    accessorFn: (row) =>
-      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.totalAmount ?? 0),
     header: "Total Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.finalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.finalAmount ?? 0),
     header: "Final Amount",
   },
   {
@@ -145,7 +138,7 @@ export const consignmentColumns = ({
                     row.original.type === "In" ? "import" : "export"
                   }`}
                   onClick={() => {
-                    onHandle(row.original.id);
+                    onHandle(row.original.id, row.original.type);
                   }}
                 >
                   {row.original.type === "In" ? "Import" : "Export"}

@@ -8,8 +8,6 @@ import {
 } from 'src/common/enums/enum';
 import {
   BadRequestException,
-  forwardRef,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,18 +17,16 @@ import { User } from 'src/user/entities/user.entity';
 import { Inventory } from './entities/inventory.entity';
 import { Product } from 'src/product/entities/product.entity';
 import { DataSource, Repository, EntityManager } from 'typeorm';
-import { ConsignmentService } from './../consignment/consigment.service';
 import { CreateItemInventoryDto } from './dto/create-item-inventory.dto';
 import { CreateAdjustInventoryDto } from './dto/create-adjust-inventory.dto';
+import { Consignment } from '../consignment/entities/consigment.entity';
+import { loadItemable } from '../item/helpers/itemable.helper';
 
 @Injectable()
 export class InventoryService {
   constructor(
     @InjectRepository(Inventory) private inventoryRepo: Repository<Inventory>,
     private dataSource: DataSource,
-
-    @Inject(forwardRef(() => ConsignmentService))
-    private consignmentService: ConsignmentService,
   ) {}
 
   // Get action of item form source information
@@ -41,7 +37,12 @@ export class InventoryService {
       case SourceType.PURCHASE:
         return InventoryAction.IMPORT;
       default: {
-        const consignment = await this.consignmentService.findOne(sourceId);
+        const consignment = await this.dataSource
+          .createQueryBuilder(Consignment, 'c')
+
+          .where('c.id = :consignmentId', { consignmentId: sourceId })
+          .getOne();
+        if (!consignment) throw new NotFoundException('Consigment not found!');
 
         return consignment.type === ConsignmentType.IN
           ? InventoryAction.IMPORT
@@ -309,5 +310,55 @@ export class InventoryService {
       .getRawOne();
 
     return result?.sum ? Number(result.sum) : 0;
+  }
+
+  async checkHandledOfSource(sourceId: number, sourceType: SourceType) {
+    const action = await this.getActionOfItem(sourceType, sourceId);
+
+    const results = await this.inventoryRepo
+      .createQueryBuilder('inventory')
+      .leftJoinAndSelect('inventory.item', 'item')
+      .select('item.id', 'itemId')
+      .addSelect('item.quantity', 'totalQuantity')
+      .addSelect('item.itemableId', 'itemableId')
+      .addSelect('SUM(inventory.quantity)', 'handledQuantity')
+      .where('inventory.action = :action', { action })
+      .andWhere('item.itemableType = :itemableType', {
+        itemableType: ItemableType.PRODUCT,
+      })
+      .andWhere('item.isActive = :isActive', { isActive: true })
+      .andWhere('item.sourceId = :sourceId', { sourceId })
+      .andWhere('item.sourceType = :sourceType', { sourceType })
+      .groupBy('item.id')
+      .getRawMany<{
+        itemId: number;
+        itemableId: number;
+        totalQuantity: number;
+        handledQuantity: number;
+      }>();
+
+    // Use Promise.all to wait all async
+    const finalResults = await Promise.all(
+      results.map(async (r) => {
+        const product = await loadItemable(
+          Number(r.itemableId),
+          ItemableType.PRODUCT,
+          this.dataSource,
+        );
+
+        const handledQuantity = Number(r.handledQuantity || 0);
+        const totalQuantity = Number(r.totalQuantity || 0);
+
+        if (handledQuantity !== totalQuantity)
+          return {
+            itemId: r.itemId,
+            productName: product.name,
+            handledQuantity,
+            totalQuantity,
+          };
+      }),
+    );
+
+    return finalResults;
   }
 }

@@ -38,6 +38,7 @@ import { loadEntitySource, loadSource } from './helpers/source.helper';
 import { AppointmentService } from 'src/appointment/appointment.service';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { Consignment } from 'src/consignment/entities/consigment.entity';
+import { InventoryService } from '../inventory/inventory.service';
 @Injectable()
 export class ItemService {
   constructor(
@@ -46,6 +47,7 @@ export class ItemService {
     @Inject(forwardRef(() => AppointmentService))
     private appointmentService: AppointmentService,
     private enrollmentService: EnrollmentService,
+    private inventoryService: InventoryService,
     private dataSource: DataSource,
   ) {}
 
@@ -272,66 +274,6 @@ export class ItemService {
       where,
     });
   }
-  // Chua check AdjustmentType
-  // async update(
-  //   id: number,
-  //   creatorId: number,
-  //   sourceId: number,
-  //   sourceType: SourceType,
-  //   updateItemDto: UpdateItemDto,
-  //   manager: EntityManager,
-  // ) {
-  //   if (!updateItemDto.discountId && !updateItemDto.quantity)
-  //     throw new BadRequestException('Disount ID or quantity is required!');
-
-  //   // Check if source exist
-  //   await loadSource(sourceId, sourceType, manager);
-  //   const repo = manager.getRepository(Item);
-
-  //   // Check if item exist
-  //   const item = await repo.findOne({
-  //     where: {
-  //       id,
-  //       sourceId,
-  //       sourceType,
-  //       isActive: true,
-  //     },
-  //   });
-
-  //   if (!item) throw new NotFoundException('Item not found!');
-
-  //   const oldFinalAmount = item.finalAmount;
-
-  //   if (updateItemDto.quantity) {
-  //     item.quantity = item.quantity + updateItemDto.quantity;
-
-  //     if (item.itemableType === ItemableType.PRODUCT) {
-  //       item.status = ItemStatus.PARTIAL;
-  //     } else if (item.itemableType === ItemableType.COURSE) {
-  //       await this.enrollmentService.createForItem(item.id, manager);
-  //     }
-  //   }
-
-  //   if (updateItemDto.discountId) {
-  //     item.discount = await this.discountService.findOne(
-  //       updateItemDto.discountId,
-  //     );
-  //   }
-
-  //   // Calculate totalAmount and finalAmount
-  //   const totalAmount = item.unitPrice * item.quantity;
-
-  //   const finalAmount = await this.calculateDiscountAmount(
-  //     totalAmount,
-  //     item.discount.id,
-  //   );
-
-  //   item.totalAmount = totalAmount;
-  //   item.finalAmount = finalAmount;
-
-  //   await repo.save(item);
-  //   return { item, oldFinalAmount };
-  // }
 
   async transferService(
     itemId: number,
@@ -459,7 +401,6 @@ export class ItemService {
         where: { id: sourceId },
         select: ['id', 'type'],
       });
-      console.log(consignment);
       status = this.getItemStatusBySource(sourceType, consignment?.type);
     } else status = this.getItemStatusBySource(sourceType);
 
@@ -498,8 +439,6 @@ export class ItemService {
           manager,
         );
 
-      console.log('isItemCompleted', isItemCompleted);
-
       if (!isItemCompleted) return false;
     }
 
@@ -525,7 +464,6 @@ export class ItemService {
       transactionStatus = transaction.status;
     }
 
-    console.log('function is order compeleted');
     const entity = await loadSource(sourceId, sourceType, manager);
     const repo = manager.getRepository(entity.constructor);
 
@@ -536,7 +474,6 @@ export class ItemService {
     if (!isSourceExist) throw new NotFoundException(`${sourceType} not found!`);
 
     // Is status of transaction paid or not
-    console.log('transactionStatus:', transactionStatus);
     const isPaid =
       transactionStatus === TransactionStatus.PAID ||
       transactionStatus === TransactionStatus.OVERPAID;
@@ -547,15 +484,12 @@ export class ItemService {
       sourceType,
       manager,
     );
-    console.log('isProductsCompleted:', isProductsCompleted);
 
     //  Is all service completed or not
     const isServicesCompleted = await this.isAllServiceItemCompleted(
       sourceId,
       manager,
     );
-    console.log('isServicesCompleted:', isServicesCompleted);
-    console.log(isPaid, isProductsCompleted, isServicesCompleted);
 
     if (isPaid && isProductsCompleted && isServicesCompleted)
       return SourceStatus.COMPLETED;
@@ -607,7 +541,6 @@ export class ItemService {
       ),
     });
 
-    console.log('hellooooooo', Number(totalAmount ?? 0), Number(quantity ?? 0));
     return {
       totalAmount: Number(totalAmount ?? 0),
       quantity: Number(quantity ?? 0),
@@ -624,5 +557,196 @@ export class ItemService {
 
     await manager.save(item);
     return item;
+  }
+
+  // Calculate the remain quantity of source which has not been handle (import/export)
+  async getRemainQuantityOfSource(sourceId: number, sourceType: SourceType) {
+    const items = await this.findItemsBySource(
+      sourceId,
+      sourceType,
+      ItemableType.PRODUCT,
+      [ItemStatus.NONE, ItemStatus.PARTIAL],
+      true,
+    );
+
+    // Get status of item from sourceType and sourceId
+    let consignmentType: ConsignmentType | undefined = undefined;
+    if (sourceType === SourceType.CONSIGNMENT) {
+      const consignment = await this.dataSource
+        .createQueryBuilder(Consignment, 'c')
+        .where('c.id =:consignmentId', { consignmentId: sourceId })
+        .getOne();
+
+      if (!consignment) throw new NotFoundException('Consignment not found!');
+
+      consignmentType = consignment?.type;
+    }
+
+    const itemStatus = this.getItemStatusBySource(sourceType, consignmentType);
+
+    // Get inventory action from sourceType and sourceId
+    const itemAction = await this.inventoryService.getActionOfItem(
+      sourceType,
+      sourceId,
+    );
+
+    const result: { itemId: number; unprocessedQuantity: number }[] = [];
+
+    for (const item of items) {
+      let unprocessedQuantity = 0;
+
+      if (item.status !== itemStatus) {
+        const processedQuantity =
+          await this.inventoryService.countInvenQuantity(item.id, itemAction);
+        unprocessedQuantity = item.quantity - processedQuantity;
+      }
+      result.push({ itemId: item.id, unprocessedQuantity });
+    }
+
+    return Array.from(result);
+  }
+
+  async getRemainQuantityOfItem(
+    sourceId: number,
+    sourceType: SourceType,
+    itemId: number,
+  ) {
+    const item = await this.dataSource
+      .createQueryBuilder(Item, 'i')
+      .where('i.id = :itemId', { itemId })
+      .andWhere('i.sourceId = :sourceId AND i.sourceType = :sourceType', {
+        sourceId,
+        sourceType,
+      })
+      .andWhere('i.itemableType = :itemableType', {
+        itemableType: ItemableType.PRODUCT,
+      })
+      .andWhere('i.isActive = :isActive', { isActive: true })
+      .getOne();
+
+    if (!item) throw new NotFoundException('Item not found!');
+
+    // Get status of item from sourceType and sourceId
+    let consignmentType: ConsignmentType | undefined = undefined;
+
+    if (sourceType === SourceType.CONSIGNMENT) {
+      const consignment = await this.dataSource
+        .createQueryBuilder(Consignment, 'c')
+        .where('c.id = :consignmentId', { consignmentId: sourceId })
+        .getOne();
+      if (!consignment) throw new NotFoundException('Consignment not found!');
+
+      consignmentType = consignment?.type;
+    }
+
+    const itemStatus = this.getItemStatusBySource(sourceType, consignmentType);
+
+    // Get inventory action from sourceType and sourceId
+    const itemAction = await this.inventoryService.getActionOfItem(
+      sourceType,
+      sourceId,
+    );
+
+    let unprocessedQuantity = 0;
+
+    if (item.status !== itemStatus) {
+      const processedQuantity = await this.inventoryService.countInvenQuantity(
+        item.id,
+        itemAction,
+      );
+      unprocessedQuantity = item.quantity - processedQuantity;
+    }
+
+    return { unprocessedQuantity };
+  }
+
+  async checkHandledOfSource(sourceId: number, sourceType: SourceType) {
+    const action = await this.inventoryService.getActionOfItem(
+      sourceType,
+      sourceId,
+    );
+
+    const results = await this.itemRepo
+      .createQueryBuilder('item')
+      .leftJoin('item.inventories', 'inventory', 'inventory.action = :action', {
+        action,
+      })
+      .select('item.id', 'itemId')
+      .addSelect('item.quantity', 'totalQuantity')
+      .addSelect('item.itemableId', 'itemableId')
+      .addSelect('SUM(inventory.quantity)', 'handledQuantity')
+      .where('item.itemableType = :itemableType', {
+        itemableType: ItemableType.PRODUCT,
+      })
+      .andWhere('item.isActive = :isActive', { isActive: true })
+      .andWhere('item.sourceId = :sourceId', { sourceId })
+      .andWhere('item.sourceType = :sourceType', { sourceType })
+      .groupBy('item.id')
+      .getRawMany<{
+        itemId: number;
+        itemableId: number;
+        totalQuantity: number;
+        handledQuantity: number;
+      }>();
+
+    // Use Promise.all to wait all async
+    const finalResults = await Promise.all(
+      results.map(async (r) => {
+        const product = await loadItemable(
+          Number(r.itemableId),
+          ItemableType.PRODUCT,
+          this.dataSource,
+        );
+
+        const handledQuantity = Number(r.handledQuantity || 0);
+        const totalQuantity = Number(r.totalQuantity || 0);
+
+        if (handledQuantity !== totalQuantity)
+          return {
+            itemId: r.itemId,
+            productName: product.name,
+            handledQuantity,
+            totalQuantity,
+          };
+      }),
+    );
+
+    return finalResults;
+  }
+
+  // Attach the status (isALlExported, isAllImported, isAllHandled) to sources
+  async enrichSourcesWithHandleStatus<T extends { id: number }>(
+    sources: T[],
+    sourceType: SourceType,
+  ) {
+    const title =
+      sourceType === SourceType.ORDER
+        ? 'isAllExported'
+        : sourceType === SourceType.PURCHASE
+          ? 'isAllImported'
+          : 'isAllHandled';
+
+    const results = await Promise.all(
+      sources.map(async (source) => {
+        const sourceId = Number(source.id);
+
+        if (isNaN(sourceId)) {
+          throw new Error(`Invalid source id: ${source.id}`);
+        }
+
+        const isAllHanlded = await this.isAllProductItemHandled(
+          sourceId,
+          sourceType,
+          this.dataSource.manager,
+        );
+
+        return {
+          ...source,
+          [title]: isAllHanlded,
+        };
+      }),
+    );
+
+    return results;
   }
 }

@@ -5,12 +5,14 @@ import { Partner } from './entities/partner.entity';
 import { PartnerController } from './partner.controller';
 import { AppointmentModule } from 'src/appointment/appointment.module';
 import { AuthorizationModule } from 'src/authorization/authorization.module';
+import { ItemModule } from '../item/item.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Partner]),
     forwardRef(() => AppointmentModule),
     AuthorizationModule,
+    forwardRef(() => ItemModule),
   ],
   controllers: [PartnerController],
   providers: [PartnerService],

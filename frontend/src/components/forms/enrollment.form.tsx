@@ -13,10 +13,10 @@ import {
   type EditEnrollmentFormType,
   type EnrollmentType,
 } from "../schemas/enrollment.schema";
+import { Input } from "../ui/input";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "../ui/input";
 import { PartnerComboBox } from "../comboBoxs/partner.comboBox";
 
 type EnrollmentProps = {
@@ -25,7 +25,6 @@ type EnrollmentProps = {
 };
 
 const EnrollmentForm = ({ onSubmit, enrollmentData }: EnrollmentProps) => {
-  console.log("enrollmentData", enrollmentData);
   const form = useForm<EditEnrollmentFormType>({
     resolver: zodResolver(editEnrollmentFormSchema),
     defaultValues: {
@@ -73,7 +72,7 @@ const EnrollmentForm = ({ onSubmit, enrollmentData }: EnrollmentProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Student</FormLabel>
-                <FormControl>
+                <FormControl className="w-xl">
                   <PartnerComboBox
                     value={field?.value}
                     onChange={(partner) => field.onChange(partner)}

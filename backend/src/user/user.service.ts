@@ -145,7 +145,13 @@ export class UserService {
 
     const userRoles = await this.authorizationService.getUserRoles(user.id);
 
-    return { ...user, roles: userRoles.roles.map((role) => role.name) };
+    return {
+      ...user,
+      roles: userRoles.roles.map((role) => role.name),
+      // userRoles.roles.length === 0
+      //   ? 'Unassigned'
+      //   : userRoles.roles.map((role) => role.name),
+    };
   }
 
   async countUser() {

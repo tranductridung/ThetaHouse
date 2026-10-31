@@ -1,6 +1,6 @@
 import type {
-  EditEnrollmentFormType,
   EnrollmentType,
+  EditEnrollmentFormType,
 } from "@/components/schemas/enrollment.schema";
 import api from "@/api/api";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ const Enrollment = ({
   courseId,
   isUseTitle = true,
 }: EnrollmentProps) => {
-  const { fetchPermissions } = useAuth();
+  const { fetchPermissions, user } = useAuth();
   const { setLoading } = useLoading();
 
   const [data, setData] = useState<EnrollmentType[]>([]);
@@ -97,7 +97,15 @@ const Enrollment = ({
     const run = async () => {
       try {
         setLoading(true);
-        await fetchPermissions(["enrollment"]);
+
+        const hasEnrollmentPermission = user?.permissions?.some((p) =>
+          p.startsWith("enrollment:")
+        );
+
+        if (!hasEnrollmentPermission) {
+          await fetchPermissions(["enrollment"]);
+        }
+
         await fetchData();
       } finally {
         setLoading(false);

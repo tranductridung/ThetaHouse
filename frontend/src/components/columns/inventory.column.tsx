@@ -4,6 +4,7 @@ import { Badge } from "../ui/badge";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ChevronsDown, ChevronsUp } from "lucide-react";
 import type { InventoryType } from "../schemas/inventory.schema";
+import { formatCurrency } from "@/lib/utils";
 
 const actionStyle = {
   Import: <ChevronsUp className="text-green-500 dark:text-green-400" />,
@@ -45,11 +46,7 @@ export const inventoryColumns = (): ColumnDef<InventoryType>[] => [
     header: "Quantity",
   },
   {
-    accessorFn: (row) =>
-      (row.unitPrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.unitPrice ?? 0),
     header: "Unit Price",
   },
   {

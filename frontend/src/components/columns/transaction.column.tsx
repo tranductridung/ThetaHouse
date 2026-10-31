@@ -16,6 +16,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { TransactionType } from "../schemas/transaction.schema";
 import { getTransactionStatusIcon } from "../styles/TransactionStatus";
+import { formatCurrency } from "@/lib/utils";
 
 type TransactionProps = {
   onAddPayment: (
@@ -45,19 +46,11 @@ export const transactionColumns = ({
     header: "Payer",
   },
   {
-    accessorFn: (row) =>
-      (row?.totalAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.totalAmount ?? 0),
     header: "Total Amount",
   },
   {
-    accessorFn: (row) =>
-      (row?.paidAmount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.paidAmount ?? 0),
     header: "Paid Amount",
   },
   {

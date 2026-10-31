@@ -23,6 +23,12 @@ import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}
 
+  @RequirePermissions('purchase:read')
+  @Get(':id/items/not-imported')
+  async checkAllProductIsExported(@Param('id') purchaseId: string) {
+    return await this.purchaseService.isAllProductImported(+purchaseId);
+  }
+
   @RequirePermissions('purchase:create')
   @Post()
   async create(
@@ -139,5 +145,23 @@ export class PurchaseController {
   ) {
     const result = await this.purchaseService.removeItem(+purchaseId, +itemId);
     return result;
+  }
+
+  @RequirePermissions('purchase:read')
+  @Get(':purchaseId/remain')
+  async getRemainProductOfPurchase(@Param('purchaseId') purchaseId: string) {
+    return await this.purchaseService.getRemainQuantityOfPurchase(+purchaseId);
+  }
+
+  @RequirePermissions('item:read')
+  @Get(':purchaseId/items/:itemId/remain')
+  async getRemainProductOfItem(
+    @Param('purchaseId') purchaseId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return await this.purchaseService.getRemainQuantityOfItem(
+      +purchaseId,
+      +itemId,
+    );
   }
 }

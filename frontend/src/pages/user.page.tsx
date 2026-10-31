@@ -50,12 +50,25 @@ const User = ({ isUseTitle = true }: UserProps) => {
     }
   };
 
-  const handleChangeRole = async (userId: number, roleId: number) => {
+  const handleChangeRole = async (
+    userId: number,
+    currentRoleId?: number,
+    newRoleId?: number
+  ) => {
     try {
       setLoading(true);
-      await api.patch(`/authorization/users/${userId}/roles`, {
-        roleId,
-      });
+      if (newRoleId) {
+        // Assign role
+        await api.patch(`/authorization/users/${userId}/roles`, {
+          roleId: newRoleId,
+        });
+      } else {
+        // Remove role
+        await api.delete(
+          `/authorization/users/${userId}/roles/${currentRoleId}`
+        );
+      }
+
       fetchData();
 
       toast.success("Update user role success!");

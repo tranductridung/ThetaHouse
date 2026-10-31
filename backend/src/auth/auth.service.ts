@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -21,12 +22,12 @@ import { AuthorizationService } from './../authorization/authorization.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
-    private tokenService: TokenService,
     private dataSource: DataSource,
     private jwtService: JwtService,
-    private configService: ConfigService,
+    private userService: UserService,
     private mailService: MailService,
+    private tokenService: TokenService,
+    private configService: ConfigService,
     private authorizationService: AuthorizationService,
   ) {}
 
@@ -98,15 +99,17 @@ export class AuthService {
         : {
             ...createUserDTO,
             password: hashedPassword,
-            status: UserStatus.ACTIVE, // Just in develop
-            // status: UserStatus.UNVERIFIED,
+            // status: UserStatus.ACTIVE, // Just in develop
+            status: UserStatus.UNVERIFIED,
           };
 
     const user = await this.userService.create(userData);
     const environment = this.configService.get<string>('environment');
+    let isVerifyAccount: boolean = false; // Use to notify FE that user need to verify or not
 
     // Just verify email when account not the first account
     if (environment === 'prod' && userCount !== 0) {
+      isVerifyAccount = true;
       const backendUrl = this.configService.get<string>('BACKEND_URL');
       const payload = {
         id: user.id,
@@ -120,7 +123,7 @@ export class AuthService {
         expiresIn: this.configService.get<string>('VERIFY_EMAIL_TOKEN_EXPIRES'),
       });
 
-      const verifyLink = `${backendUrl}/users/auth/verify-email?token=${token}`;
+      const verifyLink = `${backendUrl}/auth/verify-email?token=${token}`;
 
       await this.mailService.verifyEmail(user.email, verifyLink);
     }
@@ -133,7 +136,7 @@ export class AuthService {
         await this.authorizationService.findRoleByName('superadmin');
       await this.authorizationService.assignRoleToUser(user.id, adminRole.id);
     }
-    return result;
+    return { ...result, isVerifyAccount };
   }
 
   async verifyEmail(id: number) {
@@ -201,7 +204,7 @@ export class AuthService {
     if (!user)
       return {
         success: true,
-        message: 'Reset link is sent to your email hehe!',
+        message: 'Reset link is sent to your email!',
       };
 
     const payload = { email: user.email, sub: user.id };
@@ -235,8 +238,49 @@ export class AuthService {
       );
 
       return { message: 'Reset password success!' };
-    } catch (e) {
+    } catch (error) {
       throw new Error('Token invalid or expired!');
     }
+  }
+
+  async resendVerifyEmail(email: string) {
+    const user = await this.dataSource
+      .createQueryBuilder(User, 'user')
+      .where('user.email = :email', { email })
+      .getOne();
+
+    const successResponse = {
+      success: true,
+      message: 'If this email exists, a verification link has been sent.',
+    };
+
+    // Return if user not exist
+    if (!user) {
+      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 500));
+      return successResponse;
+    }
+
+    if (user.status !== UserStatus.UNVERIFIED)
+      throw new BadRequestException('Your account has been verified!');
+
+    // Create new token
+    const backendUrl = this.configService.get<string>('BACKEND_URL');
+    const payload = {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      roles: [],
+    };
+
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('VERIFY_EMAIL_TOKEN'),
+      expiresIn: this.configService.get<string>('VERIFY_EMAIL_TOKEN_EXPIRES'),
+    });
+
+    const verifyLink = `${backendUrl}/auth/verify-email?token=${token}`;
+
+    await this.mailService.verifyEmail(user.email, verifyLink);
+
+    return successResponse;
   }
 }

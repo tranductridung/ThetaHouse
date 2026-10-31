@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!userData.roles || userData.roles.length === 0) {
         await logout();
-        navigate("/errors/forbidden");
+        navigate("/error/forbidden");
         return;
       }
 
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = response.data.user;
       if (!userData.roles || userData.roles.length === 0) {
         await logout();
-        navigate("/errors/forbidden");
+        navigate("/error/forbidden");
         return;
       }
 

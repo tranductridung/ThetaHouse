@@ -1,14 +1,14 @@
 import {
-  Controller,
+  Req,
   Get,
   Post,
   Body,
   Param,
-  Req,
-  UseGuards,
-  Delete,
-  Query,
   Patch,
+  Query,
+  Delete,
+  UseGuards,
+  Controller,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { OrderService } from './order.service';
@@ -25,6 +25,12 @@ import { RequirePermissions } from 'src/auth/decorators/permissions.decorator';
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  @RequirePermissions('order:read')
+  @Get(':id/items/not-exported')
+  async checkAllProductIsExported(@Param('id') orderId: string) {
+    return await this.orderService.isAllProductExported(+orderId);
+  }
 
   @RequirePermissions('order:create')
   @Post()
@@ -188,5 +194,20 @@ export class OrderController {
       creatorId,
       changeCourseDto,
     );
+  }
+
+  @RequirePermissions('order:read')
+  @Get(':orderId/remain')
+  async getRemainProductOfOrder(@Param('orderId') orderId: string) {
+    return await this.orderService.getRemainQuantityOfOrder(+orderId);
+  }
+
+  @RequirePermissions('item:read')
+  @Get(':orderId/items/:itemId/remain')
+  async getRemainProductOfItem(
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return await this.orderService.getRemainQuantityOfItem(+orderId, +itemId);
   }
 }

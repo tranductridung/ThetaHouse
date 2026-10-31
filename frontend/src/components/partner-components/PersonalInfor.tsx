@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import PartnerForm from "../forms/partner.form";
 import type {
   PartnerType,
   EditPartnerFormType,
 } from "../schemas/partner.schema";
 import api from "@/api/api";
-import { handleAxiosError } from "@/lib/utils";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { handleAxiosError } from "@/lib/utils";
+import PartnerForm from "../forms/partner.form";
 
 type PersonalInforProps = {
   partnerId: number;
@@ -41,7 +41,7 @@ const PersonalInfor = ({ partnerId }: PersonalInforProps) => {
 
   return (
     <>
-      <div>
+      <div className="flex flex-col gap-5 p-4 justify-end">
         <PartnerForm
           partnerData={data}
           onSubmit={handleSubmit}

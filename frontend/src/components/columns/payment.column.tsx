@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import type { PaymentType } from "../schemas/payment.schema";
+import { formatCurrency } from "@/lib/utils";
 
 export const paymentColumns: ColumnDef<PaymentType>[] = [
   {
@@ -9,11 +10,7 @@ export const paymentColumns: ColumnDef<PaymentType>[] = [
     header: "ID",
   },
   {
-    accessorFn: (row) =>
-      (row?.amount ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.amount ?? 0),
     header: "Amount",
   },
   {

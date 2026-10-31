@@ -11,8 +11,8 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import api from "@/api/api";
-import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 type PartnerOption = {
@@ -55,12 +55,12 @@ export function PartnerComboBox({
           url = `/partners?page=${page}&limit=${pageSize}&search=${input}`;
 
         url = `/partners/${
-          type === "Customer" ? "customer" : "supplier"
+          type === "Customer" ? "customers" : "suppliers"
         }?page=${page}&limit=${pageSize}&search=${input}`;
 
         const res = await api.get(url);
-        const items: PartnerOption[] = res.data.partners || [];
 
+        const items: PartnerOption[] = res.data.partners || [];
         setPartners((prev) => (page === 0 ? items : [...prev, ...items]));
         setHasMore(items.length === pageSize);
       } catch (err) {
@@ -107,7 +107,11 @@ export function PartnerComboBox({
           role="combobox"
           className="w-full justify-between font-normal"
         >
-          {value ? value.fullName : `Choose ${type ? type : "partner"}`}
+          {value
+            ? value.fullName.length > 20
+              ? value.fullName.slice(0, 25) + "..."
+              : value.fullName
+            : `Choose ${type ? type : "partner"}`}
           <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -123,7 +127,6 @@ export function PartnerComboBox({
             }}
           />
           <CommandEmpty>Partner not found</CommandEmpty>
-
           <div
             onScroll={handleScroll}
             className="max-h-[250px] overflow-y-auto"
@@ -143,7 +146,6 @@ export function PartnerComboBox({
                 />
                 None
               </CommandItem>
-
               {partners.map((partner) => (
                 <CommandItem
                   key={partner.id}
@@ -158,7 +160,9 @@ export function PartnerComboBox({
                       value?.id === partner.id ? "opacity-100" : "opacity-0"
                     }`}
                   />
-                  {partner.fullName}
+                  {partner.fullName.length > 30
+                    ? partner.fullName.slice(0, 30) + "..."
+                    : partner.fullName}
                 </CommandItem>
               ))}
             </CommandGroup>

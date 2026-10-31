@@ -85,19 +85,19 @@ export class CourseController {
     return await this.courseService.getCourseStaff(courseId, paginationDto);
   }
 
-  @RequirePermissions('course:update', 'course:read')
+  @RequirePermissions('course:update')
   @Patch(':id/restore')
   async restore(@Param('id') id: string) {
     return await this.courseService.restore(+id);
   }
 
-  @RequirePermissions('course:update', 'course:read')
+  @RequirePermissions('course:update')
   @Patch(':id/toggle-status')
   async toggleStatus(@Param('id') id: string) {
     return await this.courseService.toggleStatus(+id);
   }
 
-  @RequirePermissions('course:update', 'user:read', 'course:read')
+  @RequirePermissions('course:create', 'course:update')
   @Post(':courseId/staff')
   async addStaff(
     @Body() body: Pick<CreateCourseStaffDto, 'role' | 'staffId'>,
@@ -110,7 +110,7 @@ export class CourseController {
     return await this.courseService.addStaff(createCourseStaffDto);
   }
 
-  @RequirePermissions('course:delete', 'course:read')
+  @RequirePermissions('course:delete')
   @Delete(':courseId/staff/:staffId')
   async removeStaff(
     @Param('courseId') courseId: string,
@@ -119,7 +119,7 @@ export class CourseController {
     return await this.courseService.removeStaff(+staffId, +courseId);
   }
 
-  @RequirePermissions('course:update', 'course:read')
+  @RequirePermissions('course:update')
   @Patch(':courseId/staff/:staffId/change-role')
   async changRole(
     @Param('courseId') courseId: string,

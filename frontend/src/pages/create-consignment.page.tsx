@@ -46,8 +46,11 @@ export default function CreateConsignmentPage({
       type: data.type,
       partnerId: data!.partner!.id,
       items: newItems,
-      payerId: data?.payer?.id,
     };
+
+    if (data.type === "In") {
+      payload.payerId = data.payer?.id;
+    }
 
     try {
       setLoading(true);

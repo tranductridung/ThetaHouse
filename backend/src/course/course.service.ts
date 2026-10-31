@@ -144,6 +144,7 @@ export class CourseService {
       .addSelect([
         'staff.fullName',
         'staff.id',
+        'course.id',
         'course.name',
         'course.mode',
         'course.startDate',

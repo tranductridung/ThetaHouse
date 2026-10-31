@@ -14,6 +14,7 @@ const ConsignmentHistory = ({
     <div>
       <Consignment
         partnerId={Number(partnerId)}
+        isUseTitle={false}
         partnerType={partnerType}
       ></Consignment>
     </div>

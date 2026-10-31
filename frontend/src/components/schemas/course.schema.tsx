@@ -14,7 +14,7 @@ export const baseCourseSchema = z.object({
   onlineSession: z.number().nullable().optional(),
   price: z.number(),
   mode: z.enum(COURSE_MODE),
-  startDate: z.date(),
+  startDate: z.coerce.date(),
   maxStudent: z.number(),
 });
 
@@ -68,14 +68,22 @@ export const courseFormSchema = baseCourseSchema
 export const courseStaffSchema = z.object({
   staff: z.object({ id: z.number(), fullName: z.string() }),
   role: z.enum(COURSE_ROLE),
-  course: z.object({
-    id: z.number(),
-    name: z.string(),
-    mode: z.enum(COURSE_MODE),
-    startDate: z.date(),
-  }),
+  course: courseSchema,
+  // course: z.object({
+  //   id: z.number(),
+  //   name: z.string(),
+  //   mode: z.enum(COURSE_MODE),
+  //   startDate: z.date(),
+  // }),
+});
+
+export const createCourseStaffSchema = z.object({
+  staffId: z.number(),
+  role: z.enum(COURSE_ROLE),
+  courseId: z.number(),
 });
 
 export type CourseType = z.infer<typeof courseSchema>;
-export type CourseStaffType = z.infer<typeof courseStaffSchema>;
 export type CourseFormType = z.infer<typeof courseFormSchema>;
+export type CreateCourseStaffType = z.infer<typeof createCourseStaffSchema>;
+export type CourseStaffType = z.infer<typeof courseStaffSchema>;

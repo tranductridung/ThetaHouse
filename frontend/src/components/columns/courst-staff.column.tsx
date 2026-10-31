@@ -5,21 +5,36 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import type { UserAuthContextType } from "@/auth/AuthContext";
 import { format } from "date-fns";
 import { Button } from "../ui/button";
 import { MoreHorizontal } from "lucide-react";
+import { COURSE_ROLE } from "../constants/constants";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { CourseStaffType } from "../schemas/course.schema";
 
 type CourseStaffProps = {
   handleDelete: (courseId: number, staffId: number) => void;
-  onEdit: (courseStaff: CourseStaffType) => void;
+  handleChangeRole: (
+    courseId: number,
+    staffId: number,
+    courseRole: string
+  ) => void;
+  user: UserAuthContextType | null;
 };
 
 export const courseStaffColumns = ({
   handleDelete,
-  onEdit,
+  handleChangeRole,
+  user,
 }: CourseStaffProps): ColumnDef<CourseStaffType>[] => [
   {
     accessorFn: (row) => row?.staff.fullName,
@@ -93,7 +108,41 @@ export const courseStaffColumns = ({
   {
     accessorKey: "role",
     header: "Role",
+    cell: ({ row }) => {
+      const role = row.original.role;
+
+      if (user?.permissions.includes("course:update"))
+        return (
+          <Select
+            value={role}
+            onValueChange={(newCourseRole) => {
+              handleChangeRole(
+                Number(row.original.course.id),
+                Number(row.original.staff.id),
+                newCourseRole
+              );
+            }}
+          >
+            <SelectTrigger
+              className="h-8 w-40"
+              id={`${row.original.staff.id}-role`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {COURSE_ROLE.map((r) => {
+                return (
+                  <>
+                    <SelectItem value={r}>{r}</SelectItem>
+                  </>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        );
+    },
   },
+
   {
     id: "actions",
     cell: ({ row }) => {
@@ -107,23 +156,14 @@ export const courseStaffColumns = ({
           </DropdownMenuTrigger>
 
           <DropdownMenuContent align="end">
-            <ActionItem
-              permission="course-staff:update"
-              onClick={() => {
-                onEdit(row.original);
-              }}
-            >
-              Edit
-            </ActionItem>
-
             <>
               <ActionItem
-                permission="course-staff:delete"
+                permission="course:delete"
                 onClick={() => {
                   handleDelete(row.original.course.id, row.original.staff.id);
                 }}
               >
-                Delete
+                Delete staff
               </ActionItem>
             </>
           </DropdownMenuContent>

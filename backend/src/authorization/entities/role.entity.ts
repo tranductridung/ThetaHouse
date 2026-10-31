@@ -22,8 +22,7 @@ export class Role {
   @BeforeInsert()
   @BeforeUpdate()
   normalizeName() {
-    this.name =
-      this.name.charAt(0).toUpperCase() + this.name.slice(1).toLowerCase();
+    this.name = this.name.toLowerCase();
   }
 
   @Column({ nullable: true })

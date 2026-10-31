@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Controller,
+  Delete,
 } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service';
 import { AuthJwtGuard } from 'src/auth/guards/auth.guard';
@@ -49,7 +50,7 @@ export class EnrollmentController {
   }
 
   @RequirePermissions('enrollment:update')
-  @Patch(':id')
+  @Delete(':id')
   withdraw(@Param('id') id: string) {
     return this.enrollmentService.withdraw(+id);
   }

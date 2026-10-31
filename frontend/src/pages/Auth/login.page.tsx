@@ -8,7 +8,15 @@ export default function Login() {
           <div className="w-full max-w-xs">
             <LoginForm />
 
-            <h1>Test Account: tranductridung0103@gmail.com / password</h1>
+            <br />
+
+            <h1 className="font-bold text-center">TEST ACCOUNT</h1>
+            <p>
+              <b>Email</b>: tranductridung0103@gmail.com
+            </p>
+            <p>
+              <b>Password</b>: password
+            </p>
           </div>
         </div>
       </div>

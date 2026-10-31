@@ -47,6 +47,7 @@ export const orderSchema = baseSourceSchema.extend({
     fullName: z.string(),
   }),
   quantity: z.number(),
+  isAllExported: z.boolean(),
 });
 export const orderDraftSchema = z.object({
   discountAmount: z.number(),
@@ -77,6 +78,7 @@ export const purchaseSchema = baseSourceSchema.extend({
     fullName: z.string(),
   }),
   quantity: z.number(),
+  isAllImported: z.boolean(),
 });
 export const purchaseDraftSchema = z.object({
   discountAmount: z.number().optional(),
@@ -118,6 +120,7 @@ export const consignmentSchema = baseSourceSchema.extend({
     .nullable()
     .optional(),
   type: z.enum(CONSIGNMENT_TYPE),
+  isAllHandled: z.boolean(),
 });
 export const createConsignmentSchema = z.object({
   type: z.enum(CONSIGNMENT_TYPE),

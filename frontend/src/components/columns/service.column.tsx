@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { ServiceType } from "../schemas/service.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type ServiceProps = {
   handleDelete: (id: number) => void;
@@ -87,11 +88,7 @@ export const serviceColumns = ({
     header: "Type",
   },
   {
-    accessorFn: (row) =>
-      (row?.unitPrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.unitPrice ?? 0),
     header: "Unit Price",
   },
   {

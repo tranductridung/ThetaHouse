@@ -8,6 +8,7 @@ type ItemModalProps = {
   handleSubmit: (itemDraftList: ItemDraftListType) => void;
   onClose: () => void;
   source: "Order" | "Purchase" | "Consignment";
+  consignmentType?: "In" | "Out";
 };
 
 const ItemModal = ({
@@ -15,6 +16,7 @@ const ItemModal = ({
   handleSubmit,
   onClose,
   source,
+  consignmentType,
 }: ItemModalProps) => {
   return (
     <>
@@ -29,7 +31,11 @@ const ItemModal = ({
       >
         <DialogContent className="max-h-[90vh]">
           <DialogTitle>ADD ITEM</DialogTitle>
-          <AddItemForm onSubmit={handleSubmit} source={source} />
+          <AddItemForm
+            onSubmit={handleSubmit}
+            source={source}
+            consignmentType={consignmentType}
+          />
         </DialogContent>
       </Dialog>
     </>

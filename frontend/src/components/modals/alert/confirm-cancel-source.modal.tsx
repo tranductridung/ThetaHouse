@@ -1,29 +1,29 @@
 import {
   AlertDialog,
-  AlertDialogAction,
+  AlertDialogTitle,
+  AlertDialogFooter,
   AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogHeader,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Dispatch, SetStateAction } from "react";
 
-type ConfirmDialogProps = {
+type ConfirmCancelSourceDialogProps = {
   type: "order" | "purchase" | "consignment";
   selectedId?: number;
   showConfirmDialog: boolean;
   setShowConfirmDialog: Dispatch<SetStateAction<boolean>>;
   handleCancel: (id?: number) => void;
 };
-const ConfirmDialog = ({
+const ConfirmCancelSourceDialog = ({
   type,
   showConfirmDialog,
   setShowConfirmDialog,
   handleCancel,
   selectedId,
-}: ConfirmDialogProps) => {
+}: ConfirmCancelSourceDialogProps) => {
   return (
     <>
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -51,4 +51,4 @@ const ConfirmDialog = ({
   );
 };
 
-export default ConfirmDialog;
+export default ConfirmCancelSourceDialog;

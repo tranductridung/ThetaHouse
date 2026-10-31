@@ -347,6 +347,7 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
             handleSubmit={onSubmitAddItem}
             onClose={onCloseItem}
             source={"Consignment"}
+            consignmentType={consignment?.type}
           ></ItemModal>
 
           {/* Add payment modal */}
@@ -361,6 +362,9 @@ const ConsignmentDetails = ({ isUseTitle = true }: ConsignmentDetailsProps) => {
             formManager={exportImportFormManager}
             handleSubmit={onSubmitExportImport}
             onClose={onCloseExportImport}
+            itemId={exportImportFormManager.selectedItemId!}
+            sourceType={"Consignment"}
+            sourceId={consignment?.id}
           ></ExportImportModal>
         </div>
       </RequirePermission>

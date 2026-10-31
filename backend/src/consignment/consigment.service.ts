@@ -1,50 +1,46 @@
-import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
-  AdjustmentType,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
   PayerType,
-  SourceStatus,
   SourceType,
+  SourceStatus,
+  AdjustmentType,
   TransactionType,
 } from 'src/common/enums/enum';
 import {
-  ConsignmentType,
-  ItemableType,
   ItemStatus,
   PartnerType,
+  ItemableType,
+  ConsignmentType,
 } from './../common/enums/enum';
-import {
-  BadRequestException,
-  forwardRef,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ItemService } from 'src/item/item.service';
 import { User } from 'src/user/entities/user.entity';
 import { Item } from 'src/item/entities/item.entity';
 import { Consignment } from './entities/consigment.entity';
+import { CreateItemDto } from 'src/item/dto/create-item.dto';
 import { Product } from 'src/product/entities/product.entity';
 import { Partner } from 'src/partner/entities/partner.entity';
-import { DataSource, EntityManager, Not, Repository } from 'typeorm';
+import { PaginationDto } from './../common/dtos/pagination.dto';
 import { InventoryService } from 'src/inventory/inventory.service';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import { CreateConsignmentDto } from './dto/create-consignment.dto';
+import { DataSource, EntityManager, Not, Repository } from 'typeorm';
 import { TransactionService } from 'src/transaction/transaction.service';
 import { Transaction } from 'src/transaction/entities/transaction.entity';
 import { CreateTransactionDto } from 'src/transaction/dto/create-transaction.dto';
 import { CreateTransactionNoSourceDto } from 'src/transaction/dto/create-transaction-no-source.dto';
-import { CreateItemDto } from 'src/item/dto/create-item.dto';
 @Injectable()
 export class ConsignmentService {
   constructor(
     @InjectRepository(Consignment)
     private consignmentRepo: Repository<Consignment>,
     private dataSource: DataSource,
-    private itemService: ItemService,
     private transactionService: TransactionService,
-
-    @Inject(forwardRef(() => InventoryService))
+    private itemService: ItemService,
     private inventoryService: InventoryService,
   ) {}
 
@@ -225,10 +221,23 @@ export class ConsignmentService {
         .take(limit)
         .getManyAndCount();
 
-      return { consignments, total };
+      const newConsignments =
+        await this.itemService.enrichSourcesWithHandleStatus(
+          consignments,
+          SourceType.CONSIGNMENT,
+        );
+
+      return { consignments: [...newConsignments], total };
     } else {
       const consignments = await queryBuilder.getMany();
-      return consignments;
+
+      const newConsignments =
+        await this.itemService.enrichSourcesWithHandleStatus(
+          consignments,
+          SourceType.CONSIGNMENT,
+        );
+
+      return { consignments: [...newConsignments] };
     }
   }
 
@@ -663,5 +672,27 @@ export class ConsignmentService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getRemainQuantityOfConsignment(consignmentId: number) {
+    return await this.itemService.getRemainQuantityOfSource(
+      consignmentId,
+      SourceType.CONSIGNMENT,
+    );
+  }
+
+  async getRemainQuantityOfItem(consignmentId: number, itemId: number) {
+    return await this.itemService.getRemainQuantityOfItem(
+      consignmentId,
+      SourceType.CONSIGNMENT,
+      itemId,
+    );
+  }
+
+  isAllProductHandled(consignmentId: number) {
+    return this.itemService.checkHandledOfSource(
+      consignmentId,
+      SourceType.CONSIGNMENT,
+    );
   }
 }

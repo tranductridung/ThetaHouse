@@ -1,6 +1,9 @@
+import { ItemService } from 'src/item/item.service';
 import { PaginationDto } from './../common/dtos/pagination.dto';
 import {
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,6 +17,7 @@ import {
   EnrollmentStatus,
   PartnerType,
   SourceStatus,
+  SourceType,
 } from 'src/common/enums/enum';
 import { Appointment } from 'src/appointment/entities/appointment.entity';
 import { Order } from 'src/order/entities/order.entity';
@@ -26,7 +30,9 @@ import { Enrollment } from 'src/enrollment/entities/enrollment.entity';
 export class PartnerService {
   constructor(
     @InjectRepository(Partner) private partnerRepo: Repository<Partner>,
-    private datasource: DataSource,
+    @Inject(forwardRef(() => ItemService))
+    private itemService: ItemService,
+    private dataSource: DataSource,
   ) {}
 
   async create(createPartnerDto: CreatePartnerDto) {
@@ -151,7 +157,7 @@ export class PartnerService {
     // Check if customer is existed
     await this.findCustomer(customerId);
 
-    const appointments = await this.datasource
+    const appointments = await this.dataSource
       .createQueryBuilder(Appointment, 'a')
       .leftJoinAndSelect('a.customer', 'customer')
       .where('customer.id = :customerId', { customerId })
@@ -179,7 +185,7 @@ export class PartnerService {
   ) {
     await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
 
-    const queryBuilder = this.datasource
+    const queryBuilder = this.dataSource
       .createQueryBuilder(Order, 'o')
       .leftJoin('o.customer', 'customer')
       .where('customer.id = :customerId', { customerId })
@@ -202,7 +208,13 @@ export class PartnerService {
         .take(limit)
         .getManyAndCount();
 
-      return { orders, total };
+      const newOrders = await this.itemService.enrichSourcesWithHandleStatus(
+        orders,
+        SourceType.ORDER,
+      );
+      return { orders: [...newOrders], total };
+
+      // return { orders, total };
     } else {
       const orders = await queryBuilder.getMany();
       return orders;
@@ -216,7 +228,7 @@ export class PartnerService {
   ) {
     await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
 
-    const queryBuilder = this.datasource
+    const queryBuilder = this.dataSource
       .createQueryBuilder(Enrollment, 'e')
       .leftJoin('e.student', 'student')
       .leftJoin('e.course', 'course')
@@ -261,7 +273,7 @@ export class PartnerService {
   ) {
     await this.checkPartnerExist(partnerId);
 
-    const queryBuilder = this.datasource
+    const queryBuilder = this.dataSource
       .createQueryBuilder(Consignment, 'c')
       .leftJoin('c.partner', 'partner')
       .where('partner.id = :partnerId', { partnerId });
@@ -282,10 +294,20 @@ export class PartnerService {
         .take(limit)
         .getManyAndCount();
 
-      return { consignments, total };
+      const newConsignments =
+        await this.itemService.enrichSourcesWithHandleStatus(
+          consignments,
+          SourceType.CONSIGNMENT,
+        );
+      return { consignments: [...newConsignments], total };
     } else {
       const consignments = await queryBuilder.getMany();
-      return consignments;
+      const newConsignments =
+        await this.itemService.enrichSourcesWithHandleStatus(
+          consignments,
+          SourceType.CONSIGNMENT,
+        );
+      return { consignments: [...newConsignments] };
     }
   }
 
@@ -296,7 +318,7 @@ export class PartnerService {
   ) {
     await this.checkPartnerExist(supplierId, PartnerType.SUPPLIER);
 
-    const queryBuilder = this.datasource
+    const queryBuilder = this.dataSource
       .createQueryBuilder(Purchase, 'p')
       .leftJoin('p.supplier', 'supplier')
       .addSelect('p.createdAt')
@@ -318,15 +340,23 @@ export class PartnerService {
         .take(limit)
         .getManyAndCount();
 
-      return { purchases, total };
+      const newPurchases = await this.itemService.enrichSourcesWithHandleStatus(
+        purchases,
+        SourceType.PURCHASE,
+      );
+      return { consignments: [...newPurchases], total };
     } else {
       const purchases = await queryBuilder.getMany();
-      return purchases;
+      const newPurchases = await this.itemService.enrichSourcesWithHandleStatus(
+        purchases,
+        SourceType.PURCHASE,
+      );
+      return { consignments: [...newPurchases] };
     }
   }
 
   async getTransactionsByPartner(partnerId: number) {
-    return this.datasource
+    return this.dataSource
       .createQueryBuilder(Transaction, 't')
       .where(
         `
@@ -360,7 +390,7 @@ export class PartnerService {
   ) {
     await this.checkPartnerExist(customerId, PartnerType.CUSTOMER);
 
-    const queryBuilder = this.datasource
+    const queryBuilder = this.dataSource
       .createQueryBuilder(Appointment, 'appointment')
       .leftJoinAndSelect('appointment.item', 'item')
       .leftJoinAndSelect('appointment.healer', 'healer')

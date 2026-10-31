@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  CheckCircle2Icon,
   CircleX,
   LoaderIcon,
   MoreHorizontal,
+  CheckCircle2Icon,
 } from "lucide-react";
 import {
   Select,
@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/select";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuContent,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,11 @@ import type { UserType } from "@/components/schemas/user.schema";
 
 type UserProps = {
   toggleStatus: (id: number) => void;
-  handleChangeRole: (userId: number, roleId: number) => void;
+  handleChangeRole: (
+    userId: number,
+    currentRoleId?: number,
+    newRoleId?: number
+  ) => void;
   roleList: RoleType[];
   user: UserAuthContextType | null;
 };
@@ -123,13 +127,16 @@ export const userColumns = ({
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => {
-      const currentRole = row.original.userRoles[0].role;
+      const currentRole =
+        row?.original.userRoles.length === 0
+          ? undefined
+          : row?.original.userRoles[0].role;
       const userId = row.original.id;
 
       if (user?.permissions.includes("authorization:create"))
         return (
           <Select
-            value={currentRole.name}
+            value={currentRole ? currentRole.name : "unassigned"}
             disabled={user?.email === row.original.email}
             onValueChange={(newRoleName) => {
               let newRoleId;
@@ -137,15 +144,19 @@ export const userColumns = ({
                 if (role.name === newRoleName) newRoleId = role.id;
               });
 
-              handleChangeRole(userId, Number(newRoleId));
+              handleChangeRole(
+                userId,
+                Number(currentRole?.id),
+                Number(newRoleId)
+              );
             }}
           >
             <SelectTrigger className="h-8 w-40" id={`${userId}-role`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">
+              <SelectItem value="unassigned">Unassigned</SelectItem>
               {roleList.map((r) => {
-                console.log(r);
                 return (
                   <>
                     <SelectItem value={r.name}>
@@ -158,7 +169,7 @@ export const userColumns = ({
           </Select>
         );
 
-      return <div>{currentRole.name}</div>;
+      return <div>{currentRole ? currentRole.name : undefined}</div>;
     },
   },
   {

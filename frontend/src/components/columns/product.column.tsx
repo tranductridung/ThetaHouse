@@ -16,6 +16,7 @@ import { Button } from "../ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ActionItem } from "../commons/action-item.helper";
 import type { ProductType } from "../schemas/product.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type ProductProps = {
   handleDelete: (id: number) => void;
@@ -88,10 +89,7 @@ export const productColumns = ({
   {
     accessorFn: (row) => {
       if (!row.useBaseQuantityPricing) return "-";
-      return (row?.orderPricePerBaseQuantity ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      });
+      return formatCurrency(row?.orderPricePerBaseQuantity ?? 0);
     },
     header: "Order Base",
   },
@@ -99,28 +97,17 @@ export const productColumns = ({
     accessorFn: (row) => {
       if (!row.useBaseQuantityPricing) return "-";
 
-      return (row?.purchasePricePerBaseQuantity ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      });
+      return formatCurrency(row?.purchasePricePerBaseQuantity ?? 0);
     },
     header: "Purchase Base",
   },
 
   {
-    accessorFn: (row) =>
-      (row?.defaultOrderPrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.defaultOrderPrice ?? 0),
     header: "Order Price",
   },
   {
-    accessorFn: (row) =>
-      (row?.defaultPurchasePrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
+    accessorFn: (row) => formatCurrency(row?.defaultPurchasePrice ?? 0),
     header: "Purchase Price",
   },
 

@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "../ui/button";
 import type { ServiceType } from "../schemas/service.schema";
+import { formatCurrency } from "@/lib/utils";
 
 type AddServiceProps = {
   handleAddService: (service: ServiceType) => void;
@@ -78,12 +79,7 @@ export const addServiceColumns = ({
     header: "Type",
   },
   {
-    accessorFn: (row) =>
-      (row?.unitPrice ?? 0).toLocaleString("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }),
-
+    accessorFn: (row) => formatCurrency(row?.unitPrice ?? 0),
     header: "Unit Price",
   },
 ];

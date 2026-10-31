@@ -16,7 +16,6 @@ import Purchase from "@/pages/purchase.page";
 import PublicRoute from "@/auth/PublicRoute";
 import SourcePage from "@/pages/source.page";
 import Signup from "@/pages/Auth/signup.page";
-import NotFound from "@/pages/error-pages/not-found.page";
 import Dashboard from "@/pages/dashboard.page";
 import Inventory from "@/pages/inventory.page";
 import { Toaster } from "@/components/ui/sonner";
@@ -32,6 +31,7 @@ import RolePermission from "./pages/role-permission";
 import OrderDetails from "@/pages/order-detail.page";
 import CourseDetail from "@/pages/course-detail.page";
 import PartnerDetail from "@/pages/partner-detail.page";
+import NotFound from "@/pages/error-pages/not-found.page";
 import CreatePurchase from "@/pages/create-purchase.page";
 import PurchaseDetails from "@/pages/purchase-detail.page";
 import Forbidden from "@/pages/error-pages/forbidden.page";
@@ -40,6 +40,10 @@ import ResetPassword from "@/pages/Auth/reset-password.page";
 import ForgotPassword from "@/pages/Auth/forgot-password.page";
 import CreateConsignment from "@/pages/create-consignment.page";
 import ConsignmentDetails from "@/pages/consignment-detail.page";
+import ResendVerifyEmail from "./pages/Auth/resend-verify-email.page";
+import VerifyEmailFailed from "./pages/error-pages/verify-email-failed.page";
+import VerifyEmailSuccess from "./pages/success-pages/verify-email-succes.page";
+import EmailMismatch from "./pages/error-pages/email-mismatch.page";
 
 const App = () => {
   return (
@@ -106,9 +110,21 @@ const App = () => {
           <Route path="/auth/signup" element={<Signup />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route
+            path="/auth/resend-verify-email"
+            element={<ResendVerifyEmail />}
+          />
         </Route>
 
-        <Route path="/errors/forbidden" element={<Forbidden />} />
+        <Route path="error" element={<SourcePage />}>
+          <Route path="forbidden" element={<Forbidden />} />
+          <Route path="verify-email-failed" element={<VerifyEmailFailed />} />
+          <Route path="email-mismatch" element={<EmailMismatch />} />
+        </Route>
+
+        <Route path="success" element={<SourcePage />}>
+          <Route path="verify-email-success" element={<VerifyEmailSuccess />} />
+        </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>

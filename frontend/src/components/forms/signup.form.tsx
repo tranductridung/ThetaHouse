@@ -28,6 +28,7 @@ import { signupSchema, type SignupType } from "../schemas/signup.schema";
 export const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const navigate = useNavigate();
 
   const backendUrl =
@@ -48,8 +49,10 @@ export const SignupForm = () => {
     const { confirmPassword, ...payload } = data;
     await axios
       .post(`${backendUrl}/auth/signup`, { ...payload })
-      .then(() => {
-        setShowEmailDialog(true);
+      .then((response) => {
+        const isVerifyAccount = response.data.isVerifyAccount;
+        if (isVerifyAccount) setShowEmailDialog(true);
+        else setShowSuccessDialog(true);
       })
       .catch((error) => {
         handleAxiosError(error);
@@ -149,6 +152,26 @@ export const SignupForm = () => {
                   className="bg-primary text-white"
                   onClick={() => {
                     setShowEmailDialog(false);
+                    navigate("/auth/login");
+                  }}
+                >
+                  Back to Login
+                </Button>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Your account has been created</DialogTitle>
+                <DialogDescription>
+                  You can now log in to your account.
+                </DialogDescription>
+                <Button
+                  className="bg-primary text-white"
+                  onClick={() => {
+                    setShowSuccessDialog(false);
                     navigate("/auth/login");
                   }}
                 >
