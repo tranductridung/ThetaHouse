@@ -82,8 +82,10 @@ const Consignment = ({
   };
   const { handleExportImport } = useSourceActions(fetchData);
 
-  const onSubmitHandle = async (id: number) => {
+  const onSubmitHandle = async (id: number | undefined) => {
     try {
+      if (!id) return;
+
       setLoading(true);
       await handleExportImport(id, "Consignment");
     } finally {

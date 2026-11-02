@@ -379,7 +379,7 @@ Run in `frontend/`:
 
 ```bash
 npm install
-cp .env.example .env     # set VITE_BACKEND_URL
+cp .env.example .env
 npm run dev
 ```
 
@@ -389,7 +389,7 @@ The app is served at `http://localhost:5173`.
 
 ### Backend (`backend/.env`)
 
-| Variable                       | Description                                                                                                                         |
+| Variable                       | Description                                                                                                                         |     |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --- |
 | `PORT`                         | Port the API listens on                                                                                                             |
 | `DB`                           | MySQL database name (must already exist)                                                                                            |
